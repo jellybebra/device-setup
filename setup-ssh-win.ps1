@@ -1,95 +1,61 @@
-$ErrorActionPreference = "Stop"
+$ip = Read-Host "ip"
+$port = Read-Host "port"
+$username = Read-Host "username"
+$alias = Read-Host "alias"
 
-$ip = Read-Host "IP"
-$port = Read-Host "Port"
-$username = Read-Host "Username"
-$alias = Read-Host "Alias"
-
-$sshDir = Join-Path $HOME ".ssh"
+$sshDir = Join-Path $env:USERPROFILE ".ssh"
+$keyBase = Join-Path $sshDir "id_ed25519"
+$pubKeyFile = "$keyBase.pub"
 $configFile = Join-Path $sshDir "config"
 
-New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
-if (-not (Test-Path $configFile)) {
-    New-Item -ItemType File -Path $configFile -Force | Out-Null
+New-Item -ItemType Directory -Force -Path $sshDir | Out-Null
+
+if (-not (Test-Path $keyBase) -or -not (Test-Path $pubKeyFile)) {
+    & ssh-keygen -t ed25519 -f $keyBase -N '""'
 }
 
-function Remove-HostBlock {
-    param(
-        [string]$AliasName,
-        [string]$FilePath
-    )
+$pubKeyContent = (Get-Content $pubKeyFile -Raw).Trim()
 
-    if (-not (Test-Path $FilePath)) { return }
+$remoteCmd = @"
+mkdir -p ~/.ssh &&
+chmod 700 ~/.ssh &&
+touch ~/.ssh/authorized_keys &&
+chmod 600 ~/.ssh/authorized_keys &&
+grep -qxF '$pubKeyContent' ~/.ssh/authorized_keys || echo '$pubKeyContent' >> ~/.ssh/authorized_keys
+"@
 
-    $lines = Get-Content -Path $FilePath -ErrorAction SilentlyContinue
+& ssh -p $port "$username@$ip" $remoteCmd
+
+$newBlock = @"
+
+Host $alias
+  HostName $ip
+  Port $port
+  User $username
+  IdentityFile $keyBase
+"@
+
+if (Test-Path $configFile) {
+    $lines = Get-Content $configFile
     $result = New-Object System.Collections.Generic.List[string]
     $skip = $false
 
     foreach ($line in $lines) {
-        if ($line -match "^\s*Host\s+$([regex]::Escape($AliasName))\s*$") {
-            $skip = $true
-            continue
+        if ($line -match '^\s*Host\s+(.+)\s*$') {
+            $hostName = $matches[1].Trim()
+            if ($skip) { $skip = $false }
+            if ($hostName -eq $alias) {
+                $skip = $true
+                continue
+            }
         }
-
-        if ($skip -and $line -match "^\s*Host\s+") {
-            $skip = $false
-        }
-
         if (-not $skip) {
             $result.Add($line)
         }
     }
 
-    Set-Content -Path $FilePath -Value $result
-}
-
-function Add-HostBlock {
-    param(
-        [string]$AliasName,
-        [string]$Ip,
-        [string]$Port,
-        [string]$Username,
-        [string]$IdentityFile = ""
-    )
-
-    Add-Content -Path $configFile -Value ""
-    Add-Content -Path $configFile -Value "Host $AliasName"
-    Add-Content -Path $configFile -Value "  HostName $Ip"
-    Add-Content -Path $configFile -Value "  Port $Port"
-    Add-Content -Path $configFile -Value "  User $Username"
-    if ($IdentityFile) {
-        Add-Content -Path $configFile -Value "  IdentityFile $IdentityFile"
-    }
-}
-
-Remove-HostBlock -AliasName $alias -FilePath $configFile
-Add-HostBlock -AliasName $alias -Ip $ip -Port $port -Username $username
-
-ssh -o StrictHostKeyChecking=accept-new $alias "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-
-$keyFile = ""
-if (Test-Path (Join-Path $sshDir "id_ed25519")) {
-    $keyFile = Join-Path $sshDir "id_ed25519"
-} elseif (Test-Path (Join-Path $sshDir "id_rsa")) {
-    $keyFile = Join-Path $sshDir "id_rsa"
+    $content = (($result -join "`r`n").TrimEnd() + "`r`n" + $newBlock.Trim() + "`r`n")
+    Set-Content -Path $configFile -Value $content -NoNewline
 } else {
-    $keyFile = Join-Path $sshDir "id_ed25519"
-    ssh-keygen -t ed25519 -f $keyFile -N '""'
+    Set-Content -Path $configFile -Value ($newBlock.Trim() + "`r`n") -NoNewline
 }
-
-$pubFile = "$keyFile.pub"
-$pubKey = (Get-Content -Path $pubFile -Raw).Trim()
-
-try {
-    Set-Clipboard -Value $pubKey
-} catch {}
-
-Start-Process notepad.exe $pubFile
-
-ssh $alias "mkdir -p ~/.ssh && chmod 700 ~/.ssh && printf '%s\n' '$pubKey' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-
-$keyFileForConfig = $keyFile -replace "\\","/"
-Remove-HostBlock -AliasName $alias -FilePath $configFile
-Add-HostBlock -AliasName $alias -Ip $ip -Port $port -Username $username -IdentityFile $keyFileForConfig
-
-Write-Host "Done."
