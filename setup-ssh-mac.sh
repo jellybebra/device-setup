@@ -1,95 +1,79 @@
-$ErrorActionPreference = "Stop"
+#!/usr/bin/env bash
 
-$ip = Read-Host "IP"
-$port = Read-Host "Port"
-$username = Read-Host "Username"
-$alias = Read-Host "Alias"
+set -euo pipefail
 
-$sshDir = Join-Path $HOME ".ssh"
-$configFile = Join-Path $sshDir "config"
+read -rp "IP: " IP
+read -rp "Port: " PORT
+read -rp "Username: " USERNAME
+read -rp "Alias: " ALIAS
 
-New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
-if (-not (Test-Path $configFile)) {
-    New-Item -ItemType File -Path $configFile -Force | Out-Null
+SSH_DIR="$HOME/.ssh"
+CONFIG_FILE="$SSH_DIR/config"
+
+mkdir -p "$SSH_DIR"
+touch "$CONFIG_FILE"
+chmod 700 "$SSH_DIR"
+chmod 600 "$CONFIG_FILE" 2>/dev/null || true
+
+remove_host_block() {
+  local alias="$1"
+  local file="$2"
+  local tmp
+  tmp="$(mktemp)"
+  awk -v alias="$alias" '
+    BEGIN {skip=0}
+    $1=="Host" && $2==alias {skip=1; next}
+    $1=="Host" && skip==1 {skip=0}
+    skip==0 {print}
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
 }
 
-function Remove-HostBlock {
-    param(
-        [string]$AliasName,
-        [string]$FilePath
-    )
+append_host_block() {
+  local alias="$1"
+  local ip="$2"
+  local port="$3"
+  local username="$4"
+  local identity_file="${5:-}"
 
-    if (-not (Test-Path $FilePath)) { return }
-
-    $lines = Get-Content -Path $FilePath -ErrorAction SilentlyContinue
-    $result = New-Object System.Collections.Generic.List[string]
-    $skip = $false
-
-    foreach ($line in $lines) {
-        if ($line -match "^\s*Host\s+$([regex]::Escape($AliasName))\s*$") {
-            $skip = $true
-            continue
-        }
-
-        if ($skip -and $line -match "^\s*Host\s+") {
-            $skip = $false
-        }
-
-        if (-not $skip) {
-            $result.Add($line)
-        }
-    }
-
-    Set-Content -Path $FilePath -Value $result
+  {
+    printf "\nHost %s\n" "$alias"
+    printf "  HostName %s\n" "$ip"
+    printf "  Port %s\n" "$port"
+    printf "  User %s\n" "$username"
+    if [[ -n "$identity_file" ]]; then
+      printf "  IdentityFile %s\n" "$identity_file"
+    fi
+  } >> "$CONFIG_FILE"
 }
 
-function Add-HostBlock {
-    param(
-        [string]$AliasName,
-        [string]$Ip,
-        [string]$Port,
-        [string]$Username,
-        [string]$IdentityFile = ""
-    )
+remove_host_block "$ALIAS" "$CONFIG_FILE"
+append_host_block "$ALIAS" "$IP" "$PORT" "$USERNAME"
 
-    Add-Content -Path $configFile -Value ""
-    Add-Content -Path $configFile -Value "Host $AliasName"
-    Add-Content -Path $configFile -Value "  HostName $Ip"
-    Add-Content -Path $configFile -Value "  Port $Port"
-    Add-Content -Path $configFile -Value "  User $Username"
-    if ($IdentityFile) {
-        Add-Content -Path $configFile -Value "  IdentityFile $IdentityFile"
-    }
-}
+ssh -o StrictHostKeyChecking=accept-new "$ALIAS" 'mkdir -p ~/.ssh && chmod 700 ~/.ssh'
 
-Remove-HostBlock -AliasName $alias -FilePath $configFile
-Add-HostBlock -AliasName $alias -Ip $ip -Port $port -Username $username
+KEY_FILE=""
+if [[ -f "$SSH_DIR/id_ed25519" ]]; then
+  KEY_FILE="$SSH_DIR/id_ed25519"
+elif [[ -f "$SSH_DIR/id_rsa" ]]; then
+  KEY_FILE="$SSH_DIR/id_rsa"
+else
+  KEY_FILE="$SSH_DIR/id_ed25519"
+  ssh-keygen -t ed25519 -f "$KEY_FILE" -N ""
+fi
 
-ssh -o StrictHostKeyChecking=accept-new $alias "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+PUB_FILE="${KEY_FILE}.pub"
+PUB_KEY="$(<"$PUB_FILE")"
 
-$keyFile = ""
-if (Test-Path (Join-Path $sshDir "id_ed25519")) {
-    $keyFile = Join-Path $sshDir "id_ed25519"
-} elseif (Test-Path (Join-Path $sshDir "id_rsa")) {
-    $keyFile = Join-Path $sshDir "id_rsa"
-} else {
-    $keyFile = Join-Path $sshDir "id_ed25519"
-    ssh-keygen -t ed25519 -f $keyFile -N '""'
-}
+if command -v pbcopy >/dev/null 2>&1; then
+  printf "%s" "$PUB_KEY" | pbcopy
+fi
 
-$pubFile = "$keyFile.pub"
-$pubKey = (Get-Content -Path $pubFile -Raw).Trim()
+open -a TextEdit "$PUB_FILE" >/dev/null 2>&1 || true
 
-try {
-    Set-Clipboard -Value $pubKey
-} catch {}
+ssh "$ALIAS" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && printf '%s\n' '$PUB_KEY' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 
-Start-Process notepad.exe $pubFile
+remove_host_block "$ALIAS" "$CONFIG_FILE"
+append_host_block "$ALIAS" "$IP" "$PORT" "$USERNAME" "$KEY_FILE"
 
-ssh $alias "mkdir -p ~/.ssh && chmod 700 ~/.ssh && printf '%s\n' '$pubKey' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-
-$keyFileForConfig = $keyFile -replace "\\","/"
-Remove-HostBlock -AliasName $alias -FilePath $configFile
-Add-HostBlock -AliasName $alias -Ip $ip -Port $port -Username $username -IdentityFile $keyFileForConfig
-
-Write-Host "Done."
+echo "Done."
