@@ -7,6 +7,9 @@ macOS:
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/ssh-setup/main/setup-ssh-mac.sh)
 ```
+```bash
+alias ssh-add-host='bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/ssh-setup/main/setup-ssh-mac.sh)'
+```
 
 Windows PowerShell:
 
