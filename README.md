@@ -7,16 +7,16 @@
 macOS:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/ssh-setup/main/setup-ssh-mac.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-mac.sh)
 ```
 ```bash
-alias ssh-add-host='bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/ssh-setup/main/setup-ssh-mac.sh)'
+alias ssh-add-host='bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-mac.sh)'
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/jellybebra/ssh-setup/main/setup-ssh-win.ps1 | iex
+irm https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-win.ps1 | iex
 ```
 
 ## Vencord
