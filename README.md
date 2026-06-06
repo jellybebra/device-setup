@@ -35,40 +35,14 @@ irm https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-win
 
 ---
 
-## Другие инструменты
-
-### Vencord
-
-Windows:
-
-```cmd
-powershell -Command "$exe = \"$env:TEMP\VencordInstallerCli.exe\"; Invoke-WebRequest -Uri \"https://github.com/Vencord/Installer/releases/latest/download/VencordInstallerCli.exe\" -OutFile $exe; $p = Start-Process -PassThru -Wait -NoNewWindow -FilePath $exe -ArgumentList \"-install\", \"-branch\", \"auto\"; Remove-Item -Force $exe; if ($p.ExitCode -eq 0) { foreach ($name in @('Discord', 'DiscordPTB', 'DiscordCanary')) { $path = \"$env:LOCALAPPDATA\$name\Update.exe\"; if (Test-Path $path) { $exeName = if ($name -eq 'Discord') { 'Discord.exe' } else { \"$name.exe\" }; Start-Process $path -ArgumentList \"--processStart $exeName\"; break } } }"
-```
-
-# Настройка нового сервера
-
-## 1. Настройка SSH и пользователей
-
-### 1.1. Настройка сервера
-
-2. Поменяй пароль на сложный
-### 1.2. Настройка SSH-сервера
-
-1. Перезагрузите сервер:
-
-   ```bash
-   sudo reboot
-   ```
-
-## 2. Настройка безопасности
-
-### 2.2. Установка Fail2Ban
-1. Установите и включите защиту от bruteforce-атак:
+### Установка Fail2Ban
 
    ```bash
    sudo apt install fail2ban
    sudo systemctl enable fail2ban
    ```
+
+## Другие инструменты
 
 Посмотреть что слушает на каком порту
 
@@ -77,4 +51,12 @@ ss -tl
 ```
 ```bash
 netstat -tulpn
+```
+
+### Vencord
+
+Windows:
+
+```cmd
+powershell -Command "$exe = \"$env:TEMP\VencordInstallerCli.exe\"; Invoke-WebRequest -Uri \"https://github.com/Vencord/Installer/releases/latest/download/VencordInstallerCli.exe\" -OutFile $exe; $p = Start-Process -PassThru -Wait -NoNewWindow -FilePath $exe -ArgumentList \"-install\", \"-branch\", \"auto\"; Remove-Item -Force $exe; if ($p.ExitCode -eq 0) { foreach ($name in @('Discord', 'DiscordPTB', 'DiscordCanary')) { $path = \"$env:LOCALAPPDATA\$name\Update.exe\"; if (Test-Path $path) { $exeName = if ($name -eq 'Discord') { 'Discord.exe' } else { \"$name.exe\" }; Start-Process $path -ArgumentList \"--processStart $exeName\"; break } } }"
 ```
