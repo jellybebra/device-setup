@@ -87,3 +87,8 @@ ss -tl
 ```bash
 netstat -tulpn
 ```
+
+```bash
+apt update && apt install unattended-upgrades
+dpkg-reconfigure --priority=low unattended-upgrades
+```

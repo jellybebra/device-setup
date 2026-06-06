@@ -376,6 +376,8 @@ while ($true) {
                 while ($true) {
                     Clear-Host
                     Write-Host "[i] Loading management options..." -ForegroundColor Blue
+                    
+                    # Check Docker
                     ssh -o ConnectTimeout=3 $($selectedHost.Alias) "command -v docker >/dev/null 2>&1"
                     if ($LASTEXITCODE -eq 0) {
                         $dockerItem = "Install Docker (Already installed)"
@@ -385,7 +387,31 @@ while ($true) {
                         $dockerInstalled = $false
                     }
 
-                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", $dockerItem, "[ Back ]")
+                    # Check Auto-updates
+                    $remoteCheck = 'if ! command -v dpkg >/dev/null 2>&1; then ' +
+                                   'echo "unsupported"; ' +
+                                   'elif dpkg -s unattended-upgrades >/dev/null 2>&1 && grep -q ''APT::Periodic::Unattended-Upgrade "1"'' /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null; then ' +
+                                   'echo "enabled"; ' +
+                                   'else ' +
+                                   'echo "disabled"; ' +
+                                   'fi'
+                    
+                    $autoupdateStatus = ssh -o ConnectTimeout=3 $($selectedHost.Alias) "$remoteCheck" 2>$null
+                    if ($null -eq $autoupdateStatus) {
+                        $autoupdateStatus = "unsupported"
+                    } else {
+                        $autoupdateStatus = $autoupdateStatus.Trim()
+                    }
+
+                    if ($autoupdateStatus -eq "enabled") {
+                        $autoupdateItem = "Auto-updates: [ON]"
+                    } elseif ($autoupdateStatus -eq "disabled") {
+                        $autoupdateItem = "Auto-updates: [OFF]"
+                    } else {
+                        $autoupdateItem = "Auto-updates: [Not supported]"
+                    }
+
+                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", $dockerItem, $autoupdateItem, "[ Back ]")
                     if ($manageChoice -eq 0) {
                         Clear-Host
                         Write-Host "=== Setup Hostname: $($selectedHost.Alias) ===" -ForegroundColor Cyan
@@ -419,8 +445,7 @@ while ($true) {
                         }
                         $confirmDocker = Read-Host "Do you want to install Docker on $($selectedHost.Alias)? (y/N)"
                         if ($confirmDocker -match '^[Yy]$') {
-                            $remoteCmd = 'curl -sSL https://get.docker.com | sudo sh && ' +
-                                         'if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y unattended-upgrades && sudo dpkg-reconfigure --priority=low unattended-upgrades; fi'
+                            $remoteCmd = 'curl -sSL https://get.docker.com | sudo sh'
                             Write-Host "`n[i] Installing Docker on remote server..." -ForegroundColor Blue
                             ssh -t $($selectedHost.Alias) "$remoteCmd"
                             if ($LASTEXITCODE -eq 0) {
@@ -431,6 +456,35 @@ while ($true) {
                             Read-Host "Press Enter to return..."
                         }
                     } elseif ($manageChoice -eq 2) {
+                        Clear-Host
+                        Write-Host "=== Toggle Auto-updates: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        if ($autoupdateStatus -eq "unsupported") {
+                            Write-Host "`n[!] Auto-updates are only supported on Debian/Ubuntu systems." -ForegroundColor Red
+                            Read-Host "Press Enter to return..."
+                            continue
+                        }
+
+                        if ($autoupdateStatus -eq "enabled") {
+                            Write-Host "`n[i] Disabling auto-updates..." -ForegroundColor Blue
+                            $remoteCmd = 'printf "APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"0\";\n" | sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null'
+                            ssh -t $($selectedHost.Alias) "$remoteCmd"
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "`n[+] Auto-updates successfully disabled!" -ForegroundColor Green
+                            } else {
+                                Write-Host "`n[!] Failed to disable auto-updates." -ForegroundColor Red
+                            }
+                        } else {
+                            Write-Host "`n[i] Enabling auto-updates (installing unattended-upgrades if needed)..." -ForegroundColor Blue
+                            $remoteCmd = 'sudo apt-get update && sudo apt-get install -y unattended-upgrades && printf "APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";\n" | sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null'
+                            ssh -t $($selectedHost.Alias) "$remoteCmd"
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "`n[+] Auto-updates successfully enabled!" -ForegroundColor Green
+                            } else {
+                                Write-Host "`n[!] Failed to enable auto-updates." -ForegroundColor Red
+                            }
+                        }
+                        Read-Host "Press Enter to return..."
+                    } elseif ($manageChoice -eq 3) {
                         break
                     }
                 }

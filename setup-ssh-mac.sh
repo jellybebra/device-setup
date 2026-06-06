@@ -454,6 +454,7 @@ while true; do
                 while true; do
                     clear
                     echo -e "\033[1;34m[i] Loading management options...\033[0m"
+                    # Check Docker
                     if ssh -o ConnectTimeout=3 "$server_alias" "command -v docker >/dev/null 2>&1"; then
                         docker_item="Install Docker (Already installed)"
                         docker_installed=1
@@ -462,8 +463,27 @@ while true; do
                         docker_installed=0
                     fi
 
+                    # Check Auto-updates
+                    remote_check="if ! command -v dpkg >/dev/null 2>&1; then \
+echo 'unsupported'; \
+elif dpkg -s unattended-upgrades >/dev/null 2>&1 && grep -q 'APT::Periodic::Unattended-Upgrade \"1\"' /etc/apt/apt.conf.d/20auto-upgrades 2>/dev/null; then \
+echo 'enabled'; \
+else \
+echo 'disabled'; \
+fi"
+                    autoupdate_status=$(ssh -o ConnectTimeout=3 "$server_alias" "$remote_check" 2>/dev/null || echo "unsupported")
+                    autoupdate_status=$(echo "$autoupdate_status" | xargs)
+
+                    if [[ "$autoupdate_status" == "enabled" ]]; then
+                        autoupdate_item="Auto-updates: [ON]"
+                    elif [[ "$autoupdate_status" == "disabled" ]]; then
+                        autoupdate_item="Auto-updates: [OFF]"
+                    else
+                        autoupdate_item="Auto-updates: [Not supported]"
+                    fi
+
                     clear
-                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "$docker_item" "[ Back ]"
+                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "$docker_item" "$autoupdate_item" "[ Back ]"
                     manage_choice=$selected_index
                     if [ "$manage_choice" -eq 0 ]; then
                         clear
@@ -497,8 +517,7 @@ echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
                         read -r -p "Do you want to install Docker on $server_alias? (y/N): " confirm_docker
                         if [[ "$confirm_docker" =~ ^[Yy]$ ]]; then
                             echo -e "\n\033[1;34m[i] Installing Docker on remote server...\033[0m"
-                            remote_cmd="curl -sSL https://get.docker.com | sudo sh && \
-if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y unattended-upgrades && sudo dpkg-reconfigure --priority=low unattended-upgrades; fi"
+                            remote_cmd="curl -sSL https://get.docker.com | sudo sh"
                             if ssh -t "$server_alias" "$remote_cmd"; then
                                 echo -e "\n\033[1;32m[+] Docker successfully installed on remote server!\033[0m"
                             else
@@ -507,6 +526,33 @@ if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get 
                             read -rsn1 -p "Press any key to return..."
                         fi
                     elif [ "$manage_choice" -eq 2 ]; then
+                        clear
+                        echo -e "\033[1;36m=== Toggle Auto-updates: $server_alias ===\033[0m"
+                        if [[ "$autoupdate_status" == "unsupported" ]]; then
+                            echo -e "\n\033[1;31m[!] Auto-updates are only supported on Debian/Ubuntu systems.\033[0m"
+                            read -rsn1 -p "Press any key to return..."
+                            continue
+                        fi
+
+                        if [[ "$autoupdate_status" == "enabled" ]]; then
+                            echo -e "\n\033[1;34m[i] Disabling auto-updates...\033[0m"
+                            remote_cmd="printf 'APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"0\";\n' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null"
+                            if ssh -t "$server_alias" "$remote_cmd"; then
+                                echo -e "\n\033[1;32m[+] Auto-updates successfully disabled!\033[0m"
+                            else
+                                echo -e "\n\033[1;31m[!] Failed to disable auto-updates.\033[0m"
+                            fi
+                        else
+                            echo -e "\n\033[1;34m[i] Enabling auto-updates (installing unattended-upgrades if needed)...\033[0m"
+                            remote_cmd="sudo apt-get update && sudo apt-get install -y unattended-upgrades && printf 'APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";\n' | sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null"
+                            if ssh -t "$server_alias" "$remote_cmd"; then
+                                echo -e "\n\033[1;32m[+] Auto-updates successfully enabled!\033[0m"
+                            else
+                                echo -e "\n\033[1;31m[!] Failed to enable auto-updates.\033[0m"
+                            fi
+                        fi
+                        read -rsn1 -p "Press any key to return..."
+                    elif [ "$manage_choice" -eq 3 ]; then
                         break
                     fi
                 done
