@@ -429,7 +429,7 @@ while true; do
 
         while true; do
             clear
-            select_menu "=== Server: $server_alias ($server_user@$server_ip:$server_port) ===" "Connect" "Edit" "Delete" "[ Back ]"
+            select_menu "=== Server: $server_alias ($server_user@$server_ip:$server_port) ===" "Connect" "Edit" "Delete" "Manage" "[ Back ]"
             action_choice=$selected_index
 
             if [ "$action_choice" -eq 0 ]; then
@@ -450,6 +450,37 @@ while true; do
                 delete_server "$choice"
                 break
             elif [ "$action_choice" -eq 3 ]; then
+                # Manage
+                while true; do
+                    clear
+                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "[ Back ]"
+                    manage_choice=$selected_index
+                    if [ "$manage_choice" -eq 0 ]; then
+                        clear
+                        echo -e "\033[1;36m=== Setup Hostname: $server_alias ===\033[0m"
+                        read -r -p "Enter new hostname: " new_hostname
+                        if [[ -n "$new_hostname" ]]; then
+                            if [[ ! "$new_hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]; then
+                                echo -e "\n\033[1;31m[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed.\033[0m"
+                                read -rsn1 -p "Press any key to return..."
+                                continue
+                            fi
+                            echo -e "\n\033[1;34m[i] Configuring hostname on remote server...\033[0m"
+                            remote_cmd="sudo hostnamectl set-hostname '$new_hostname' && \
+sudo sed -i '/^[[:space:]]*127\\.0\\.1\\.1/d' /etc/hosts && \
+echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
+                            if ssh -t "$server_alias" "$remote_cmd"; then
+                                echo -e "\n\033[1;32m[+] Hostname successfully updated on remote server!\033[0m"
+                            else
+                                echo -e "\n\033[1;31m[!] Failed to update hostname on remote server.\033[0m"
+                            fi
+                            read -rsn1 -p "Press any key to return..."
+                        fi
+                    elif [ "$manage_choice" -eq 1 ]; then
+                        break
+                    fi
+                done
+            elif [ "$action_choice" -eq 4 ]; then
                 # Back
                 break
             fi

@@ -2,10 +2,13 @@
 
 Интерактивный менеджер SSH-подключений для терминала с удобным выбором серверов стрелочками, возможностью добавления, редактирования и удаления серверов из вашего конфигурационного файла `~/.ssh/config`.
 
+Инструмент предназначен для настройки и управления удаленными Linux-серверами на базе **systemd** (Debian, Ubuntu, CentOS, Rocky и др.).
+
 ## Запуск менеджера
 
 ### macOS:
 
+**Удаленный запуск:**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-mac.sh)
 ```
@@ -15,10 +18,21 @@ bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main
 alias ssh-manager='bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-mac.sh)'
 ```
 
+**Локальный запуск:**
+```bash
+bash setup-ssh-mac.sh
+```
+
 ### Windows (PowerShell):
 
+**Удаленный запуск:**
 ```powershell
 irm https://raw.githubusercontent.com/jellybebra/device-setup/main/setup-ssh-win.ps1 | iex
+```
+
+**Локальный запуск:**
+```powershell
+.\setup-ssh-win.ps1
 ```
 
 ---
@@ -63,28 +77,6 @@ powershell -Command "$exe = \"$env:TEMP\VencordInstallerCli.exe\"; Invoke-WebReq
    ```bash
    sudo apt install fail2ban
    sudo systemctl enable fail2ban
-   ```
-
-## 5. Настройка Hostname
-1. Замените hostname:
-
-   ```bash
-   sudo hostname dev
-   ```
-
-2. Отредактируйте файл `/etc/hostname`:
-
-   ```
-   dev
-   ```
-
-3. Отредактируйте файл `/etc/hosts`:
-
-   ```
-   ...
-   127.0.1.1 dev
-   ...
-   111.111.111.111 dev
    ```
 
 # Docker

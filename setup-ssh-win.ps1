@@ -352,7 +352,7 @@ while ($true) {
         $selectedHost = $hosts[$choice]
 
         while ($true) {
-            $actionChoice = Show-Menu "=== Server: $($selectedHost.Alias) ($($selectedHost.User)@$($selectedHost.HostName):$($selectedHost.Port)) ===" @("Connect", "Edit", "Delete", "[ Back ]")
+            $actionChoice = Show-Menu "=== Server: $($selectedHost.Alias) ($($selectedHost.User)@$($selectedHost.HostName):$($selectedHost.Port)) ===" @("Connect", "Edit", "Delete", "Manage", "[ Back ]")
 
             if ($actionChoice -eq 0) {
                 # Connect
@@ -372,6 +372,37 @@ while ($true) {
                 Delete-Server $selectedHost
                 break
             } elseif ($actionChoice -eq 3) {
+                # Manage
+                while ($true) {
+                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", "[ Back ]")
+                    if ($manageChoice -eq 0) {
+                        Clear-Host
+                        Write-Host "=== Setup Hostname: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        $newHostname = Read-Host "Enter new hostname"
+                        if (-not [string]::IsNullOrWhiteSpace($newHostname)) {
+                            if ($newHostname -notmatch '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$') {
+                                Write-Host "`n[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed." -ForegroundColor Red
+                                Read-Host "Press Enter to return..."
+                                continue
+                            }
+                            $remoteCmd = 'sudo hostnamectl set-hostname "' + $newHostname + '" && ' +
+                                         'sudo sed -i ''/^[[:space:]]*127\.0\.1\.1/d'' /etc/hosts && ' +
+                                         'echo "127.0.1.1 ' + $newHostname + '" | sudo tee -a /etc/hosts > /dev/null'
+
+                            Write-Host "`n[i] Configuring hostname on remote server..." -ForegroundColor Blue
+                            ssh -t $($selectedHost.Alias) "$remoteCmd"
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "`n[+] Hostname successfully updated on remote server!" -ForegroundColor Green
+                            } else {
+                                Write-Host "`n[!] Failed to update hostname on remote server." -ForegroundColor Red
+                            }
+                            Read-Host "Press Enter to return..."
+                        }
+                    } elseif ($manageChoice -eq 1) {
+                        break
+                    }
+                }
+            } elseif ($actionChoice -eq 4) {
                 # Back
                 break
             }
