@@ -483,7 +483,7 @@ fi"
                     fi
 
                     clear
-                    select_menu "=== Manage: $server_alias ===" "System Update & Upgrade" "Reboot" "$docker_item" "$autoupdate_item" "Edit Hostname" "[ Back ]"
+                    select_menu "=== Manage: $server_alias ===" "System Update & Upgrade" "Reboot" "$docker_item" "$autoupdate_item" "Edit Hostname" "Change Password" "[ Back ]"
                     manage_choice=$selected_index
                     if [ "$manage_choice" -eq 0 ]; then
                         clear
@@ -578,6 +578,16 @@ echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
                             read -rsn1 -p "Press any key to return..."
                         fi
                     elif [ "$manage_choice" -eq 5 ]; then
+                        clear
+                        echo -e "\033[1;36m=== Change Password: $server_alias ===\033[0m"
+                        echo -e "[i] Changing password for the remote user...\n"
+                        if ssh -t "$server_alias" "passwd"; then
+                            echo -e "\n\033[1;32m[+] Password successfully updated!\033[0m"
+                        else
+                            echo -e "\n\033[1;31m[!] Failed to update password.\033[0m"
+                        fi
+                        read -rsn1 -p "Press any key to return..."
+                    elif [ "$manage_choice" -eq 6 ]; then
                         break
                     fi
                 done

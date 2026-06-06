@@ -411,7 +411,7 @@ while ($true) {
                         $autoupdateItem = "Auto-updates: [Not supported]"
                     }
 
-                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("System Update & Upgrade", "Reboot", $dockerItem, $autoupdateItem, "Edit Hostname", "[ Back ]")
+                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("System Update & Upgrade", "Reboot", $dockerItem, $autoupdateItem, "Edit Hostname", "Change Password", "[ Back ]")
                     if ($manageChoice -eq 0) {
                         Clear-Host
                         Write-Host "=== System Update & Upgrade: $($selectedHost.Alias) ===" -ForegroundColor Cyan
@@ -511,6 +511,17 @@ while ($true) {
                             Read-Host "Press Enter to return..."
                         }
                     } elseif ($manageChoice -eq 5) {
+                        Clear-Host
+                        Write-Host "=== Change Password: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        Write-Host "[i] Changing password for the remote user...`n" -ForegroundColor Blue
+                        ssh -t $($selectedHost.Alias) "passwd"
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "`n[+] Password successfully updated!" -ForegroundColor Green
+                        } else {
+                            Write-Host "`n[!] Failed to update password." -ForegroundColor Red
+                        }
+                        Read-Host "Press Enter to return..."
+                    } elseif ($manageChoice -eq 6) {
                         break
                     }
                 }
