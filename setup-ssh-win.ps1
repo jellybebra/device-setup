@@ -351,7 +351,7 @@ while ($true) {
     if ($choice -lt $numServers) {
         $selectedHost = $hosts[$choice]
 
-        while ($true) {
+        :actionLoop while ($true) {
             $actionChoice = Show-Menu "=== Server: $($selectedHost.Alias) ($($selectedHost.User)@$($selectedHost.HostName):$($selectedHost.Port)) ===" @("Connect", "Edit", "Delete", "Manage", "[ Back ]")
 
             if ($actionChoice -eq 0) {
@@ -411,31 +411,34 @@ while ($true) {
                         $autoupdateItem = "Auto-updates: [Not supported]"
                     }
 
-                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", $dockerItem, $autoupdateItem, "[ Back ]")
+                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("System Update & Upgrade", "Reboot", $dockerItem, $autoupdateItem, "Edit Hostname", "[ Back ]")
                     if ($manageChoice -eq 0) {
                         Clear-Host
-                        Write-Host "=== Setup Hostname: $($selectedHost.Alias) ===" -ForegroundColor Cyan
-                        $newHostname = Read-Host "Enter new hostname"
-                        if (-not [string]::IsNullOrWhiteSpace($newHostname)) {
-                            if ($newHostname -notmatch '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$') {
-                                Write-Host "`n[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed." -ForegroundColor Red
-                                Read-Host "Press Enter to return..."
-                                continue
-                            }
-                            $remoteCmd = 'sudo hostnamectl set-hostname "' + $newHostname + '" && ' +
-                                         'sudo sed -i ''/^[[:space:]]*127\.0\.1\.1/d'' /etc/hosts && ' +
-                                         'echo "127.0.1.1 ' + $newHostname + '" | sudo tee -a /etc/hosts > /dev/null'
-
-                            Write-Host "`n[i] Configuring hostname on remote server..." -ForegroundColor Blue
+                        Write-Host "=== System Update & Upgrade: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        $confirmUpgrade = Read-Host "Do you want to update and upgrade packages on $($selectedHost.Alias)? (y/N)"
+                        if ($confirmUpgrade -match '^[Yy]$') {
+                            $remoteCmd = 'if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get upgrade -y; elif command -v dnf >/dev/null 2>&1; then sudo dnf upgrade -y; elif command -v yum >/dev/null 2>&1; then sudo yum update -y; elif command -v apk >/dev/null 2>&1; then sudo apk update && sudo apk upgrade; else echo "Unsupported package manager."; exit 1; fi'
+                            Write-Host "`n[i] Running system update and upgrade..." -ForegroundColor Blue
                             ssh -t $($selectedHost.Alias) "$remoteCmd"
                             if ($LASTEXITCODE -eq 0) {
-                                Write-Host "`n[+] Hostname successfully updated on remote server!" -ForegroundColor Green
+                                Write-Host "`n[+] System successfully updated and upgraded!" -ForegroundColor Green
                             } else {
-                                Write-Host "`n[!] Failed to update hostname on remote server." -ForegroundColor Red
+                                Write-Host "`n[!] Failed to update and upgrade system." -ForegroundColor Red
                             }
                             Read-Host "Press Enter to return..."
                         }
                     } elseif ($manageChoice -eq 1) {
+                        Clear-Host
+                        Write-Host "=== Reboot: $($selectedHost.Alias) ===" -ForegroundColor Red
+                        $confirmReboot = Read-Host "Are you sure you want to reboot '$($selectedHost.Alias)'? (y/N)"
+                        if ($confirmReboot -match '^[Yy]$') {
+                            Write-Host "`n[i] Sending reboot command to remote server..." -ForegroundColor Blue
+                            ssh -t $($selectedHost.Alias) "sudo reboot"
+                            Write-Host "`n[+] Reboot command sent. Returning to main menu..." -ForegroundColor Green
+                            Start-Sleep -Seconds 2
+                            break actionLoop
+                        }
+                    } elseif ($manageChoice -eq 2) {
                         Clear-Host
                         Write-Host "=== Install Docker: $($selectedHost.Alias) ===" -ForegroundColor Cyan
                         if ($dockerInstalled) {
@@ -455,7 +458,7 @@ while ($true) {
                             }
                             Read-Host "Press Enter to return..."
                         }
-                    } elseif ($manageChoice -eq 2) {
+                    } elseif ($manageChoice -eq 3) {
                         Clear-Host
                         Write-Host "=== Toggle Auto-updates: $($selectedHost.Alias) ===" -ForegroundColor Cyan
                         if ($autoupdateStatus -eq "unsupported") {
@@ -484,7 +487,30 @@ while ($true) {
                             }
                         }
                         Read-Host "Press Enter to return..."
-                    } elseif ($manageChoice -eq 3) {
+                    } elseif ($manageChoice -eq 4) {
+                        Clear-Host
+                        Write-Host "=== Edit Hostname: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        $newHostname = Read-Host "Enter new hostname"
+                        if (-not [string]::IsNullOrWhiteSpace($newHostname)) {
+                            if ($newHostname -notmatch '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$') {
+                                Write-Host "`n[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed." -ForegroundColor Red
+                                Read-Host "Press Enter to return..."
+                                continue
+                            }
+                            $remoteCmd = 'sudo hostnamectl set-hostname "' + $newHostname + '" && ' +
+                                         'sudo sed -i ''/^[[:space:]]*127\.0\.1\.1/d'' /etc/hosts && ' +
+                                         'echo "127.0.1.1 ' + $newHostname + '" | sudo tee -a /etc/hosts > /dev/null'
+
+                            Write-Host "`n[i] Configuring hostname on remote server..." -ForegroundColor Blue
+                            ssh -t $($selectedHost.Alias) "$remoteCmd"
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "`n[+] Hostname successfully updated on remote server!" -ForegroundColor Green
+                            } else {
+                                Write-Host "`n[!] Failed to update hostname on remote server." -ForegroundColor Red
+                            }
+                            Read-Host "Press Enter to return..."
+                        }
+                    } elseif ($manageChoice -eq 5) {
                         break
                     }
                 }

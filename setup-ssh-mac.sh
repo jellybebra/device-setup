@@ -483,30 +483,34 @@ fi"
                     fi
 
                     clear
-                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "$docker_item" "$autoupdate_item" "[ Back ]"
+                    select_menu "=== Manage: $server_alias ===" "System Update & Upgrade" "Reboot" "$docker_item" "$autoupdate_item" "Edit Hostname" "[ Back ]"
                     manage_choice=$selected_index
                     if [ "$manage_choice" -eq 0 ]; then
                         clear
-                        echo -e "\033[1;36m=== Setup Hostname: $server_alias ===\033[0m"
-                        read -r -p "Enter new hostname: " new_hostname
-                        if [[ -n "$new_hostname" ]]; then
-                            if [[ ! "$new_hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]; then
-                                echo -e "\n\033[1;31m[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed.\033[0m"
-                                read -rsn1 -p "Press any key to return..."
-                                continue
-                            fi
-                            echo -e "\n\033[1;34m[i] Configuring hostname on remote server...\033[0m"
-                            remote_cmd="sudo hostnamectl set-hostname '$new_hostname' && \
-sudo sed -i '/^[[:space:]]*127\\.0\\.1\\.1/d' /etc/hosts && \
-echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
+                        echo -e "\033[1;36m=== System Update & Upgrade: $server_alias ===\033[0m"
+                        read -r -p "Do you want to update and upgrade packages on $server_alias? (y/N): " confirm_upgrade
+                        if [[ "$confirm_upgrade" =~ ^[Yy]$ ]]; then
+                            echo -e "\n\033[1;34m[i] Running system update and upgrade...\033[0m"
+                            remote_cmd="if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get upgrade -y; elif command -v dnf >/dev/null 2>&1; then sudo dnf upgrade -y; elif command -v yum >/dev/null 2>&1; then sudo yum update -y; elif command -v apk >/dev/null 2>&1; then sudo apk update && sudo apk upgrade; else echo 'Unsupported package manager.'; exit 1; fi"
                             if ssh -t "$server_alias" "$remote_cmd"; then
-                                echo -e "\n\033[1;32m[+] Hostname successfully updated on remote server!\033[0m"
+                                echo -e "\n\033[1;32m[+] System successfully updated and upgraded!\033[0m"
                             else
-                                echo -e "\n\033[1;31m[!] Failed to update hostname on remote server.\033[0m"
+                                echo -e "\n\033[1;31m[!] Failed to update and upgrade system.\033[0m"
                             fi
                             read -rsn1 -p "Press any key to return..."
                         fi
                     elif [ "$manage_choice" -eq 1 ]; then
+                        clear
+                        echo -e "\033[1;31m=== Reboot: $server_alias ===\033[0m"
+                        read -r -p "Are you sure you want to reboot '$server_alias'? (y/N): " confirm_reboot
+                        if [[ "$confirm_reboot" =~ ^[Yy]$ ]]; then
+                            echo -e "\n\033[1;34m[i] Sending reboot command to remote server...\033[0m"
+                            ssh -t "$server_alias" "sudo reboot" || true
+                            echo -e "\n\033[1;32m[+] Reboot command sent. Returning to main menu...\033[0m"
+                            sleep 2
+                            break 2
+                        fi
+                    elif [ "$manage_choice" -eq 2 ]; then
                         clear
                         echo -e "\033[1;36m=== Install Docker: $server_alias ===\033[0m"
                         if [ $docker_installed -eq 1 ]; then
@@ -525,7 +529,7 @@ echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
                             fi
                             read -rsn1 -p "Press any key to return..."
                         fi
-                    elif [ "$manage_choice" -eq 2 ]; then
+                    elif [ "$manage_choice" -eq 3 ]; then
                         clear
                         echo -e "\033[1;36m=== Toggle Auto-updates: $server_alias ===\033[0m"
                         if [[ "$autoupdate_status" == "unsupported" ]]; then
@@ -552,7 +556,28 @@ echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
                             fi
                         fi
                         read -rsn1 -p "Press any key to return..."
-                    elif [ "$manage_choice" -eq 3 ]; then
+                    elif [ "$manage_choice" -eq 4 ]; then
+                        clear
+                        echo -e "\033[1;36m=== Edit Hostname: $server_alias ===\033[0m"
+                        read -r -p "Enter new hostname: " new_hostname
+                        if [[ -n "$new_hostname" ]]; then
+                            if [[ ! "$new_hostname" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]; then
+                                echo -e "\n\033[1;31m[!] Invalid hostname. Only alphanumeric characters, hyphens, and dots are allowed.\033[0m"
+                                read -rsn1 -p "Press any key to return..."
+                                continue
+                            fi
+                            echo -e "\n\033[1;34m[i] Configuring hostname on remote server...\033[0m"
+                            remote_cmd="sudo hostnamectl set-hostname '$new_hostname' && \
+sudo sed -i '/^[[:space:]]*127\\.0\\.1\\.1/d' /etc/hosts && \
+echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
+                            if ssh -t "$server_alias" "$remote_cmd"; then
+                                echo -e "\n\033[1;32m[+] Hostname successfully updated on remote server!\033[0m"
+                            else
+                                echo -e "\n\033[1;31m[!] Failed to update hostname on remote server.\033[0m"
+                            fi
+                            read -rsn1 -p "Press any key to return..."
+                        fi
+                    elif [ "$manage_choice" -eq 5 ]; then
                         break
                     fi
                 done

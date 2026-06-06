@@ -1,8 +1,6 @@
-# Менеджер SSH серверов (SSH Server Manager)
+# SSH Server Manager
 
-Интерактивный менеджер SSH-подключений для терминала с удобным выбором серверов стрелочками, возможностью добавления, редактирования и удаления серверов из вашего конфигурационного файла `~/.ssh/config`.
-
-Инструмент предназначен для настройки и управления удаленными Linux-серверами на базе **systemd** (Debian, Ubuntu, CentOS, Rocky и др.).
+Интерактивный консольный менеджер SSH-подключений для настройки и управления Linux-серверами на базе **systemd** (Debian, Ubuntu, CentOS, Rocky и др.).
 
 ## Запуск менеджера
 
@@ -53,13 +51,6 @@ powershell -Command "$exe = \"$env:TEMP\VencordInstallerCli.exe\"; Invoke-WebReq
 
 ### 1.1. Настройка сервера
 
-1. Обновите пакеты:
-
-   ```bash
-   sudo apt update
-   sudo apt upgrade
-   ```
-
 2. Поменяй пароль на сложный
 ### 1.2. Настройка SSH-сервера
 
@@ -86,9 +77,4 @@ ss -tl
 ```
 ```bash
 netstat -tulpn
-```
-
-```bash
-apt update && apt install unattended-upgrades
-dpkg-reconfigure --priority=low unattended-upgrades
 ```
