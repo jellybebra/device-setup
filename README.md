@@ -79,20 +79,6 @@ powershell -Command "$exe = \"$env:TEMP\VencordInstallerCli.exe\"; Invoke-WebReq
    sudo systemctl enable fail2ban
    ```
 
-# Docker
-
-```bash
-curl -sSL https://get.docker.com | sh
-exit
-```
-
-```bash
-apt update && apt install unattended-upgrades
-dpkg-reconfigure --priority=low unattended-upgrades
-```
-
-## 
-
 Посмотреть что слушает на каком порту
 
 ```bash

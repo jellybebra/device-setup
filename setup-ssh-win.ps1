@@ -374,7 +374,18 @@ while ($true) {
             } elseif ($actionChoice -eq 3) {
                 # Manage
                 while ($true) {
-                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", "[ Back ]")
+                    Clear-Host
+                    Write-Host "[i] Loading management options..." -ForegroundColor Blue
+                    ssh -o ConnectTimeout=3 $($selectedHost.Alias) "command -v docker >/dev/null 2>&1"
+                    if ($LASTEXITCODE -eq 0) {
+                        $dockerItem = "Install Docker (Already installed)"
+                        $dockerInstalled = $true
+                    } else {
+                        $dockerItem = "Install Docker"
+                        $dockerInstalled = $false
+                    }
+
+                    $manageChoice = Show-Menu "=== Manage: $($selectedHost.Alias) ===" @("Setup Hostname", $dockerItem, "[ Back ]")
                     if ($manageChoice -eq 0) {
                         Clear-Host
                         Write-Host "=== Setup Hostname: $($selectedHost.Alias) ===" -ForegroundColor Cyan
@@ -399,6 +410,27 @@ while ($true) {
                             Read-Host "Press Enter to return..."
                         }
                     } elseif ($manageChoice -eq 1) {
+                        Clear-Host
+                        Write-Host "=== Install Docker: $($selectedHost.Alias) ===" -ForegroundColor Cyan
+                        if ($dockerInstalled) {
+                            Write-Host "[i] Docker is already installed on this server." -ForegroundColor Yellow
+                            Read-Host "Press Enter to return..."
+                            continue
+                        }
+                        $confirmDocker = Read-Host "Do you want to install Docker on $($selectedHost.Alias)? (y/N)"
+                        if ($confirmDocker -match '^[Yy]$') {
+                            $remoteCmd = 'curl -sSL https://get.docker.com | sudo sh && ' +
+                                         'if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y unattended-upgrades && sudo dpkg-reconfigure --priority=low unattended-upgrades; fi'
+                            Write-Host "`n[i] Installing Docker on remote server..." -ForegroundColor Blue
+                            ssh -t $($selectedHost.Alias) "$remoteCmd"
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Host "`n[+] Docker successfully installed on remote server!" -ForegroundColor Green
+                            } else {
+                                Write-Host "`n[!] Failed to install Docker on remote server." -ForegroundColor Red
+                            }
+                            Read-Host "Press Enter to return..."
+                        }
+                    } elseif ($manageChoice -eq 2) {
                         break
                     }
                 }

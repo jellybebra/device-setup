@@ -453,7 +453,17 @@ while true; do
                 # Manage
                 while true; do
                     clear
-                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "[ Back ]"
+                    echo -e "\033[1;34m[i] Loading management options...\033[0m"
+                    if ssh -o ConnectTimeout=3 "$server_alias" "command -v docker >/dev/null 2>&1"; then
+                        docker_item="Install Docker (Already installed)"
+                        docker_installed=1
+                    else
+                        docker_item="Install Docker"
+                        docker_installed=0
+                    fi
+
+                    clear
+                    select_menu "=== Manage: $server_alias ===" "Setup Hostname" "$docker_item" "[ Back ]"
                     manage_choice=$selected_index
                     if [ "$manage_choice" -eq 0 ]; then
                         clear
@@ -477,6 +487,26 @@ echo '127.0.1.1 $new_hostname' | sudo tee -a /etc/hosts > /dev/null"
                             read -rsn1 -p "Press any key to return..."
                         fi
                     elif [ "$manage_choice" -eq 1 ]; then
+                        clear
+                        echo -e "\033[1;36m=== Install Docker: $server_alias ===\033[0m"
+                        if [ $docker_installed -eq 1 ]; then
+                            echo -e "\033[1;33m[i] Docker is already installed on this server.\033[0m"
+                            read -rsn1 -p "Press any key to return..."
+                            continue
+                        fi
+                        read -r -p "Do you want to install Docker on $server_alias? (y/N): " confirm_docker
+                        if [[ "$confirm_docker" =~ ^[Yy]$ ]]; then
+                            echo -e "\n\033[1;34m[i] Installing Docker on remote server...\033[0m"
+                            remote_cmd="curl -sSL https://get.docker.com | sudo sh && \
+if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y unattended-upgrades && sudo dpkg-reconfigure --priority=low unattended-upgrades; fi"
+                            if ssh -t "$server_alias" "$remote_cmd"; then
+                                echo -e "\n\033[1;32m[+] Docker successfully installed on remote server!\033[0m"
+                            else
+                                echo -e "\n\033[1;31m[!] Failed to install Docker on remote server.\033[0m"
+                            fi
+                            read -rsn1 -p "Press any key to return..."
+                        fi
+                    elif [ "$manage_choice" -eq 2 ]; then
                         break
                     fi
                 done
