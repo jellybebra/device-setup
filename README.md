@@ -83,3 +83,9 @@ cd %USERPROFILE%
 icacls "AppData\Local\Packages" /grant "ALL APPLICATION PACKAGES":(F) /T /C
 icacls "AppData\Local\Packages" /grant "ALL RESTRICTED APPLICATION PACKAGES":(F) /T /C
 ```
+
+### MacOs fix v2rayn
+
+```bash
+xattr -cr /Applications/v2rayN.app
+```
