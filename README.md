@@ -68,3 +68,18 @@ Windows:
 ```cmd
 irm https://raw.githubusercontent.com/jellybebra/device-setup/main/antigravity-fix.ps1 | iex
 ```
+
+### Fix компьютера
+
+```cmd
+sfc /scannow
+DISM /Online /Cleanup-Image /RestoreHealth
+```
+
+### Fix Xbox games (от админа)
+
+```cmd
+cd %USERPROFILE%
+icacls "AppData\Local\Packages" /grant "ALL APPLICATION PACKAGES":(F) /T /C
+icacls "AppData\Local\Packages" /grant "ALL RESTRICTED APPLICATION PACKAGES":(F) /T /C
+```
