@@ -84,8 +84,13 @@ icacls "AppData\Local\Packages" /grant "ALL APPLICATION PACKAGES":(F) /T /C
 icacls "AppData\Local\Packages" /grant "ALL RESTRICTED APPLICATION PACKAGES":(F) /T /C
 ```
 
-### MacOs fix v2rayn
+### macOS: Сброс карантина (xattr)
+
+Для отдельного приложения (например, v2rayN):
 
 ```bash
 xattr -cr /Applications/v2rayN.app
 ```
+
+Для удобного сброса карантина через контекстное меню Finder (Quick Action) см. руководство: [remove-quarantine.md](file:///Users/mikhail/IdeaProjects/device-setup/remove-quarantine.md).
+
