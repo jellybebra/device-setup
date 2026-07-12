@@ -106,21 +106,21 @@ cat > "$CONTENTS/document.wflow" <<'WFLOW'
         <key>ActionParameters</key>
         <dict>
           <key>COMMAND_STRING</key>
-          <string>status=0
+          <string>exit_code=0
 
 for item in "$@"; do
   if ! /usr/bin/xattr -dr com.apple.quarantine "$item"; then
-    status=1
+    exit_code=1
   fi
 done
 
-if (( status == 0 )); then
+if (( exit_code == 0 )); then
   /usr/bin/osascript -e 'display notification "Quarantine attribute removed" with title "Remove Quarantine"'
 else
   /usr/bin/osascript -e 'display dialog "Could not remove quarantine from one or more selected items." with title "Remove Quarantine" buttons {"OK"} default button "OK" with icon caution'
 fi
 
-exit $status</string>
+exit $exit_code</string>
 
           <key>CheckedForUserDefaultShell</key>
           <true/>
