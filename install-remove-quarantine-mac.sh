@@ -1,8 +1,7 @@
-# Быстрое действие Finder для удаления карантина (Remove Quarantine)
+#!/usr/bin/env bash
 
-Вставь **весь блок целиком** в Terminal один раз. Он создаст Finder Quick Action с shell-скриптом и обновит меню Finder. Automator поддерживает Quick Actions в Finder и действие **Run Shell Script**. ([Apple Support][1])
+set -euo pipefail
 
-```bash
 SERVICE="$HOME/Library/Services/Remove Quarantine.workflow"
 CONTENTS="$SERVICE/Contents"
 
@@ -228,34 +227,8 @@ exit $exit_code</string>
 </plist>
 WFLOW
 
-plutil -lint "$CONTENTS/Info.plist" "$CONTENTS/document.wflow" &&
+plutil -lint "$CONTENTS/Info.plist" "$CONTENTS/document.wflow"
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
-
 killall Finder 2>/dev/null || true
 
-echo "Installed: Remove Quarantine"
-```
-
-## Использование
-
-```text
-Finder → right-click по .app → Quick Actions → Remove Quarantine
-```
-
-Можно выделить сразу несколько приложений.
-
-## Если пункт скрыт
-
-```text
-System Settings → Privacy & Security → Extensions → Finder
-```
-
-## Для удаления Quick Action
-
-```bash
-rm -rf "$HOME/Library/Services/Remove Quarantine.workflow" &&
-/System/Library/CoreServices/pbs -flush &&
-killall Finder
-```
-
-[1]: https://support.apple.com/en-ke/guide/automator/autbbd4cc11c/2.10/mac/15.0?utm_source=chatgpt.com "Use a shell script action in an Automator workflow on Mac"
+echo 'Installed: Remove Quarantine'

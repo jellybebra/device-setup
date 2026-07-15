@@ -84,13 +84,17 @@ icacls "AppData\Local\Packages" /grant "ALL APPLICATION PACKAGES":(F) /T /C
 icacls "AppData\Local\Packages" /grant "ALL RESTRICTED APPLICATION PACKAGES":(F) /T /C
 ```
 
-### macOS: Сброс карантина (xattr)
-
-Для отдельного приложения (например, v2rayN):
+### MacOS, ПКМ по приложению, Remove Quarantine
 
 ```bash
-xattr -cr /Applications/v2rayN.app
+bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/install-remove-quarantine-mac.sh)
 ```
 
-Для удобного сброса карантина через контекстное меню Finder (Quick Action) см. руководство: [remove-quarantine.md](file:///Users/mikhail/IdeaProjects/device-setup/remove-quarantine.md).
+Удаление Quick Action:
+
+```bash
+rm -rf "$HOME/Library/Services/Remove Quarantine.workflow" &&
+/System/Library/CoreServices/pbs -flush &&
+killall Finder
+```
 
