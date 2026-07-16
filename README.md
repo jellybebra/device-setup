@@ -98,3 +98,8 @@ rm -rf "$HOME/Library/Services/Remove Quarantine.workflow" &&
 killall Finder
 ```
 
+### Codex rg fix
+
+```powershell
+winget install --id BurntSushi.ripgrep.MSVC -e
+```
