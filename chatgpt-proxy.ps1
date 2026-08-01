@@ -1,8 +1,9 @@
-# Принудительно используем TLS 1.2 для работы в старых версиях PowerShell
+﻿# Принудительно используем TLS 1.2 для работы в старых версиях PowerShell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $installDir = Join-Path $env:LOCALAPPDATA "OpenAI\CodexProxyLauncher"
 $launcherPath = Join-Path $installDir "Launch-ChatGPT-Proxy.ps1"
+$windowlessLauncherPath = Join-Path $installDir "Launch-ChatGPT-Proxy.vbs"
 $shortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "ChatGPT Proxy.lnk"
 $iconPath = $null
 
@@ -146,40 +147,105 @@ if ($package) {
         $executable = Join-Path $package.InstallLocation $relativeExe
     }
 
-    # В пакете уже есть полноценная ICO с размерами от 16 до 256 px.
-    # ExtractAssociatedIcon() возвращает только один кадр 32x32, поэтому
-    # при увеличении ярлыка такая иконка выглядит размытой.
-    $packagedIcon = Join-Path $package.InstallLocation `
-        "app\resources\icon-chatgpt.ico"
+    # UWP-ярлык использует белые unplated-ресурсы из assets. Иконка из EXE
+    # имеет другую (тёмную) расцветку, поэтому собираем ICO из тех же PNG.
+    $assetDirectory = Join-Path $package.InstallLocation "assets"
 
-    if (Test-Path -LiteralPath $packagedIcon) {
-        try {
-            # Версия в имени не даёт Проводнику использовать старую 32x32
-            # иконку из кэша после повторного запуска установщика.
+    try {
+        $iconImages = @(
+            Get-ChildItem -LiteralPath $assetDirectory `
+                -Filter "Square44x44Logo.targetsize-*_altform-unplated.png" `
+                -File `
+                -ErrorAction Stop |
+                ForEach-Object {
+                    $match = [regex]::Match(
+                        $_.Name,
+                        "targetsize-(\d+)_altform-unplated\.png$"
+                    )
+
+                    if ($match.Success) {
+                        [PSCustomObject]@{
+                            Size = [int]$match.Groups[1].Value
+                            Data = [IO.File]::ReadAllBytes($_.FullName)
+                        }
+                    }
+                } |
+                Sort-Object Size
+        )
+
+        if ($iconImages.Count -gt 0) {
+            # Суффикс меняет IconLocation и обходит старую запись кэша.
             $iconPath = Join-Path $installDir `
-                "ChatGPT-$($package.Version).ico"
-            Copy-Item -LiteralPath $packagedIcon `
-                -Destination $iconPath `
-                -Force
+                "ChatGPT-$($package.Version)-unplated.ico"
+
+            $stream = [IO.MemoryStream]::new()
+            $writer = [IO.BinaryWriter]::new($stream)
+
+            try {
+                # ICONDIR
+                $writer.Write([uint16]0)
+                $writer.Write([uint16]1)
+                $writer.Write([uint16]$iconImages.Count)
+
+                $imageOffset = 6 + (16 * $iconImages.Count)
+
+                # ICONDIRENTRY для каждого PNG-кадра.
+                foreach ($image in $iconImages) {
+                    $encodedSize = if ($image.Size -eq 256) {
+                        0
+                    } else {
+                        $image.Size
+                    }
+
+                    $writer.Write([byte]$encodedSize)
+                    $writer.Write([byte]$encodedSize)
+                    $writer.Write([byte]0)
+                    $writer.Write([byte]0)
+                    $writer.Write([uint16]1)
+                    $writer.Write([uint16]32)
+                    $writer.Write([uint32]$image.Data.Length)
+                    $writer.Write([uint32]$imageOffset)
+                    $imageOffset += $image.Data.Length
+                }
+
+                foreach ($image in $iconImages) {
+                    $writer.Write([byte[]]$image.Data)
+                }
+
+                $writer.Flush()
+                [IO.File]::WriteAllBytes($iconPath, $stream.ToArray())
+            }
+            finally {
+                $writer.Dispose()
+                $stream.Dispose()
+            }
         }
-        catch {
-            $iconPath = $null
-        }
+    }
+    catch {
+        $iconPath = $null
     }
 }
 
 # Создаём ярлык
 $windowsPowerShell = Join-Path $env:SystemRoot `
     "System32\WindowsPowerShell\v1.0\powershell.exe"
+$windowsScriptHost = Join-Path $env:SystemRoot "System32\wscript.exe"
+
+# WScript запускает PowerShell сразу со скрытым окном. При прямом запуске
+# powershell.exe консоль успевает появиться до обработки -WindowStyle Hidden.
+$escapedPowerShell = $windowsPowerShell.Replace('"', '""')
+$escapedLauncherPath = $launcherPath.Replace('"', '""')
+
+@"
+Set shell = CreateObject("WScript.Shell")
+shell.Run """$escapedPowerShell"" -NoProfile -ExecutionPolicy Bypass -File ""$escapedLauncherPath""", 0, False
+"@ | Set-Content -LiteralPath $windowlessLauncherPath -Encoding Unicode
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($shortcutPath)
 
-$shortcut.TargetPath = $windowsPowerShell
-$shortcut.Arguments = (
-    '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden ' +
-    "-File `"$launcherPath`""
-)
+$shortcut.TargetPath = $windowsScriptHost
+$shortcut.Arguments = "`"$windowlessLauncherPath`""
 $shortcut.WorkingDirectory = $installDir
 $shortcut.Description = "Запустить ChatGPT/Codex через v2rayN"
 if ($iconPath -and (Test-Path -LiteralPath $iconPath)) {
