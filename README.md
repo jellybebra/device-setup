@@ -69,6 +69,20 @@ Windows:
 irm https://raw.githubusercontent.com/jellybebra/device-setup/main/antigravity-fix.ps1 | iex
 ```
 
+### ChatGPT Proxy
+
+Windows:
+
+```powershell
+irm https://raw.githubusercontent.com/jellybebra/device-setup/main/chatgpt-proxy.ps1 | iex
+```
+
+Все созданные данные находятся здесь:
+
+```
+%LOCALAPPDATA%\OpenAI\CodexProxyLauncher
+```
+
 ### Fix компьютера
 
 ```cmd
