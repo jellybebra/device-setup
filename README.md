@@ -61,7 +61,15 @@ Windows:
 irm https://raw.githubusercontent.com/jellybebra/device-setup/main/install-vencord.ps1 | iex
 ```
 
-### Antigravity Proxy Fix
+### Antigravity Proxy
+
+macOS:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/jellybebra/device-setup/main/install-antigravity-v2rayn-mac.sh)
+```
+
+*(После запуска Finder откроет **Antigravity Proxy.app** — перетащите его в Dock)*
 
 Windows:
 
