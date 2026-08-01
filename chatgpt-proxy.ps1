@@ -4,7 +4,7 @@
 $installDir = Join-Path $env:LOCALAPPDATA "OpenAI\CodexProxyLauncher"
 $launcherPath = Join-Path $installDir "Launch-ChatGPT-Proxy.ps1"
 $shortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "ChatGPT Proxy.lnk"
-$iconPath = Join-Path $installDir "ChatGPT.ico"
+$iconPath = $null
 
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
@@ -145,24 +145,26 @@ if ($package) {
         ).Executable -replace "/", "\"
         $executable = Join-Path $package.InstallLocation $relativeExe
     }
-}
 
-if ($executable -and (Test-Path -LiteralPath $executable)) {
-    try {
-        Add-Type -AssemblyName System.Drawing
-        $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($executable)
-        $stream = [IO.File]::Create($iconPath)
+    # В пакете уже есть полноценная ICO с размерами от 16 до 256 px.
+    # ExtractAssociatedIcon() возвращает только один кадр 32x32, поэтому
+    # при увеличении ярлыка такая иконка выглядит размытой.
+    $packagedIcon = Join-Path $package.InstallLocation `
+        "app\resources\icon-chatgpt.ico"
 
+    if (Test-Path -LiteralPath $packagedIcon) {
         try {
-            $icon.Save($stream)
+            # Версия в имени не даёт Проводнику использовать старую 32x32
+            # иконку из кэша после повторного запуска установщика.
+            $iconPath = Join-Path $installDir `
+                "ChatGPT-$($package.Version).ico"
+            Copy-Item -LiteralPath $packagedIcon `
+                -Destination $iconPath `
+                -Force
         }
-        finally {
-            $stream.Dispose()
-            $icon.Dispose()
+        catch {
+            $iconPath = $null
         }
-    }
-    catch {
-        $iconPath = $executable
     }
 }
 
@@ -180,7 +182,7 @@ $shortcut.Arguments = (
 )
 $shortcut.WorkingDirectory = $installDir
 $shortcut.Description = "Запустить ChatGPT/Codex через v2rayN"
-if (Test-Path -LiteralPath $iconPath) {
+if ($iconPath -and (Test-Path -LiteralPath $iconPath)) {
     $shortcut.IconLocation = "$iconPath,0"
 } elseif ($executable -and (Test-Path -LiteralPath $executable)) {
     $shortcut.IconLocation = "$executable,0"
