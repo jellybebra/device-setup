@@ -93,6 +93,12 @@ netstat -tulpn
 
 Документация: [UPnP API Windows — Add](https://learn.microsoft.com/en-us/windows/win32/api/natupnp/nf-natupnp-istaticportmappingcollection-add), [UPnP WANIPConnection v1 — срок действия и обновление правил](https://upnp.org/specs/gw/UPnP-gw-WANIPConnection-v1-Service.pdf).
 
+### Голосовой ввод в Chrome на Windows
+
+Если при отключении WebRTC-эхоподавления и автоматической регулировки громкости распознавание голоса работает лучше, параметры можно добавить к обычному запуску Chrome из «Пуска» и открытию ссылок из приложений.
+
+[Настройка Chrome без отдельного ярлыка Chrome Voice: проверка, ограничения и откат](docs/chrome-voice-windows.md).
+
 ### Vencord
 
 Windows:
