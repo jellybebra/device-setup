@@ -3,6 +3,7 @@
 
 $installDir = Join-Path $env:LOCALAPPDATA "OpenAI\CodexProxyLauncher"
 $launcherPath = Join-Path $installDir "Launch-ChatGPT-Proxy.ps1"
+$packageLauncherPath = Join-Path $installDir "Start-ChatGPT-InPackage.ps1"
 $windowlessLauncherPath = Join-Path $installDir "Launch-ChatGPT-Proxy.vbs"
 $shortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "ChatGPT Proxy.lnk"
 $iconPath = $null
@@ -102,31 +103,71 @@ if ($desktopProcesses.Count -gt 0) {
     Start-Sleep -Milliseconds 800
 }
 
-# Запуск с отдельным окружением процесса
-$startInfo = [Diagnostics.ProcessStartInfo]::new()
-$startInfo.FileName = $executable
-$startInfo.UseShellExecute = $false
-$startInfo.Arguments = @(
-    "--proxy-server=$proxy"
-    '--proxy-bypass-list=<-loopback>;localhost;127.0.0.1;::1'
-    "--disable-quic"
-) -join " "
+# Запускаем helper внутри MSIX-пакета: прямой запуск EXE больше не даёт
+# приложению package identity. Окружение Invoke-CommandInDesktopPackage
+# не наследует, поэтому proxy задаётся самим helper перед запуском EXE.
+try {
+    $windowsPowerShell = Join-Path $env:SystemRoot `
+        "System32\WindowsPowerShell\v1.0\powershell.exe"
+    $packageLauncherPath = Join-Path $PSScriptRoot "Start-ChatGPT-InPackage.ps1"
+    $launchArguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}" -Executable "{1}" -Proxy "{2}"' -f `
+        $packageLauncherPath, $executable, $proxy
 
-foreach ($name in @(
-    "HTTP_PROXY",
-    "HTTPS_PROXY",
-    "http_proxy",
-    "https_proxy"
-)) {
-    $startInfo.EnvironmentVariables[$name] = $proxy
+    Invoke-CommandInDesktopPackage `
+        -PackageFamilyName $package.PackageFamilyName `
+        -AppId $application.Id `
+        -Command $windowsPowerShell `
+        -Args $launchArguments `
+        -PreventBreakaway `
+        -ErrorAction Stop
 }
-
-foreach ($name in @("NO_PROXY", "no_proxy")) {
-    $startInfo.EnvironmentVariables[$name] = "localhost,127.0.0.1,::1"
+catch {
+    Show-Error "Не удалось запустить приложение в контексте пакета: $($_.Exception.Message)"
+    exit 5
 }
-
-[Diagnostics.Process]::Start($startInfo) | Out-Null
 '@ | Set-Content -LiteralPath $launcherPath -Encoding UTF8
+
+@'
+param(
+    [Parameter(Mandatory = $true)][string]$Executable,
+    [Parameter(Mandatory = $true)][string]$Proxy
+)
+
+$ErrorActionPreference = "Stop"
+
+try {
+    # Helper и EXE сохраняют package identity благодаря -PreventBreakaway.
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $executable
+    $startInfo.WorkingDirectory = Split-Path -Parent $executable
+    $startInfo.UseShellExecute = $false
+    $startInfo.Arguments = @(
+        "--proxy-server=$proxy"
+        '--proxy-bypass-list=<-loopback>;localhost;127.0.0.1;::1'
+        "--disable-quic"
+    ) -join " "
+
+    foreach ($name in @(
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "http_proxy",
+        "https_proxy"
+    )) {
+        $startInfo.EnvironmentVariables[$name] = $proxy
+    }
+
+    foreach ($name in @("NO_PROXY", "no_proxy")) {
+        $startInfo.EnvironmentVariables[$name] = "localhost,127.0.0.1,::1"
+    }
+
+    [Diagnostics.Process]::Start($startInfo) | Out-Null
+}
+catch {
+    $shell = New-Object -ComObject WScript.Shell
+    $shell.Popup("Не удалось запустить приложение: $($_.Exception.Message)", 0, "ChatGPT Proxy", 16) | Out-Null
+    exit 6
+}
+'@ | Set-Content -LiteralPath $packageLauncherPath -Encoding UTF8
 
 # Получаем текущую иконку приложения
 $package = Get-AppxPackage -Name OpenAI.Codex -ErrorAction SilentlyContinue |
