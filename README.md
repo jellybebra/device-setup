@@ -6,6 +6,7 @@
 
 | Инструкция | Платформа | Что внутри |
 | --- | --- | --- |
+| [v2rayN: routing и TUN](docs/v2rayn-routing.md) | macOS, Windows | Рабочий профиль маршрутизации, ChatGPT/Discord и исключение proxy-сервера из TUN |
 | [Happ на iPhone](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
 | [Проброс порта через UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN |
