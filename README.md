@@ -1,11 +1,12 @@
 # Device Setup
 
-Скрипты и инструкции для настройки macOS, Windows и Linux-серверов. Выберите нужную тему — команды запуска и подробности находятся в отдельных документах.
+Скрипты и инструкции для настройки macOS, Windows, iPhone и Linux-серверов. Выберите нужную тему — команды запуска и подробности находятся в отдельных документах.
 
 ## Навигация
 
 | Инструкция | Платформа | Что внутри |
 | --- | --- | --- |
+| [Happ на iPhone](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
 | [Проброс порта через UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN |
 | [Antigravity Proxy](docs/antigravity-proxy.md) | macOS, Windows | Установка и запуск через прокси |
