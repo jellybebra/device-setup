@@ -1,4 +1,4 @@
-﻿[CmdletBinding(SupportsShouldProcess)]
+[CmdletBinding(SupportsShouldProcess)]
 param(
     [string[]]$IPAddress,
     [string]$Group = 'Minecraft-Friends-25565-20260928'

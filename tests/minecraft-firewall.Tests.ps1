@@ -1,4 +1,4 @@
-﻿# Run with Windows PowerShell 5.1 or PowerShell 7 on Windows. No elevation or
+# Run with Windows PowerShell 5.1 or PowerShell 7 on Windows. No elevation or
 # firewall mutations: mocked reads and -WhatIf exercise the real script.
 $ErrorActionPreference = 'Stop'
 $scriptPath = Join-Path (Split-Path $PSScriptRoot) 'add-minecraft-friend.ps1'
@@ -55,5 +55,5 @@ foreach ($bad in @('Any','1.2.3.4/24','::1','1.2.3.999','127.0.0.1','0.0.0.0','2
 }
 $WhatIfPreference = $true
 function Read-Host { '203.0.113.7' }
-Get-Content -LiteralPath $scriptPath -Raw | Invoke-Expression
+[Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($scriptPath)) | Invoke-Expression
 Write-Host 'PASS: preservation, deduplication, adjacent addresses, complete IPv4/IPv6 coverage and invalid input.'
