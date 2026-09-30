@@ -97,6 +97,13 @@
     "remarks": "ChatGPT: explicit proxy"
   },
   {
+    "port": "7844",
+    "network": "tcp,udp",
+    "outboundTag": "proxy",
+    "enabled": true,
+    "remarks": "Cloudflare Tunnel в прокси"
+  },
+  {
     "port": "0-65535",
     "outboundTag": "direct",
     "enabled": true,
