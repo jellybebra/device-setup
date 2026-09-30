@@ -1,4 +1,4 @@
-# v2rayN на новом компьютере
+# v2rayN
 
 Windows и macOS, v2rayN 7.24.9, ядро Xray.
 
