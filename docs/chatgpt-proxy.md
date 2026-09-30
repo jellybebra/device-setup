@@ -1,5 +1,3 @@
-[← К навигации](../README.md)
-
 # ChatGPT Proxy
 
 ## macOS (Electron-версия ChatGPT/Codex)

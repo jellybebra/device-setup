@@ -1,5 +1,3 @@
-[← К навигации](../README.md)
-
 # Remove Quarantine для macOS
 
 Quick Action для удаления карантина через контекстное меню приложения в Finder.

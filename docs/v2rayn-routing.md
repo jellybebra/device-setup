@@ -1,5 +1,3 @@
-[← К навигации](../README.md)
-
 # v2rayN на новом компьютере
 
 Windows и macOS, v2rayN 7.24.9, ядро Xray.
