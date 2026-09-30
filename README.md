@@ -7,8 +7,8 @@
 | Инструкция | Платформа | Что внутри |
 | --- | --- | --- |
 | [AGENTS.md: правила работы агентов](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация и деплой |
-| [v2rayN на новом компьютере](docs/v2rayn-routing.md) | macOS, Windows | Пошаговая настройка, готовый Xray-шаблон, TUN и исключения Cloudflare Tunnel |
-| [Happ на iPhone](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
+| [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Пошаговая настройка, готовый Xray-шаблон, TUN и исключения Cloudflare Tunnel |
+| [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
 | [Проброс порта через UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |
 | [Antigravity Proxy](docs/antigravity-proxy.md) | macOS, Windows | Установка и запуск через прокси |
