@@ -1,5 +1,3 @@
-[← К навигации](../README.md)
-
 # Vencord
 
 ## Windows (PowerShell)

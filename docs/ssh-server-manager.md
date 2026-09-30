@@ -1,5 +1,3 @@
-[← К навигации](../README.md)
-
 # SSH Server Manager
 
 Интерактивный консольный менеджер SSH-подключений для настройки и управления Linux-серверами на базе **systemd** (Debian, Ubuntu, CentOS, Rocky и др.).
