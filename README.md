@@ -15,6 +15,7 @@
 | [ChatGPT Proxy](docs/chatgpt-proxy.md) | macOS, Windows | Установка launcher, проверка, журналы и удаление |
 | [Vencord](docs/vencord.md) | Windows | Команда установки |
 | [Голосовой ввод в Chrome](docs/chrome-voice-windows.md) | Windows | Параметры запуска, проверка, ограничения и откат |
+| [Windows Reinstall](docs/windows-reinstall.md) | Windows | Приложения и ссылки для установки после переустановки системы |
 | [Восстановление Windows](docs/windows.md) | Windows | Проверка и восстановление системных файлов |
 | [Исправление Xbox games](docs/xbox-games-windows.md) | Windows | Исправление прав доступа к папке Packages |
 | [Remove Quarantine](docs/macos.md) | macOS | Установка и удаление Quick Action для Finder |
