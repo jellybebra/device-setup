@@ -6,7 +6,7 @@
 
 | Инструкция | Платформа | Что внутри |
 | --- | --- | --- |
-| [AGENTS.md: правила работы агентов](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация и деплой |
+| [AGENTS.md](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация и деплой |
 | [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN и исключения Cloudflare Tunnel |
 | [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
