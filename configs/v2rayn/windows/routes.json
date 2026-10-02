@@ -68,13 +68,6 @@
   },
   {
     "outboundTag": "proxy",
-    "port": "19294-19344,50000-65535",
-    "network": "udp",
-    "remarks": "Дискорд (войс) в прокси",
-    "enabled": true
-  },
-  {
-    "outboundTag": "proxy",
     "ip": [
       "geoip:ru-blocked"
     ],

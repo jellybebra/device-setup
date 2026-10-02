@@ -314,12 +314,6 @@
       {
         "type": "field",
         "outboundTag": "proxy",
-        "port": "19294-19344,50000-65535",
-        "network": "udp"
-      },
-      {
-        "type": "field",
-        "outboundTag": "proxy",
         "ip": [
           "geoip:ru-blocked"
         ]
