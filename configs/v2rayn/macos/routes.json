@@ -61,17 +61,6 @@
   },
   {
     "outboundTag": "proxy",
-    "ip": [
-      "1.0.0.1",
-      "1.1.1.1",
-      "8.8.8.8",
-      "8.8.4.4"
-    ],
-    "remarks": "DNS в прокси",
-    "enabled": true
-  },
-  {
-    "outboundTag": "proxy",
     "port": "19294-19344,50000-65535",
     "network": "udp",
     "remarks": "Дискорд (войс) в прокси",
