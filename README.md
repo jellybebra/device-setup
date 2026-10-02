@@ -10,7 +10,7 @@
 | [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN и исключения Cloudflare Tunnel |
 | [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
-| [Проброс порта через UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |
+| [UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |
 | [Vencord](docs/vencord.md) | Windows | Команда установки |
 | [Голосовой ввод в Chrome](docs/chrome-voice-windows.md) | Windows | Параметры запуска, проверка, ограничения и откат |
 | [Windows Reinstall](docs/windows-reinstall.md) | Windows | Приложения и ссылки для установки после переустановки системы |
