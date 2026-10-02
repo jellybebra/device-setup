@@ -7,8 +7,6 @@
 | Windows | Напрямую | Напрямую | [windows/routes.json](../configs/v2rayn/windows/routes.json) | [windows/xray-template.json](../configs/v2rayn/windows/xray-template.json) |
 | macOS | Через прокси | Через прокси | [macos/routes.json](../configs/v2rayn/macos/routes.json) | [macos/xray-template.json](../configs/v2rayn/macos/xray-template.json) |
 
-Для одного компьютера используй оба готовых файла из одной строки. Источник настроек — этот репозиторий. Скрипты и генерация не нужны: скопируй JSON в соответствующие настройки v2rayN.
-
 ## Настройка компьютера
 
 Названия элементов интерфейса указаны в формате **English / Русский**. Если название одинаково в обоих языках интерфейса, оно указано один раз.
