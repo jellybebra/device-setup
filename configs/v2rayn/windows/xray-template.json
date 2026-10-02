@@ -365,22 +365,6 @@
         "type": "field",
         "outboundTag": "direct",
         "port": "0-65535"
-      },
-      {
-        "type": "field",
-        "inboundTag": [
-          "direct-dns-1",
-          "direct-dns-2",
-          "direct-dns-3"
-        ],
-        "outboundTag": "direct"
-      },
-      {
-        "type": "field",
-        "inboundTag": [
-          "dns-module"
-        ],
-        "outboundTag": "proxy"
       }
     ]
   }
