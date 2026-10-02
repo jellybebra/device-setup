@@ -261,6 +261,13 @@
     "rules": [
       {
         "type": "field",
+        "domain": [
+          "geosite:discord"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
         "outboundTag": "direct",
         "protocol": [
           "bittorrent"
@@ -286,6 +293,13 @@
         "domain": [
           "geosite:private"
         ]
+      },
+      {
+        "type": "field",
+        "domain": [
+          "geosite:google"
+        ],
+        "outboundTag": "direct"
       },
       {
         "type": "field",

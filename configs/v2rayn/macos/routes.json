@@ -1,0 +1,158 @@
+[
+  {
+    "domain": [
+      "geosite:discord"
+    ],
+    "remarks": "Discord domains",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
+    "remarks": "Discord application (including voice)",
+    "outboundTag": "proxy",
+    "process": [
+      "Discord",
+      "Discord Helper",
+      "Discord Helper (Renderer)",
+      "Discord Helper (GPU)",
+      "Discord Helper (Plugin)"
+    ],
+    "enabled": true
+  },
+  {
+    "outboundTag": "direct",
+    "protocol": [
+      "bittorrent"
+    ],
+    "remarks": "BitTorrent",
+    "enabled": true
+  },
+  {
+    "outboundTag": "block",
+    "domain": [
+      "geosite:category-ads-all"
+    ],
+    "remarks": "Advertising domains",
+    "enabled": true
+  },
+  {
+    "outboundTag": "direct",
+    "ip": [
+      "geoip:private"
+    ],
+    "remarks": "Private networks",
+    "enabled": true
+  },
+  {
+    "outboundTag": "direct",
+    "domain": [
+      "geosite:private"
+    ],
+    "remarks": "Private domains",
+    "enabled": true
+  },
+  {
+    "domain": [
+      "geosite:google"
+    ],
+    "remarks": "Google domains",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "ip": [
+      "1.0.0.1",
+      "1.1.1.1",
+      "8.8.8.8",
+      "8.8.4.4"
+    ],
+    "remarks": "Public DNS servers",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "port": "19294-19344,50000-65535",
+    "network": "udp",
+    "remarks": "UDP voice port ranges",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "ip": [
+      "geoip:ru-blocked"
+    ],
+    "remarks": "Blocked networks",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "domain": [
+      "geosite:ru-blocked"
+    ],
+    "remarks": "Blocked domains",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "domain": [
+      "domain:chatgpt.com",
+      "domain:openai.com",
+      "domain:oaistatic.com",
+      "domain:oaiusercontent.com",
+      "domain:oaistatsig.com",
+      "full:cdn.openaimerge.com",
+      "full:challenges.cloudflare.com",
+      "full:cdn.workos.com",
+      "full:forwarder.workos.com",
+      "full:setup.workos.com",
+      "full:images.workoscdn.com",
+      "full:workos.imgix.net",
+      "domain:intercom.io",
+      "domain:intercomcdn.com",
+      "domain:ct.sendgrid.net",
+      "full:js.stripe.com",
+      "full:o207216.ingest.sentry.io",
+      "full:o33249.ingest.sentry.io",
+      "full:rum.browser-intake-datadoghq.com",
+      "full:humb.apple.com",
+      "domain:chatgpt.livekit.cloud",
+      "domain:host.livekit.cloud",
+      "domain:turn.livekit.cloud",
+      "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$"
+    ],
+    "remarks": "ChatGPT and supporting services",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "port": "7844",
+    "network": "tcp,udp",
+    "remarks": "Cloudflare Tunnel",
+    "enabled": true
+  },
+  {
+    "outboundTag": "direct",
+    "port": "0-65535",
+    "remarks": "All remaining traffic",
+    "enabled": true
+  },
+  {
+    "inboundTag": [
+      "direct-dns-1",
+      "direct-dns-2",
+      "direct-dns-3"
+    ],
+    "outboundTag": "direct",
+    "remarks": "Direct DNS requests",
+    "enabled": true
+  },
+  {
+    "inboundTag": [
+      "dns-module"
+    ],
+    "outboundTag": "proxy",
+    "remarks": "Proxy DNS requests",
+    "enabled": true
+  }
+]
