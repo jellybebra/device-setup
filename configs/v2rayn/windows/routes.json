@@ -3,12 +3,12 @@
     "domain": [
       "geosite:discord"
     ],
-    "remarks": "Discord domains",
+    "remarks": "Дискорд напрямую",
     "outboundTag": "direct",
     "enabled": true
   },
   {
-    "remarks": "Discord application (including voice)",
+    "remarks": "Дискорд (приложение и голос) напрямую",
     "outboundTag": "direct",
     "process": [
       "Discord.exe"
@@ -20,7 +20,7 @@
     "protocol": [
       "bittorrent"
     ],
-    "remarks": "BitTorrent",
+    "remarks": "Торрент напрямую",
     "enabled": true
   },
   {
@@ -28,7 +28,7 @@
     "domain": [
       "geosite:category-ads-all"
     ],
-    "remarks": "Advertising domains",
+    "remarks": "Блокировка рекламы",
     "enabled": true
   },
   {
@@ -36,7 +36,7 @@
     "ip": [
       "geoip:private"
     ],
-    "remarks": "Private networks",
+    "remarks": "Приватные сети напрямую",
     "enabled": true
   },
   {
@@ -44,14 +44,14 @@
     "domain": [
       "geosite:private"
     ],
-    "remarks": "Private domains",
+    "remarks": "Приватные домены напрямую",
     "enabled": true
   },
   {
     "domain": [
       "geosite:google"
     ],
-    "remarks": "Google domains",
+    "remarks": "Google напрямую",
     "outboundTag": "direct",
     "enabled": true
   },
@@ -63,14 +63,14 @@
       "8.8.8.8",
       "8.8.4.4"
     ],
-    "remarks": "Public DNS servers",
+    "remarks": "DNS в прокси",
     "enabled": true
   },
   {
     "outboundTag": "proxy",
     "port": "19294-19344,50000-65535",
     "network": "udp",
-    "remarks": "UDP voice port ranges",
+    "remarks": "Дискорд (войс) в прокси",
     "enabled": true
   },
   {
@@ -78,7 +78,7 @@
     "ip": [
       "geoip:ru-blocked"
     ],
-    "remarks": "Blocked networks",
+    "remarks": "Заблокированные сети в прокси",
     "enabled": true
   },
   {
@@ -86,7 +86,7 @@
     "domain": [
       "geosite:ru-blocked"
     ],
-    "remarks": "Blocked domains",
+    "remarks": "Заблокированные домены в прокси",
     "enabled": true
   },
   {
@@ -117,20 +117,20 @@
       "domain:turn.livekit.cloud",
       "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$"
     ],
-    "remarks": "ChatGPT and supporting services",
+    "remarks": "ChatGPT: explicit proxy",
     "enabled": true
   },
   {
     "outboundTag": "proxy",
     "port": "7844",
     "network": "tcp,udp",
-    "remarks": "Cloudflare Tunnel",
+    "remarks": "Cloudflare Tunnel через VPN",
     "enabled": true
   },
   {
     "outboundTag": "direct",
     "port": "0-65535",
-    "remarks": "All remaining traffic",
+    "remarks": "Остальное напрямую",
     "enabled": true
   },
   {
@@ -140,7 +140,7 @@
       "direct-dns-3"
     ],
     "outboundTag": "direct",
-    "remarks": "Direct DNS requests",
+    "remarks": "DNS напрямую",
     "enabled": true
   },
   {
@@ -148,7 +148,7 @@
       "dns-module"
     ],
     "outboundTag": "proxy",
-    "remarks": "Proxy DNS requests",
+    "remarks": "DNS в прокси",
     "enabled": true
   }
 ]
