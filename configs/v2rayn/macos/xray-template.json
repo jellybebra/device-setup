@@ -262,6 +262,13 @@
       {
         "type": "field",
         "domain": [
+          "geosite:steam"
+        ],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "domain": [
           "geosite:discord"
         ],
         "outboundTag": "proxy"

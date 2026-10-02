@@ -1,6 +1,14 @@
 [
   {
     "domain": [
+      "geosite:steam"
+    ],
+    "remarks": "Steam через прокси",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
+    "domain": [
       "geosite:discord"
     ],
     "remarks": "Дискорд в прокси",
