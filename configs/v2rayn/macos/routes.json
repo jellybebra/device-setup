@@ -68,6 +68,14 @@
     "enabled": true
   },
   {
+    "ip": [
+      "geoip:google"
+    ],
+    "remarks": "Google без домена (TCP и QUIC) в прокси",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
     "outboundTag": "proxy",
     "port": "19294-19344,50000-65535",
     "network": "udp",
