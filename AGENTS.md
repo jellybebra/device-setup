@@ -11,6 +11,7 @@
 For a new project, create folder in this folder:
 
 Windows: %USERPROFILE%\Documents\GitHub
+
 MacOS: ~/IdeaProjects
 
 ### Порты
