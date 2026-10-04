@@ -6,6 +6,13 @@
 
 При последующих сообщениях продолжай работу в тех же worktree — не создавай новые.
 
+### Project paths
+
+For a new project, create folder in this folder:
+
+Windows: %USERPROFILE%\Documents\GitHub
+MacOS: ~/IdeaProjects
+
 ### Порты
 
 Используй отдельные свободные порты (проверь какие заняты) и локальные данные/БД под задачу. При наличии существующей локальной dev-БД используй её отдельную копию, а не пустую БД.
