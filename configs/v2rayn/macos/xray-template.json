@@ -240,7 +240,8 @@
         "enabled": true,
         "destOverride": [
           "http",
-          "tls"
+          "tls",
+          "quic"
         ],
         "routeOnly": false,
         "domainsExcluded": [
@@ -305,6 +306,13 @@
         "type": "field",
         "domain": [
           "geosite:google"
+        ],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "ip": [
+          "geoip:google"
         ],
         "outboundTag": "proxy"
       },
