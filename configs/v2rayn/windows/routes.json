@@ -1,6 +1,15 @@
 [
   {
     "domain": [
+      "full:catalog.gamepass.com",
+      "full:store-images.s-microsoft.com"
+    ],
+    "remarks": "Game Pass и картинки Xbox через прокси",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
+    "domain": [
       "geosite:steam"
     ],
     "remarks": "Steam через прокси",
