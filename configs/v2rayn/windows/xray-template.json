@@ -262,6 +262,14 @@
       {
         "type": "field",
         "domain": [
+          "full:catalog.gamepass.com",
+          "full:store-images.s-microsoft.com"
+        ],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "domain": [
           "geosite:steam"
         ],
         "outboundTag": "proxy"
