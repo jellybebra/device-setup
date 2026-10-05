@@ -87,17 +87,6 @@
       {
         "address": "77.88.8.8",
         "domains": [
-          "full:cable.auth.com",
-          "full:cable.ua5v.com",
-          "full:app-site-association.cdn-apple.com",
-          "full:app-site-association.networking.apple"
-        ],
-        "skipFallback": true,
-        "tag": "direct-dns-passkeys"
-      },
-      {
-        "address": "77.88.8.8",
-        "domains": [
           "full:dns.google"
         ],
         "skipFallback": true
@@ -270,16 +259,6 @@
   "routing": {
     "domainStrategy": "IPOnDemand",
     "rules": [
-      {
-        "type": "field",
-        "domain": [
-          "full:cable.auth.com",
-          "full:cable.ua5v.com",
-          "full:app-site-association.cdn-apple.com",
-          "full:app-site-association.networking.apple"
-        ],
-        "outboundTag": "direct"
-      },
       {
         "type": "field",
         "domain": [
