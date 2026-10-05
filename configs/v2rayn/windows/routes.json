@@ -1,6 +1,17 @@
 [
   {
     "domain": [
+      "full:cable.auth.com",
+      "full:cable.ua5v.com",
+      "full:app-site-association.cdn-apple.com",
+      "full:app-site-association.networking.apple"
+    ],
+    "remarks": "Passkeys / WebAuthn напрямую",
+    "outboundTag": "direct",
+    "enabled": true
+  },
+  {
+    "domain": [
       "geosite:steam"
     ],
     "remarks": "Steam через прокси",

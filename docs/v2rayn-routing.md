@@ -7,6 +7,8 @@
 | Windows | Напрямую | Напрямую | [windows/routes.json](../configs/v2rayn/windows/routes.json) | [windows/xray-template.json](../configs/v2rayn/windows/xray-template.json) |
 | macOS | Через прокси | Через прокси | [macos/routes.json](../configs/v2rayn/macos/routes.json) | [macos/xray-template.json](../configs/v2rayn/macos/xray-template.json) |
 
+В обоих профилях служебные адреса passkey идут напрямую. Обновление и проверка входа через QR описаны в [инструкции passkey](passkeys-vpn.md).
+
 ## Настройка компьютера
 
 1. Скачай v2rayN из [официального релиза](https://github.com/2dust/v2rayN/releases/tag/7.24.9).
