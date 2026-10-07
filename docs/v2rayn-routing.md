@@ -7,6 +7,19 @@
 | Windows | Напрямую | Напрямую | [windows/routes.json](../configs/v2rayn/windows/routes.json) | [windows/xray-template.json](../configs/v2rayn/windows/xray-template.json) |
 | macOS | Через прокси | Через прокси | [macos/routes.json](../configs/v2rayn/macos/routes.json) | [macos/xray-template.json](../configs/v2rayn/macos/xray-template.json) |
 
+## Brevo и Claude
+
+В обоих профилях Brevo (`brevo.com`, `sendinblue.com`) и Claude (`claude.com`, `claude.ai`, `anthropic.com`, `claudeusercontent.com`) направляются через прокси явными правилами. Они стоят выше блокировки рекламы и охватывают поддомены, включая `app.brevo.com` и `platform.claude.com`. Эти домены также добавлены в списки внешних DNS-серверов шаблона Xray.
+
+При проверке 7 октября 2026 года со старой конфигурацией на macOS:
+
+- `app.brevo.com` начинал отвечать HTTP 200, но загрузка обрывалась по тайм-ауту; установленный `category-ads-all` дополнительно блокировал `cdn.brevo.com`.
+- `platform.claude.com/offers/startups-application` возвращал HTTP 307 на `app-unavailable-in-region?utm_source=country`. В установленном `ru-blocked` был `claude.ai`, но не `claude.com`, поэтому на этот список нельзя полагаться для всей платформы Claude.
+
+С новыми правилами на том же VPN-сервере оба адреса полностью ответили HTTP 200. Это проверка HTTP-доступности без входа в аккаунты; доступность Claude также зависит от региона выходного IP сервера.
+
+Чтобы применить исправление к уже настроенному v2rayN, обнови **оба поля полного шаблона Xray** и **активный профиль Routing Setting** по инструкции ниже, затем перезапусти службу и TUN. Изменение только файлов репозитория не обновляет настройки приложения.
+
 ## Настройка компьютера
 
 1. Скачай v2rayN из [официального релиза](https://github.com/2dust/v2rayN/releases/tag/7.24.9).

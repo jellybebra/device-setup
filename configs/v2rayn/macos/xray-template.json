@@ -125,7 +125,13 @@
           "domain:chatgpt.livekit.cloud",
           "domain:host.livekit.cloud",
           "domain:turn.livekit.cloud",
-          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$"
+          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$",
+          "domain:brevo.com",
+          "domain:sendinblue.com",
+          "domain:claude.com",
+          "domain:claude.ai",
+          "domain:anthropic.com",
+          "domain:claudeusercontent.com"
         ],
         "skipFallback": true
       },
@@ -155,7 +161,13 @@
           "domain:chatgpt.livekit.cloud",
           "domain:host.livekit.cloud",
           "domain:turn.livekit.cloud",
-          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$"
+          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$",
+          "domain:brevo.com",
+          "domain:sendinblue.com",
+          "domain:claude.com",
+          "domain:claude.ai",
+          "domain:anthropic.com",
+          "domain:claudeusercontent.com"
         ],
         "skipFallback": true
       },
@@ -185,7 +197,13 @@
           "domain:chatgpt.livekit.cloud",
           "domain:host.livekit.cloud",
           "domain:turn.livekit.cloud",
-          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$"
+          "regexp:^chatgpt-async-webps-prod-\\S+-\\d+\\.webpubsub\\.azure\\.com$",
+          "domain:brevo.com",
+          "domain:sendinblue.com",
+          "domain:claude.com",
+          "domain:claude.ai",
+          "domain:anthropic.com",
+          "domain:claudeusercontent.com"
         ],
         "skipFallback": true
       },
@@ -279,6 +297,24 @@
         "outboundTag": "direct",
         "protocol": [
           "bittorrent"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "proxy",
+        "domain": [
+          "domain:brevo.com",
+          "domain:sendinblue.com"
+        ]
+      },
+      {
+        "type": "field",
+        "outboundTag": "proxy",
+        "domain": [
+          "domain:claude.com",
+          "domain:claude.ai",
+          "domain:anthropic.com",
+          "domain:claudeusercontent.com"
         ]
       },
       {
