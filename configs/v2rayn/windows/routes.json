@@ -41,6 +41,26 @@
     "enabled": true
   },
   {
+    "outboundTag": "proxy",
+    "domain": [
+      "domain:brevo.com",
+      "domain:sendinblue.com"
+    ],
+    "remarks": "Brevo: кабинет и ресурсы через прокси",
+    "enabled": true
+  },
+  {
+    "outboundTag": "proxy",
+    "domain": [
+      "domain:claude.com",
+      "domain:claude.ai",
+      "domain:anthropic.com",
+      "domain:claudeusercontent.com"
+    ],
+    "remarks": "Claude / Anthropic через прокси",
+    "enabled": true
+  },
+  {
     "outboundTag": "block",
     "domain": [
       "geosite:category-ads-all"
