@@ -1,4 +1,5 @@
 from contextlib import closing
+import base64
 import importlib.util
 import json
 from pathlib import Path
@@ -117,12 +118,15 @@ class UpdateTests(unittest.TestCase):
 
     def test_download_pins_both_files_to_same_commit(self):
         sha = "a" * 40
-        with patch.object(updater, "fetch_json", side_effect=[{"sha": sha}, self.template, self.rules]) as fetch:
+        def encode(value):
+            return {"encoding": "base64", "content": base64.b64encode(json.dumps(value).encode()).decode()}
+        with patch.object(updater, "fetch_json", side_effect=[{"sha": sha}, encode(self.template), encode(self.rules)]) as fetch:
             template, rules, source = updater.load_rules(False)
         self.assertEqual(template, self.template)
         self.assertEqual(rules, self.rules)
         for call in fetch.call_args_list[1:]:
-            self.assertIn(f"/{sha}/", call.args[0])
+            self.assertIn(f"?ref={sha}", call.args[0])
+            self.assertTrue(call.args[0].startswith("https://api.github.com/"))
         self.assertIn(sha[:12], source)
 
 
