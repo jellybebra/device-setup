@@ -258,7 +258,8 @@
         "enabled": true,
         "destOverride": [
           "http",
-          "tls"
+          "tls",
+          "quic"
         ],
         "routeOnly": false,
         "domainsExcluded": [
