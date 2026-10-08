@@ -1,6 +1,7 @@
 """Update an existing Windows v2rayN setup without reloading its services."""
 
 import argparse
+import base64
 import csv
 import ctypes
 from ctypes import wintypes
@@ -77,9 +78,14 @@ def load_rules(local):
     else:
         # Pin both files to one commit, even if main changes during the download.
         sha = fetch_json(f"https://api.github.com/repos/{REPOSITORY}/commits/main")["sha"]
-        base = f"https://raw.githubusercontent.com/{REPOSITORY}/{sha}/configs/v2rayn/windows"
-        template = fetch_json(f"{base}/xray-template.json")
-        rules = fetch_json(f"{base}/routes.json")
+        base = f"https://api.github.com/repos/{REPOSITORY}/contents/configs/v2rayn/windows"
+        def download(name):
+            item = fetch_json(f"{base}/{name}?ref={sha}")
+            if item.get("encoding") != "base64":
+                raise ValueError(f"Unexpected GitHub file encoding: {name}")
+            return json.loads(base64.b64decode(item["content"]))
+        template = download("xray-template.json")
+        rules = download("routes.json")
         source = f"{REPOSITORY}@{sha[:12]}"
     if not isinstance(template, dict) or not template.get("routing", {}).get("rules"):
         raise ValueError("Empty or invalid Xray template.")
