@@ -10,6 +10,17 @@
   },
   {
     "domain": [
+      "domain:steamcontent.com",
+      "full:steampipe.akamaized.net",
+      "full:steampipe-kr.akamaized.net",
+      "full:steampipe-partner.akamaized.net"
+    ],
+    "remarks": "Загрузки Steam напрямую",
+    "outboundTag": "direct",
+    "enabled": true
+  },
+  {
+    "domain": [
       "geosite:steam"
     ],
     "remarks": "Steam через прокси",

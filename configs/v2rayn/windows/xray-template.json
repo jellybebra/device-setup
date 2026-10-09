@@ -289,6 +289,16 @@
       {
         "type": "field",
         "domain": [
+          "domain:steamcontent.com",
+          "full:steampipe.akamaized.net",
+          "full:steampipe-kr.akamaized.net",
+          "full:steampipe-partner.akamaized.net"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
           "geosite:steam"
         ],
         "outboundTag": "proxy"

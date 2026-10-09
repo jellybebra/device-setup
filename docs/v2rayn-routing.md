@@ -7,6 +7,12 @@
 | Windows | Напрямую | Напрямую | [windows/routes.json](../configs/v2rayn/windows/routes.json) | [windows/xray-template.json](../configs/v2rayn/windows/xray-template.json) |
 | macOS | Через прокси | Через прокси | [macos/routes.json](../configs/v2rayn/macos/routes.json) | [macos/xray-template.json](../configs/v2rayn/macos/xray-template.json) |
 
+## Загрузки Steam
+
+В обоих профилях загрузки с `steamcontent.com` (включая поддомены) и CDN `steampipe.akamaized.net`, `steampipe-kr.akamaized.net`, `steampipe-partner.akamaized.net` идут напрямую. Правило стоит **перед** общим `geosite:steam → proxy`; магазин, сообщество и остальные домены Steam продолжают использовать прокси. Список CDN можно сверить с [категорией Steam в domain-list-community](https://github.com/v2fly/domain-list-community/blob/master/data/steam).
+
+После применения правил нажми **Reload** в v2rayN, затем приостанови и возобнови загрузку Steam, чтобы соединения открылись с новым маршрутом. При TUN или системном прокси трафик может по-прежнему проходить через локальный v2rayN, но для этих CDN используется выход `direct` без удалённого прокси-сервера.
+
 ## Обновление уже настроенного v2rayN на Windows
 
 Запусти v2rayN и выполни из корня репозитория (нужен Python 3, дополнительные библиотеки не нужны):
