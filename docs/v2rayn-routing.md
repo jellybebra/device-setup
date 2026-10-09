@@ -36,6 +36,66 @@ python .\update-v2rayn.py --app-dir 'C:\Tools\v2rayN'
 
 Для отката закрой v2rayN и восстанови `guiNDB.db` из нужной резервной копии в его `guiConfigs`. Копия содержит также серверы и подписки на момент обновления. `guiNConfig.json` скрипт не меняет; его копия сохраняется для справки.
 
+## Приоритет sing-box в Windows
+
+На этом компьютере для `sing-box.exe` установлен приоритет **AboveNormal / Выше обычного**. Настройка применена 9 октября 2026 года к работающему процессу и сохранена для следующих запусков, включая перезапуск Windows. TUN и игровое соединение при применении не перезапускались.
+
+### Причина: скачки пинга в Battlefield 6
+
+Проверено с v2rayN 7.24.9, sing-box 1.13.12, TUN со стеком `mixed` и zapret-discord-youtube 1.10.2 со стратегией EXP. При загрузке CPU около 100% игровые UDP-пакеты задерживались между TUN и Ethernet. Соединения `bf6.exe` попадали под последнее правило **«Остальное напрямую»** (`port_range=0:65535 => route(direct)`); отдельного правила Battlefield не было. Оно направляло игру без прокси-сервера, но оставляло обработку пакетов локальным sing-box.
+
+Пассивный захват сопоставил 26 265 игровых пакетов на обоих интерфейсах. В одном матче приоритет sing-box последовательно менялся `Normal → AboveNormal → Normal`; маршруты, соединения и zapret в этом тесте не менялись.
+
+| Приоритет sing-box | Загрузка CPU, медиана | Исходящая задержка внутри TUN, p95 | Входящая задержка внутри TUN, p95 |
+| --- | --- | --- | --- |
+| Normal, до изменения | 99,9% | 177,9 мс | 108,5 мс |
+| AboveNormal | 99,5% | **5,4 мс** | **27,4 мс** |
+| Normal, после возврата | 100% | 224,0 мс | 176,2 мс |
+
+`p95` — задержка, в которую укладывались 95% пакетов. Это время прохождения локального участка между интерфейсами, а не полный пинг до сервера. При обычном приоритете отдельные задержки достигали 895 мс. После повышения приоритета максимальная исходящая задержка составила 21 мс, входящая — 179 мс: улучшение существенное, но отдельные выбросы остались. Контрольные UDP-пробы через Ethernet дали 0 таймаутов на 306 отправок.
+
+Захват подтвердил задержки, но не исчезновение игровых пакетов между Ethernet и TUN: вне границ захвата несопоставленных пакетов не было. Происхождение каждого показанного игрой значения PL не установлено; потери на внешнем пути этим тестом полностью не исключены. Ограничение FPS для снижения нагрузки CPU не проверялось и не применялось.
+
+Результат согласуется с [планированием потоков Windows по приоритетам](https://learn.microsoft.com/en-us/windows/win32/procthread/scheduling).
+
+### Что настроено
+
+В 64-битном реестре Windows:
+
+```text
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sing-box.exe\PerfOptions
+CpuPriorityClass = 6 (REG_DWORD, AboveNormal)
+```
+
+Параметр применяется ко всем экземплярам с именем `sing-box.exe`, независимо от папки установки. Проверены приоритет текущего процесса и начальный приоритет отдельно созданного экземпляра `sing-box.exe version`; оба — `AboveNormal`. Команда `version` завершилась, рабочий TUN продолжил работать в прежнем процессе.
+
+Повторить настройку можно в **64-битном PowerShell от имени администратора**. Значение `6` ниже относится к параметру реестра; для работающего процесса используется именованное значение `AboveNormal`:
+
+```powershell
+$priorityKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sing-box.exe\PerfOptions'
+New-Item -Path $priorityKey -Force | Out-Null
+New-ItemProperty -Path $priorityKey -Name CpuPriorityClass -PropertyType DWord -Value 6 -Force | Out-Null
+Get-Process -Name sing-box | ForEach-Object { $_.PriorityClass = 'AboveNormal' }
+Get-Process -Name sing-box | Select-Object Id, ProcessName, PriorityClass
+```
+
+Изменение реестра задаёт приоритет будущих запусков; присваивание `PriorityClass` применяет его сразу к уже запущенным экземплярам. Reload v2rayN для этого не нужен.
+
+### Откат на этом компьютере
+
+До изменения параметр `CpuPriorityClass` отсутствовал, а работающий sing-box имел приоритет `Normal`. Исходное состояние записано в `%LOCALAPPDATA%\DeviceSetup\v2rayn-priority\backup.json`, результат применения — в соседнем `status.json`. Это локальные файлы компьютера, они не включены в Git.
+
+Чтобы вернуть это исходное состояние, выполни в PowerShell от имени администратора:
+
+```powershell
+$priorityKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sing-box.exe\PerfOptions'
+Remove-ItemProperty -Path $priorityKey -Name CpuPriorityClass -ErrorAction SilentlyContinue
+Get-Process -Name sing-box | ForEach-Object { $_.PriorityClass = 'Normal' }
+Get-Process -Name sing-box | Select-Object Id, ProcessName, PriorityClass
+```
+
+Удаляется только добавленный параметр, остальные параметры реестра сохраняются. Для другой машины с ранее заданным `CpuPriorityClass` нужно восстановить её прежнее значение.
+
 ## Доменные правила и HTTP/3
 
 В обоих шаблонах Xray в `sniffing.destOverride` включены `http`, `tls` и `quic`. Это позволяет применять доменные правила к HTTP/3, когда TUN передаёт Xray соединение с IP-адресом назначения. Без `quic` запросы браузера по UDP могут попасть в правило «Остальное напрямую», хотя обычный HTTPS-запрос через TCP идёт через прокси. См. [документацию Xray по sniffing](https://xtls.github.io/en/config/inbound.html#sniffingobject).
