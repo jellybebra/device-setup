@@ -281,6 +281,14 @@
       {
         "type": "field",
         "domain": [
+          "domain:addons.mozilla.org",
+          "domain:addons.mozilla.net"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
           "full:catalog.gamepass.com",
           "full:store-images.s-microsoft.com"
         ],

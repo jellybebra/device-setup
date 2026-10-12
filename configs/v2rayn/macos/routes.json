@@ -1,6 +1,15 @@
 [
   {
     "domain": [
+      "domain:addons.mozilla.org",
+      "domain:addons.mozilla.net"
+    ],
+    "remarks": "Mozilla Add-ons и CDN напрямую",
+    "outboundTag": "direct",
+    "enabled": true
+  },
+  {
+    "domain": [
       "domain:steamcontent.com",
       "full:steampipe.akamaized.net",
       "full:steampipe-kr.akamaized.net",

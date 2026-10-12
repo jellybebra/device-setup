@@ -281,6 +281,14 @@
       {
         "type": "field",
         "domain": [
+          "domain:addons.mozilla.org",
+          "domain:addons.mozilla.net"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
           "domain:steamcontent.com",
           "full:steampipe.akamaized.net",
           "full:steampipe-kr.akamaized.net",

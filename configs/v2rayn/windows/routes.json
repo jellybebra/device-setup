@@ -1,6 +1,15 @@
 [
   {
     "domain": [
+      "domain:addons.mozilla.org",
+      "domain:addons.mozilla.net"
+    ],
+    "remarks": "Mozilla Add-ons и CDN напрямую",
+    "outboundTag": "direct",
+    "enabled": true
+  },
+  {
+    "domain": [
       "full:catalog.gamepass.com",
       "full:store-images.s-microsoft.com"
     ],
