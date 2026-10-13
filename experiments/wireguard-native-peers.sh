@@ -2,6 +2,10 @@
 # Add independent Windows/macOS peers to the task's existing interface, without restart.
 set -euo pipefail
 ROOT=/opt/warp-wireguard-test
+if [[ -f /etc/device-setup/warp-wireguard/managed ]]; then
+  echo 'Use the permanent server configuration for peer changes; this experiment is retired.'
+  exit 1
+fi
 IFACE=wg-codex
 [[ -f "$ROOT/owned-by-device-setup" ]]
 [[ $(cat "/sys/class/net/$IFACE/ifalias") == codex-warp-wg ]]

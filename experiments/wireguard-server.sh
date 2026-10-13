@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Isolated IPv4 test VPN. Does not modify VLESS, Docker, or the default route.
 set -euo pipefail
+if [[ -f /etc/device-setup/warp-wireguard/managed ]]; then
+  echo 'WireGuard is now managed by device-setup-wireguard.service; this experiment must not alter it.'
+  exit 1
+fi
 ROOT=/opt/warp-wireguard-test
 IFACE=wg-codex
 PORT=51871

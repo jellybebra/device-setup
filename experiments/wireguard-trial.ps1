@@ -3,6 +3,9 @@ param(
     [string]$DataDirectory = "$env:LOCALAPPDATA\DeviceSetup\warp-latency-20261013"
 )
 $ErrorActionPreference = 'Stop'
+if (Get-ScheduledTask -TaskName 'DeviceSetup WARP WireGuard' -ErrorAction SilentlyContinue) {
+    throw 'The permanent DeviceSetup WARP WireGuard task is installed. This experimental launcher is retired.'
+}
 $statePath = Join-Path $DataDirectory 'wireguard-trial-processes.json'
 $state = if (Test-Path -LiteralPath $statePath) { Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json } else { @() }
 $alive = @($state | Where-Object {
