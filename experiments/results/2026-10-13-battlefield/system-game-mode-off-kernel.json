@@ -1,0 +1,198 @@
+{
+  "duration_seconds": 120.106,
+  "packets": 34458,
+  "pairs": 16958,
+  "ambiguous_keys": 4,
+  "unmatched_keys_away_from_capture_edges": 476,
+  "unmatched_by_interface_remote_port": {
+    "if7:remote-port-3478": 452,
+    "if7:remote-port-21018": 24
+  },
+  "invalid_order_keys": 0,
+  "game_servers": {
+    "5.60.103.91": 15329,
+    "18.199.154.193": 1161
+  },
+  "summary": [
+    {
+      "kind": "game",
+      "direction": "in",
+      "n": 8369,
+      "median_ms": 0.67,
+      "p95_ms": 9.712,
+      "p99_ms": 35.289,
+      "max_ms": 97.965,
+      "over50": 43
+    },
+    {
+      "kind": "game",
+      "direction": "out",
+      "n": 8121,
+      "median_ms": 1.006,
+      "p95_ms": 4.078,
+      "p99_ms": 6.179,
+      "max_ms": 25.606,
+      "over50": 0
+    },
+    {
+      "kind": "stun",
+      "direction": "in",
+      "n": 234,
+      "median_ms": 1.245,
+      "p95_ms": 14.536,
+      "p99_ms": 80.292,
+      "max_ms": 97.521,
+      "over50": 4
+    },
+    {
+      "kind": "stun",
+      "direction": "out",
+      "n": 234,
+      "median_ms": 0.773,
+      "p95_ms": 4.489,
+      "p99_ms": 6.767,
+      "max_ms": 7.39,
+      "over50": 0
+    }
+  ],
+  "steady_foreground_seconds": 99.40770387649536,
+  "steady_foreground_summary": [
+    {
+      "kind": "game",
+      "direction": "in",
+      "n": 6896,
+      "median_ms": 0.711,
+      "p95_ms": 10.499,
+      "p99_ms": 35.911,
+      "max_ms": 97.965,
+      "over50": 36
+    },
+    {
+      "kind": "game",
+      "direction": "out",
+      "n": 6710,
+      "median_ms": 1.031,
+      "p95_ms": 4.061,
+      "p99_ms": 6.465,
+      "max_ms": 25.606,
+      "over50": 0
+    },
+    {
+      "kind": "stun",
+      "direction": "in",
+      "n": 200,
+      "median_ms": 1.264,
+      "p95_ms": 14.104,
+      "p99_ms": 25.384,
+      "max_ms": 80.292,
+      "over50": 2
+    },
+    {
+      "kind": "stun",
+      "direction": "out",
+      "n": 200,
+      "median_ms": 0.752,
+      "p95_ms": 4.102,
+      "p99_ms": 5.824,
+      "max_ms": 7.39,
+      "over50": 0
+    }
+  ],
+  "by_phase": [],
+  "worst_game": [
+    {
+      "at": 1791911796.3707638,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "18.199.154.193",
+      "port": 21067,
+      "ms": 97.96476364135742,
+      "steady_foreground": true
+    },
+    {
+      "at": 1791911787.8150904,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 97.74661064147949,
+      "steady_foreground": false
+    },
+    {
+      "at": 1791911787.8150647,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 97.67985343933105,
+      "steady_foreground": false
+    },
+    {
+      "at": 1791911847.246447,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 97.22304344177246,
+      "steady_foreground": true
+    },
+    {
+      "at": 1791911796.3758483,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 92.94533729553223,
+      "steady_foreground": true
+    },
+    {
+      "at": 1791911811.1178238,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 90.26002883911133,
+      "steady_foreground": true
+    },
+    {
+      "at": 1791911847.2587857,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "18.199.154.193",
+      "port": 21067,
+      "ms": 85.01267433166504,
+      "steady_foreground": true
+    },
+    {
+      "at": 1791911787.9423647,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.103.91",
+      "port": 21018,
+      "ms": 82.95130729675293,
+      "steady_foreground": true
+    }
+  ],
+  "reader_lag": {
+    "n": 34458,
+    "median_ms": 0.24,
+    "p95_ms": 2.674,
+    "p99_ms": 4.921,
+    "max_ms": 98.199,
+    "over50": 13
+  },
+  "limitations": [
+    "Game Mode off per user; baseline match ended early, so not a controlled A/B match comparison.",
+    "Capture restarted after launcher argument-order error; monitor starts 17 seconds after capture. First monitor also overlaps for part of this recording.",
+    "Foreground sampled at 1 Hz; excludes only observed focus transitions."
+  ],
+  "user_report": "User was not watching the in-game ping indicator; no subjective improvement/worsening established."
+}

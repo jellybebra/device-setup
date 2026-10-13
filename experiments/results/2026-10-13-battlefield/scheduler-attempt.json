@@ -1,0 +1,11 @@
+{
+  "time_local": "2026-10-13T20:24:17+03:00",
+  "profile": "Scheduler.Verbose.File",
+  "started": false,
+  "error_code": "0x80070005",
+  "error": "Access is denied",
+  "final_recorder_state": "WPR is not recording",
+  "game_was_running": true,
+  "cause": "Not established. No claim that anti-cheat caused the denial.",
+  "earlier_launcher_issue": "Windows PowerShell native stderr handling interrupted the first attempt; retried using Start-Process with redirected native stdout/stderr."
+}

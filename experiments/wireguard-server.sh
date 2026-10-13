@@ -64,6 +64,13 @@ done
   printf '[Interface]\nPrivateKey = %s\nListenPort = %s\n' "$(cat "$ROOT/server.key")" "$PORT"
   printf '\n[Peer]\nPublicKey = %s\nAllowedIPs = 10.203.13.2/32\n' "$(cat "$ROOT/warp.pub")"
   printf '\n[Peer]\nPublicKey = %s\nAllowedIPs = 10.203.13.3/32\n' "$(cat "$ROOT/direct.pub")"
+  # Keep optional native clients provisioned by wireguard-native-peers.sh.
+  for pair in native-win:4 native-mac:5; do
+    name=${pair%:*}; host=${pair#*:}
+    if [[ -f "$ROOT/$name.pub" ]]; then
+      printf '\n[Peer]\nPublicKey = %s\nAllowedIPs = 10.203.13.%s/32\n' "$(cat "$ROOT/$name.pub")" "$host"
+    fi
+  done
 } > "$ROOT/server.conf"
 python3 - <<'PY'
 import json, pathlib

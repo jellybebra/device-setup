@@ -1,0 +1,80 @@
+[
+  {
+    "at": "2026-10-13T19:40:36.0698029+03:00",
+    "priorities": [
+      {
+        "priority": "Normal",
+        "pid": 16724
+      },
+      {
+        "priority": "Normal",
+        "pid": 14172
+      },
+      {
+        "priority": "Normal",
+        "pid": 4700
+      },
+      {
+        "priority": "AboveNormal",
+        "pid": 4660
+      },
+      {
+        "priority": "Normal",
+        "pid": 27840
+      }
+    ],
+    "phase": "before"
+  },
+  {
+    "at": "2026-10-13T19:41:26.2503977+03:00",
+    "priorities": [
+      {
+        "priority": "High",
+        "pid": 16724
+      },
+      {
+        "priority": "High",
+        "pid": 14172
+      },
+      {
+        "priority": "High",
+        "pid": 4700
+      },
+      {
+        "priority": "High",
+        "pid": 4660
+      },
+      {
+        "priority": "High",
+        "pid": 27840
+      }
+    ],
+    "phase": "high"
+  },
+  {
+    "at": "2026-10-13T19:42:19.0470254+03:00",
+    "priorities": [
+      {
+        "priority": "Normal",
+        "pid": 16724
+      },
+      {
+        "priority": "Normal",
+        "pid": 14172
+      },
+      {
+        "priority": "Normal",
+        "pid": 4700
+      },
+      {
+        "priority": "AboveNormal",
+        "pid": 4660
+      },
+      {
+        "priority": "Normal",
+        "pid": 27840
+      }
+    ],
+    "phase": "after"
+  }
+]

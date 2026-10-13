@@ -1,0 +1,42 @@
+{
+  "started": "2026-10-13T19:28:36.126656+03:00",
+  "payload_bytes": 1024,
+  "meter_priority": "above-normal",
+  "samples": {
+    "native": [],
+    "userspace": []
+  },
+  "cpu_percent": [],
+  "warmup": {
+    "native": [
+      null,
+      null,
+      null
+    ],
+    "userspace": [
+      null,
+      null,
+      null
+    ]
+  },
+  "error": "One path failed all warmup probes; no comparison was run",
+  "summary": {
+    "native": {
+      "sent": 0,
+      "timeouts": 0,
+      "median_ms": null,
+      "p95_ms": null,
+      "p99_ms": null,
+      "max_ms": null
+    },
+    "userspace": {
+      "sent": 0,
+      "timeouts": 0,
+      "median_ms": null,
+      "p95_ms": null,
+      "p99_ms": null,
+      "max_ms": null
+    }
+  },
+  "cpu_median": null
+}

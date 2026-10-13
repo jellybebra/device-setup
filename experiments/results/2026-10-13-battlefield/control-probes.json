@@ -1,0 +1,133 @@
+{
+  "baseline": {
+    "probes": [
+      {
+        "mode": "ethernet",
+        "size": 20,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 29.05,
+        "max_ms": 74.99
+      },
+      {
+        "mode": "ethernet",
+        "size": 1280,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 29.134999999999998,
+        "max_ms": 79.04
+      },
+      {
+        "mode": "tun",
+        "size": 20,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 34.3,
+        "max_ms": 371.56
+      },
+      {
+        "mode": "tun",
+        "size": 1280,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 33.715,
+        "max_ms": 152.54
+      }
+    ],
+    "cpu_median": 94.5,
+    "cpu_max": 100.0,
+    "source": "match-171701.jsonl"
+  },
+  "reported_cap60": {
+    "probes": [
+      {
+        "mode": "ethernet",
+        "size": 20,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 29.86,
+        "max_ms": 57.28
+      },
+      {
+        "mode": "ethernet",
+        "size": 1280,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 30.41,
+        "max_ms": 42.57
+      },
+      {
+        "mode": "tun",
+        "size": 20,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 31.925,
+        "max_ms": 144.9
+      },
+      {
+        "mode": "tun",
+        "size": 1280,
+        "sent": 80,
+        "lost": 0,
+        "median_ms": 32.96,
+        "max_ms": 163.21
+      }
+    ],
+    "cpu_median": 99.1,
+    "cpu_max": 100.0,
+    "source": "match-171953.jsonl"
+  },
+  "priority_trial": {
+    "probes": [
+      {
+        "mode": "ethernet",
+        "size": 20,
+        "sent": 100,
+        "lost": 0,
+        "median_ms": 33.61,
+        "max_ms": 106.37
+      },
+      {
+        "mode": "ethernet",
+        "size": 1280,
+        "sent": 100,
+        "lost": 0,
+        "median_ms": 32.525,
+        "max_ms": 181.6
+      },
+      {
+        "mode": "tun",
+        "size": 20,
+        "sent": 100,
+        "lost": 0,
+        "median_ms": 40.785,
+        "max_ms": 221.53
+      },
+      {
+        "mode": "tun",
+        "size": 1280,
+        "sent": 100,
+        "lost": 0,
+        "median_ms": 34.675,
+        "max_ms": 514.21
+      }
+    ],
+    "cpu_median": 99.7,
+    "cpu_max": 100.0,
+    "source": "match-172303.jsonl"
+  },
+  "priority_cpu": {
+    "above_before": {
+      "median": 98.9,
+      "n": 43
+    },
+    "high": {
+      "median": 99.9,
+      "n": 44
+    },
+    "above_after": {
+      "median": 99.85,
+      "n": 60
+    }
+  }
+}

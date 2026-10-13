@@ -1,0 +1,267 @@
+{
+  "duration_seconds": 150.017,
+  "packets": 42505,
+  "pairs": 21020,
+  "ambiguous_keys": 2,
+  "unmatched_keys_away_from_capture_edges": 420,
+  "unmatched_by_interface_remote_port": {
+    "if7:remote-port-3478": 384,
+    "if7:remote-port-21018": 36
+  },
+  "invalid_order_keys": 0,
+  "game_servers": {
+    "5.60.100.239": 19160,
+    "3.66.235.248": 881,
+    "18.199.104.251": 582
+  },
+  "summary": [
+    {
+      "kind": "game",
+      "direction": "in",
+      "n": 10480,
+      "median_ms": 1.252,
+      "p95_ms": 29.542,
+      "p99_ms": 107.448,
+      "max_ms": 489.577,
+      "over50": 277
+    },
+    {
+      "kind": "game",
+      "direction": "out",
+      "n": 10143,
+      "median_ms": 0.578,
+      "p95_ms": 4.385,
+      "p99_ms": 6.545,
+      "max_ms": 30.133,
+      "over50": 0
+    },
+    {
+      "kind": "stun",
+      "direction": "in",
+      "n": 198,
+      "median_ms": 1.891,
+      "p95_ms": 31.597,
+      "p99_ms": 211.014,
+      "max_ms": 476.764,
+      "over50": 4
+    },
+    {
+      "kind": "stun",
+      "direction": "out",
+      "n": 199,
+      "median_ms": 0.217,
+      "p95_ms": 3.703,
+      "p99_ms": 9.282,
+      "max_ms": 17.946,
+      "over50": 0
+    }
+  ],
+  "by_phase": [
+    {
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "n": 4199,
+      "median_ms": 1.976,
+      "p95_ms": 34.668,
+      "p99_ms": 174.004,
+      "max_ms": 489.577,
+      "over50": 130
+    },
+    {
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "out",
+      "n": 4064,
+      "median_ms": 1.513,
+      "p95_ms": 4.854,
+      "p99_ms": 7.464,
+      "max_ms": 30.133,
+      "over50": 0
+    },
+    {
+      "phase": "above_after",
+      "kind": "stun",
+      "direction": "in",
+      "n": 79,
+      "median_ms": 1.79,
+      "p95_ms": 40.238,
+      "p99_ms": 476.764,
+      "max_ms": 476.764,
+      "over50": 1
+    },
+    {
+      "phase": "above_after",
+      "kind": "stun",
+      "direction": "out",
+      "n": 80,
+      "median_ms": 0.447,
+      "p95_ms": 3.703,
+      "p99_ms": 5.86,
+      "max_ms": 5.86,
+      "over50": 0
+    },
+    {
+      "phase": "above_before",
+      "kind": "game",
+      "direction": "in",
+      "n": 3120,
+      "median_ms": 0.75,
+      "p95_ms": 27.125,
+      "p99_ms": 102.321,
+      "max_ms": 199.444,
+      "over50": 93
+    },
+    {
+      "phase": "above_before",
+      "kind": "game",
+      "direction": "out",
+      "n": 3021,
+      "median_ms": 1.235,
+      "p95_ms": 4.584,
+      "p99_ms": 6.473,
+      "max_ms": 18.441,
+      "over50": 0
+    },
+    {
+      "phase": "above_before",
+      "kind": "stun",
+      "direction": "in",
+      "n": 58,
+      "median_ms": 1.697,
+      "p95_ms": 30.561,
+      "p99_ms": 211.014,
+      "max_ms": 211.014,
+      "over50": 1
+    },
+    {
+      "phase": "above_before",
+      "kind": "stun",
+      "direction": "out",
+      "n": 58,
+      "median_ms": 0.416,
+      "p95_ms": 3.773,
+      "p99_ms": 17.946,
+      "max_ms": 17.946,
+      "over50": 0
+    },
+    {
+      "phase": "high",
+      "kind": "game",
+      "direction": "in",
+      "n": 3161,
+      "median_ms": 1.011,
+      "p95_ms": 27.36,
+      "p99_ms": 65.761,
+      "max_ms": 234.407,
+      "over50": 54
+    },
+    {
+      "phase": "high",
+      "kind": "game",
+      "direction": "out",
+      "n": 3058,
+      "median_ms": 0.193,
+      "p95_ms": 0.428,
+      "p99_ms": 0.844,
+      "max_ms": 15.401,
+      "over50": 0
+    },
+    {
+      "phase": "high",
+      "kind": "stun",
+      "direction": "in",
+      "n": 61,
+      "median_ms": 2.067,
+      "p95_ms": 22.025,
+      "p99_ms": 188.73,
+      "max_ms": 188.73,
+      "over50": 2
+    },
+    {
+      "phase": "high",
+      "kind": "stun",
+      "direction": "out",
+      "n": 61,
+      "median_ms": 0.149,
+      "p95_ms": 0.28,
+      "p99_ms": 0.383,
+      "max_ms": 0.383,
+      "over50": 0
+    }
+  ],
+  "worst_game": [
+    {
+      "at": 1791901525.388979,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 489.577054977417
+    },
+    {
+      "at": 1791901525.4061658,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 473.0846881866455
+    },
+    {
+      "at": 1791901525.4207668,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 458.71925354003906
+    },
+    {
+      "at": 1791901525.4375544,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 442.0444965362549
+    },
+    {
+      "at": 1791901525.449818,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 429.8980236053467
+    },
+    {
+      "at": 1791901525.4555535,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 424.35216903686523
+    },
+    {
+      "at": 1791901525.4733138,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 421.875
+    },
+    {
+      "at": 1791901525.4896197,
+      "phase": "above_after",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 406.4176082611084
+    }
+  ]
+}
