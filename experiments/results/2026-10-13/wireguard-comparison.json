@@ -1,0 +1,2600 @@
+{
+  "started": 1791897086.8733244,
+  "udp": [
+    {
+      "mode": "VLESS",
+      "round": 0,
+      "ms": 601.76
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 0,
+      "ms": 353.23
+    },
+    {
+      "mode": "WireGuard",
+      "round": 0,
+      "ms": 308.82
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 0,
+      "ms": 229.6
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 1,
+      "ms": 131.37
+    },
+    {
+      "mode": "WireGuard",
+      "round": 1,
+      "ms": 359.22
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 1,
+      "ms": 193.71
+    },
+    {
+      "mode": "VLESS",
+      "round": 1,
+      "ms": 148.16
+    },
+    {
+      "mode": "WireGuard",
+      "round": 2,
+      "ms": 344.1
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 2,
+      "ms": 190.06
+    },
+    {
+      "mode": "VLESS",
+      "round": 2,
+      "ms": 169.79
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 2,
+      "ms": 105.54
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 3,
+      "ms": 125.4
+    },
+    {
+      "mode": "VLESS",
+      "round": 3,
+      "ms": 191.43
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 3,
+      "ms": 101.6
+    },
+    {
+      "mode": "WireGuard",
+      "round": 3,
+      "ms": 420.93
+    },
+    {
+      "mode": "VLESS",
+      "round": 4,
+      "ms": 203.37
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 4,
+      "ms": 113.41
+    },
+    {
+      "mode": "WireGuard",
+      "round": 4,
+      "ms": 365.61
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 4,
+      "ms": 117.77
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 5,
+      "ms": 103.98
+    },
+    {
+      "mode": "WireGuard",
+      "round": 5,
+      "ms": 327.41
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 5,
+      "ms": 123.43
+    },
+    {
+      "mode": "VLESS",
+      "round": 5,
+      "ms": 216.29
+    },
+    {
+      "mode": "WireGuard",
+      "round": 6,
+      "ms": 337.26
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 6,
+      "ms": 119.13
+    },
+    {
+      "mode": "VLESS",
+      "round": 6,
+      "ms": 202.23
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 6,
+      "ms": 114.9
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 7,
+      "ms": 102.76
+    },
+    {
+      "mode": "VLESS",
+      "round": 7,
+      "ms": 209.52
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 7,
+      "ms": 99.58
+    },
+    {
+      "mode": "WireGuard",
+      "round": 7,
+      "ms": 413.87
+    },
+    {
+      "mode": "VLESS",
+      "round": 8,
+      "ms": 194.31
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 8,
+      "ms": 98.9
+    },
+    {
+      "mode": "WireGuard",
+      "round": 8,
+      "ms": 351.72
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 8,
+      "ms": 105.71
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 9,
+      "ms": 102.08
+    },
+    {
+      "mode": "WireGuard",
+      "round": 9,
+      "ms": 407.89
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 9,
+      "ms": 117.77
+    },
+    {
+      "mode": "VLESS",
+      "round": 9,
+      "ms": 199.99
+    },
+    {
+      "mode": "WireGuard",
+      "round": 10,
+      "ms": 412.3
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 10,
+      "ms": 116.89
+    },
+    {
+      "mode": "VLESS",
+      "round": 10,
+      "ms": 188.17
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 10,
+      "ms": 108.8
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 11,
+      "ms": 110.91
+    },
+    {
+      "mode": "VLESS",
+      "round": 11,
+      "ms": 212.08
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 11,
+      "ms": 102.94
+    },
+    {
+      "mode": "WireGuard",
+      "round": 11,
+      "ms": 482.8
+    },
+    {
+      "mode": "VLESS",
+      "round": 12,
+      "ms": 201.92
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 12,
+      "ms": 98.96
+    },
+    {
+      "mode": "WireGuard",
+      "round": 12,
+      "ms": 399.97
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 12,
+      "ms": 103.41
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 13,
+      "ms": 113.94
+    },
+    {
+      "mode": "WireGuard",
+      "round": 13,
+      "ms": 324.84
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 13,
+      "ms": 111.75
+    },
+    {
+      "mode": "VLESS",
+      "round": 13,
+      "ms": 256.63
+    },
+    {
+      "mode": "WireGuard",
+      "round": 14,
+      "ms": 389.41
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 14,
+      "ms": 112.26
+    },
+    {
+      "mode": "VLESS",
+      "round": 14,
+      "ms": 214.53
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 14,
+      "ms": 98.71
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 15,
+      "ms": 111.68
+    },
+    {
+      "mode": "VLESS",
+      "round": 15,
+      "ms": 190.8
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 15,
+      "ms": 98.39
+    },
+    {
+      "mode": "WireGuard",
+      "round": 15,
+      "ms": 409.07
+    },
+    {
+      "mode": "VLESS",
+      "round": 16,
+      "ms": 198.71
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 16,
+      "ms": 109.34
+    },
+    {
+      "mode": "WireGuard",
+      "round": 16,
+      "ms": 423.49
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 16,
+      "ms": 108.46
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 17,
+      "ms": 97.93
+    },
+    {
+      "mode": "WireGuard",
+      "round": 17,
+      "ms": 351.97
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 17,
+      "ms": 109.72
+    },
+    {
+      "mode": "VLESS",
+      "round": 17,
+      "ms": 192.8
+    },
+    {
+      "mode": "WireGuard",
+      "round": 18,
+      "ms": 386.37
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 18,
+      "ms": 103.76
+    },
+    {
+      "mode": "VLESS",
+      "round": 18,
+      "ms": 209.93
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 18,
+      "ms": 103.18
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 19,
+      "ms": 106.27
+    },
+    {
+      "mode": "VLESS",
+      "round": 19,
+      "ms": 194.7
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 19,
+      "ms": 99.37
+    },
+    {
+      "mode": "WireGuard",
+      "round": 19,
+      "ms": 389.39
+    },
+    {
+      "mode": "VLESS",
+      "round": 20,
+      "ms": 174.2
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 20,
+      "ms": 98.99
+    },
+    {
+      "mode": "WireGuard",
+      "round": 20,
+      "ms": 359.2
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 20,
+      "ms": 99.7
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 21,
+      "ms": 98.06
+    },
+    {
+      "mode": "WireGuard",
+      "round": 21,
+      "ms": 400.81
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 21,
+      "ms": 101.25
+    },
+    {
+      "mode": "VLESS",
+      "round": 21,
+      "ms": 196.24
+    },
+    {
+      "mode": "WireGuard",
+      "round": 22,
+      "ms": 359.83
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 22,
+      "ms": 103.72
+    },
+    {
+      "mode": "VLESS",
+      "round": 22,
+      "ms": 168.54
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 22,
+      "ms": 96.07
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 23,
+      "ms": 100.94
+    },
+    {
+      "mode": "VLESS",
+      "round": 23,
+      "ms": 172.33
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 23,
+      "ms": 100.1
+    },
+    {
+      "mode": "WireGuard",
+      "round": 23,
+      "ms": 361.62
+    },
+    {
+      "mode": "VLESS",
+      "round": 24,
+      "ms": 198.51
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 24,
+      "ms": 106.0
+    },
+    {
+      "mode": "WireGuard",
+      "round": 24,
+      "ms": 398.95
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 24,
+      "ms": 101.03
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 25,
+      "ms": 109.83
+    },
+    {
+      "mode": "WireGuard",
+      "round": 25,
+      "ms": 394.89
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 25,
+      "ms": 105.36
+    },
+    {
+      "mode": "VLESS",
+      "round": 25,
+      "ms": 239.48
+    },
+    {
+      "mode": "WireGuard",
+      "round": 26,
+      "ms": 361.19
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 26,
+      "ms": 97.66
+    },
+    {
+      "mode": "VLESS",
+      "round": 26,
+      "ms": 247.37
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 26,
+      "ms": 110.48
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 27,
+      "ms": 100.2
+    },
+    {
+      "mode": "VLESS",
+      "round": 27,
+      "ms": 215.32
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 27,
+      "ms": 98.19
+    },
+    {
+      "mode": "WireGuard",
+      "round": 27,
+      "ms": 371.38
+    },
+    {
+      "mode": "VLESS",
+      "round": 28,
+      "ms": 205.68
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 28,
+      "ms": 99.72
+    },
+    {
+      "mode": "WireGuard",
+      "round": 28,
+      "ms": 356.89
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 28,
+      "ms": 100.59
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 29,
+      "ms": 102.22
+    },
+    {
+      "mode": "WireGuard",
+      "round": 29,
+      "ms": 372.78
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 29,
+      "ms": 98.26
+    },
+    {
+      "mode": "VLESS",
+      "round": 29,
+      "ms": 170.75
+    },
+    {
+      "mode": "WireGuard",
+      "round": 30,
+      "ms": 373.39
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 30,
+      "ms": 100.14
+    },
+    {
+      "mode": "VLESS",
+      "round": 30,
+      "ms": 171.83
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 30,
+      "ms": 98.89
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 31,
+      "ms": 97.31
+    },
+    {
+      "mode": "VLESS",
+      "round": 31,
+      "ms": 178.01
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 31,
+      "ms": 107.61
+    },
+    {
+      "mode": "WireGuard",
+      "round": 31,
+      "ms": 285.56
+    },
+    {
+      "mode": "VLESS",
+      "round": 32,
+      "ms": 213.12
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 32,
+      "ms": 106.87
+    },
+    {
+      "mode": "WireGuard",
+      "round": 32,
+      "ms": 313.17
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 32,
+      "ms": 100.2
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 33,
+      "ms": 99.99
+    },
+    {
+      "mode": "WireGuard",
+      "round": 33,
+      "ms": 336.2
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 33,
+      "ms": 103.24
+    },
+    {
+      "mode": "VLESS",
+      "round": 33,
+      "ms": 182.46
+    },
+    {
+      "mode": "WireGuard",
+      "round": 34,
+      "ms": 317.85
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 34,
+      "ms": 97.36
+    },
+    {
+      "mode": "VLESS",
+      "round": 34,
+      "ms": 191.43
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 34,
+      "ms": 98.54
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 35,
+      "ms": 103.7
+    },
+    {
+      "mode": "VLESS",
+      "round": 35,
+      "ms": 205.51
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 35,
+      "ms": 100.27
+    },
+    {
+      "mode": "WireGuard",
+      "round": 35,
+      "ms": 377.8
+    },
+    {
+      "mode": "VLESS",
+      "round": 36,
+      "ms": 198.05
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 36,
+      "ms": 97.53
+    },
+    {
+      "mode": "WireGuard",
+      "round": 36,
+      "ms": 408.2
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 36,
+      "ms": 102.39
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 37,
+      "ms": 105.1
+    },
+    {
+      "mode": "WireGuard",
+      "round": 37,
+      "ms": 370.96
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 37,
+      "ms": 106.04
+    },
+    {
+      "mode": "VLESS",
+      "round": 37,
+      "ms": 184.77
+    },
+    {
+      "mode": "WireGuard",
+      "round": 38,
+      "ms": 370.52
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 38,
+      "ms": 107.41
+    },
+    {
+      "mode": "VLESS",
+      "round": 38,
+      "ms": 190.88
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 38,
+      "ms": 96.73
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "round": 39,
+      "ms": 109.54
+    },
+    {
+      "mode": "VLESS",
+      "round": 39,
+      "ms": 172.0
+    },
+    {
+      "mode": "WARP-VLESS",
+      "round": 39,
+      "ms": 101.38
+    },
+    {
+      "mode": "WireGuard",
+      "round": 39,
+      "ms": 437.99
+    }
+  ],
+  "web": [
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000697,
+          "time_appconnect": 0.425225,
+          "time_starttransfer": 0.536571,
+          "time_total": 0.536585,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.111772,
+          "time_total": 0.111787,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000669,
+          "time_appconnect": 0.424981,
+          "time_starttransfer": 0.55928,
+          "time_total": 0.559331,
+          "size_download": 216,
+          "speed_download": 386,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.143044,
+          "time_total": 0.143117,
+          "size_download": 216,
+          "speed_download": 1509,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.001127,
+          "time_appconnect": 0.322948,
+          "time_starttransfer": 0.512295,
+          "time_total": 0.512309,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.099233,
+          "time_total": 0.099251,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00081,
+          "time_appconnect": 0.376804,
+          "time_starttransfer": 0.577565,
+          "time_total": 0.577621,
+          "size_download": 216,
+          "speed_download": 373,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.100884,
+          "time_total": 0.100955,
+          "size_download": 216,
+          "speed_download": 2139,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000725,
+          "time_appconnect": 0.999814,
+          "time_starttransfer": 1.316652,
+          "time_total": 1.316666,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.291164,
+          "time_total": 0.291178,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000759,
+          "time_appconnect": 0.836802,
+          "time_starttransfer": 1.1354,
+          "time_total": 1.135454,
+          "size_download": 211,
+          "speed_download": 185,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.299079,
+          "time_total": 0.2992,
+          "size_download": 211,
+          "speed_download": 705,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000755,
+          "time_appconnect": 0.320472,
+          "time_starttransfer": 0.422913,
+          "time_total": 0.422926,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.102888,
+          "time_total": 0.102907,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.001003,
+          "time_appconnect": 0.33203,
+          "time_starttransfer": 0.441245,
+          "time_total": 0.441294,
+          "size_download": 212,
+          "speed_download": 480,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.106865,
+          "time_total": 0.106921,
+          "size_download": 212,
+          "speed_download": 1982,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000812,
+          "time_appconnect": 0.335496,
+          "time_starttransfer": 0.522299,
+          "time_total": 0.52233,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.097561,
+          "time_total": 0.097576,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000707,
+          "time_appconnect": 0.375834,
+          "time_starttransfer": 0.483084,
+          "time_total": 0.48313,
+          "size_download": 217,
+          "speed_download": 449,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.105909,
+          "time_total": 0.10597,
+          "size_download": 217,
+          "speed_download": 2047,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.00073,
+          "time_appconnect": 0.773674,
+          "time_starttransfer": 1.181642,
+          "time_total": 1.181656,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.403397,
+          "time_total": 0.403413,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000737,
+          "time_appconnect": 0.67963,
+          "time_starttransfer": 1.001504,
+          "time_total": 1.001559,
+          "size_download": 211,
+          "speed_download": 210,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.313528,
+          "time_total": 0.313609,
+          "size_download": 215,
+          "speed_download": 685,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000811,
+          "time_appconnect": 0.219374,
+          "time_starttransfer": 0.320702,
+          "time_total": 0.320715,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.100357,
+          "time_total": 0.100371,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00069,
+          "time_appconnect": 0.205271,
+          "time_starttransfer": 0.306199,
+          "time_total": 0.306251,
+          "size_download": 211,
+          "speed_download": 688,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.098969,
+          "time_total": 0.099016,
+          "size_download": 216,
+          "speed_download": 2181,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000797,
+          "time_appconnect": 0.35583,
+          "time_starttransfer": 0.455902,
+          "time_total": 0.455919,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.090553,
+          "time_total": 0.090569,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000769,
+          "time_appconnect": 0.459158,
+          "time_starttransfer": 0.612964,
+          "time_total": 0.613008,
+          "size_download": 212,
+          "speed_download": 345,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.158334,
+          "time_total": 0.158393,
+          "size_download": 217,
+          "speed_download": 1370,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000772,
+          "time_appconnect": 0.648398,
+          "time_starttransfer": 0.966574,
+          "time_total": 0.966589,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.283802,
+          "time_total": 0.283817,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000821,
+          "time_appconnect": 0.528044,
+          "time_starttransfer": 0.731823,
+          "time_total": 0.731905,
+          "size_download": 216,
+          "speed_download": 295,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.189567,
+          "time_total": 0.189621,
+          "size_download": 216,
+          "speed_download": 1139,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000782,
+          "time_appconnect": 0.21148,
+          "time_starttransfer": 0.312211,
+          "time_total": 0.312224,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.099509,
+          "time_total": 0.099519,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000881,
+          "time_appconnect": 0.2086,
+          "time_starttransfer": 0.317423,
+          "time_total": 0.317467,
+          "size_download": 212,
+          "speed_download": 667,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.105149,
+          "time_total": 0.105205,
+          "size_download": 212,
+          "speed_download": 2015,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000837,
+          "time_appconnect": 0.339168,
+          "time_starttransfer": 0.449202,
+          "time_total": 0.449215,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.106081,
+          "time_total": 0.106096,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000801,
+          "time_appconnect": 0.37772,
+          "time_starttransfer": 0.497977,
+          "time_total": 0.498029,
+          "size_download": 211,
+          "speed_download": 423,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.118289,
+          "time_total": 0.118344,
+          "size_download": 211,
+          "speed_download": 1782,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.00111,
+          "time_appconnect": 0.329299,
+          "time_starttransfer": 0.515792,
+          "time_total": 0.515807,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.100225,
+          "time_total": 0.100239,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.001064,
+          "time_appconnect": 0.361333,
+          "time_starttransfer": 0.491455,
+          "time_total": 0.491506,
+          "size_download": 217,
+          "speed_download": 441,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.110516,
+          "time_total": 0.110573,
+          "size_download": 212,
+          "speed_download": 1917,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000673,
+          "time_appconnect": 0.222949,
+          "time_starttransfer": 0.331571,
+          "time_total": 0.331584,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.098783,
+          "time_total": 0.098796,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000751,
+          "time_appconnect": 0.214062,
+          "time_starttransfer": 0.319154,
+          "time_total": 0.319206,
+          "size_download": 211,
+          "speed_download": 661,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.101877,
+          "time_total": 0.101926,
+          "size_download": 216,
+          "speed_download": 2119,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000833,
+          "time_appconnect": 0.5749,
+          "time_starttransfer": 0.757682,
+          "time_total": 0.757696,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.185513,
+          "time_total": 0.185531,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000776,
+          "time_appconnect": 0.371359,
+          "time_starttransfer": 0.493678,
+          "time_total": 0.493726,
+          "size_download": 216,
+          "speed_download": 437,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.12664,
+          "time_total": 0.126692,
+          "size_download": 212,
+          "speed_download": 1673,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000671,
+          "time_appconnect": 0.360201,
+          "time_starttransfer": 0.54385,
+          "time_total": 0.543864,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.095979,
+          "time_total": 0.095994,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000789,
+          "time_appconnect": 0.329384,
+          "time_starttransfer": 0.522385,
+          "time_total": 0.522435,
+          "size_download": 217,
+          "speed_download": 415,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.103714,
+          "time_total": 0.103771,
+          "size_download": 217,
+          "speed_download": 2091,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.00069,
+          "time_appconnect": 0.617096,
+          "time_starttransfer": 0.907234,
+          "time_total": 0.907247,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.261145,
+          "time_total": 0.261159,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000663,
+          "time_appconnect": 0.453893,
+          "time_starttransfer": 0.693643,
+          "time_total": 0.69369,
+          "size_download": 216,
+          "speed_download": 311,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.280761,
+          "time_total": 0.280816,
+          "size_download": 211,
+          "speed_download": 751,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000774,
+          "time_appconnect": 0.37674,
+          "time_starttransfer": 0.48983,
+          "time_total": 0.489844,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.107548,
+          "time_total": 0.107563,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00079,
+          "time_appconnect": 0.425973,
+          "time_starttransfer": 0.557105,
+          "time_total": 0.557153,
+          "size_download": 211,
+          "speed_download": 378,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.125493,
+          "time_total": 0.125548,
+          "size_download": 211,
+          "speed_download": 1680,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000734,
+          "time_appconnect": 0.320522,
+          "time_starttransfer": 0.509091,
+          "time_total": 0.509104,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.09518,
+          "time_total": 0.095194,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000652,
+          "time_appconnect": 0.327686,
+          "time_starttransfer": 0.522463,
+          "time_total": 0.522512,
+          "size_download": 216,
+          "speed_download": 413,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.103893,
+          "time_total": 0.103941,
+          "size_download": 212,
+          "speed_download": 2039,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000791,
+          "time_appconnect": 0.462393,
+          "time_starttransfer": 0.675984,
+          "time_total": 0.675998,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.228694,
+          "time_total": 0.228708,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000902,
+          "time_appconnect": 0.455379,
+          "time_starttransfer": 0.689594,
+          "time_total": 0.689642,
+          "size_download": 215,
+          "speed_download": 311,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.236182,
+          "time_total": 0.236238,
+          "size_download": 216,
+          "speed_download": 914,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.001169,
+          "time_appconnect": 0.214826,
+          "time_starttransfer": 0.311662,
+          "time_total": 0.311681,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.098694,
+          "time_total": 0.09871,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000935,
+          "time_appconnect": 0.206963,
+          "time_starttransfer": 0.312526,
+          "time_total": 0.312573,
+          "size_download": 212,
+          "speed_download": 678,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.102906,
+          "time_total": 0.102959,
+          "size_download": 217,
+          "speed_download": 2107,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000775,
+          "time_appconnect": 0.416885,
+          "time_starttransfer": 0.601453,
+          "time_total": 0.601465,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.100306,
+          "time_total": 0.100318,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000825,
+          "time_appconnect": 0.31664,
+          "time_starttransfer": 0.507975,
+          "time_total": 0.508023,
+          "size_download": 212,
+          "speed_download": 417,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.107223,
+          "time_total": 0.10727,
+          "size_download": 217,
+          "speed_download": 2022,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000834,
+          "time_appconnect": 0.529685,
+          "time_starttransfer": 0.741015,
+          "time_total": 0.741029,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.247959,
+          "time_total": 0.247974,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00088,
+          "time_appconnect": 0.509401,
+          "time_starttransfer": 0.751296,
+          "time_total": 0.751346,
+          "size_download": 216,
+          "speed_download": 287,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.255603,
+          "time_total": 0.255659,
+          "size_download": 211,
+          "speed_download": 825,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000709,
+          "time_appconnect": 0.21542,
+          "time_starttransfer": 0.311741,
+          "time_total": 0.311754,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.096635,
+          "time_total": 0.096648,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000781,
+          "time_appconnect": 0.20604,
+          "time_starttransfer": 0.310677,
+          "time_total": 0.310727,
+          "size_download": 217,
+          "speed_download": 698,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.108261,
+          "time_total": 0.108309,
+          "size_download": 216,
+          "speed_download": 1994,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.google.com/generate_204",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 204,
+          "time_connect": 0.000876,
+          "time_appconnect": 0.40646,
+          "time_starttransfer": 0.519902,
+          "time_total": 0.519913,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 204,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.112639,
+          "time_total": 0.112651,
+          "size_download": 0,
+          "speed_download": 0,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://www.cloudflare.com/cdn-cgi/trace",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000658,
+          "time_appconnect": 0.594608,
+          "time_starttransfer": 0.792089,
+          "time_total": 0.792141,
+          "size_download": 217,
+          "speed_download": 273,
+          "num_connects": 1,
+          "exitcode": 0
+        },
+        {
+          "http_code": 200,
+          "time_connect": 0.0,
+          "time_appconnect": 0.0,
+          "time_starttransfer": 0.202625,
+          "time_total": 0.202763,
+          "size_download": 212,
+          "speed_download": 1045,
+          "num_connects": 0,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    }
+  ],
+  "downloads": [
+    {
+      "mode": "VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000863,
+          "time_appconnect": 0.454159,
+          "time_starttransfer": 0.616739,
+          "time_total": 2.878975,
+          "size_download": 10000000,
+          "speed_download": 3473463,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00081,
+          "time_appconnect": 0.397729,
+          "time_starttransfer": 0.669778,
+          "time_total": 2.587112,
+          "size_download": 10000000,
+          "speed_download": 3865319,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000776,
+          "time_appconnect": 1.043098,
+          "time_starttransfer": 1.45377,
+          "time_total": 5.949433,
+          "size_download": 10000000,
+          "speed_download": 1680833,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000791,
+          "time_appconnect": 0.306142,
+          "time_starttransfer": 0.435225,
+          "time_total": 2.125933,
+          "size_download": 10000000,
+          "speed_download": 4703823,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00072,
+          "time_appconnect": 0.362666,
+          "time_starttransfer": 0.603491,
+          "time_total": 2.569389,
+          "size_download": 10000000,
+          "speed_download": 3891981,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000831,
+          "time_appconnect": 0.600247,
+          "time_starttransfer": 0.983748,
+          "time_total": 4.027052,
+          "size_download": 10000000,
+          "speed_download": 2483208,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.00074,
+          "time_appconnect": 0.206227,
+          "time_starttransfer": 0.351693,
+          "time_total": 2.196732,
+          "size_download": 10000000,
+          "speed_download": 4552222,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000732,
+          "time_appconnect": 0.416064,
+          "time_starttransfer": 0.62292,
+          "time_total": 2.823414,
+          "size_download": 10000000,
+          "speed_download": 3541816,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000708,
+          "time_appconnect": 0.64293,
+          "time_starttransfer": 1.010848,
+          "time_total": 5.090011,
+          "size_download": 10000000,
+          "speed_download": 1964634,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-WireGuard",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000832,
+          "time_appconnect": 0.217786,
+          "time_starttransfer": 0.381861,
+          "time_total": 2.136306,
+          "size_download": 10000000,
+          "speed_download": 4680983,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000907,
+          "time_appconnect": 0.561311,
+          "time_starttransfer": 0.778475,
+          "time_total": 4.150513,
+          "size_download": 10000000,
+          "speed_download": 2409342,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    },
+    {
+      "mode": "WARP-VLESS",
+      "url": "https://speed.cloudflare.com/__down?bytes=10000000",
+      "exit": 0,
+      "samples": [
+        {
+          "http_code": 200,
+          "time_connect": 0.000796,
+          "time_appconnect": 0.306214,
+          "time_starttransfer": 0.531468,
+          "time_total": 2.690182,
+          "size_download": 10000000,
+          "speed_download": 3717226,
+          "num_connects": 1,
+          "exitcode": 0
+        }
+      ],
+      "error": ""
+    }
+  ],
+  "summary": {
+    "VLESS": {
+      "udp_ms": {
+        "n": 40,
+        "median": 197.15,
+        "p95": 247.37,
+        "min": 148.16,
+        "max": 601.76
+      },
+      "udp_failed": 0,
+      "https_cold_ms": {
+        "n": 12,
+        "median": 528.25,
+        "p95": 792.14,
+        "min": 449.21,
+        "max": 792.14
+      },
+      "https_best_ms": {
+        "n": 12,
+        "median": 121.95,
+        "p95": 202.76,
+        "min": 90.57,
+        "max": 202.76
+      },
+      "https_failed": 0,
+      "download_mbps": [
+        27.79,
+        28.33,
+        19.27
+      ]
+    },
+    "WARP-VLESS": {
+      "udp_ms": {
+        "n": 40,
+        "median": 101.49,
+        "p95": 114.9,
+        "min": 96.07,
+        "max": 353.23
+      },
+      "udp_failed": 0,
+      "https_cold_ms": {
+        "n": 12,
+        "median": 519.07,
+        "p95": 601.47,
+        "min": 483.13,
+        "max": 601.47
+      },
+      "https_best_ms": {
+        "n": 12,
+        "median": 100.64,
+        "p95": 110.57,
+        "min": 95.19,
+        "max": 110.57
+      },
+      "https_failed": 0,
+      "download_mbps": [
+        30.92,
+        31.14,
+        29.74
+      ]
+    },
+    "WireGuard": {
+      "udp_ms": {
+        "n": 40,
+        "median": 371.17,
+        "p95": 423.49,
+        "min": 285.56,
+        "max": 482.8
+      },
+      "udp_failed": 0,
+      "https_cold_ms": {
+        "n": 12,
+        "median": 829.3,
+        "p95": 1316.67,
+        "min": 676.0,
+        "max": 1316.67
+      },
+      "https_best_ms": {
+        "n": 12,
+        "median": 270.99,
+        "p95": 403.41,
+        "min": 189.62,
+        "max": 403.41
+      },
+      "https_failed": 0,
+      "download_mbps": [
+        13.45,
+        19.87,
+        15.72
+      ]
+    },
+    "WARP-WireGuard": {
+      "udp_ms": {
+        "n": 40,
+        "median": 105.53,
+        "p95": 190.06,
+        "min": 97.31,
+        "max": 229.6
+      },
+      "udp_failed": 0,
+      "https_cold_ms": {
+        "n": 12,
+        "median": 315.02,
+        "p95": 441.29,
+        "min": 306.25,
+        "max": 441.29
+      },
+      "https_best_ms": {
+        "n": 12,
+        "median": 101.15,
+        "p95": 108.31,
+        "min": 96.65,
+        "max": 108.31
+      },
+      "https_failed": 0,
+      "download_mbps": [
+        37.63,
+        36.42,
+        37.45
+      ]
+    }
+  },
+  "finished": 1791897194.7747579
+}
