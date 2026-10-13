@@ -1,0 +1,1002 @@
+[
+  {
+    "mode": "WARP-VLESS",
+    "round": 0,
+    "ms": 420.33
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 0,
+    "ms": 99.42
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 1,
+    "ms": 96.46
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 1,
+    "ms": 94.39
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 2,
+    "ms": 95.16
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 2,
+    "ms": 96.97
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 3,
+    "ms": 99.8
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 3,
+    "ms": 96.87
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 4,
+    "ms": 93.99
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 4,
+    "ms": 97.51
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 5,
+    "ms": 105.22
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 5,
+    "ms": 98.14
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 6,
+    "ms": 103.43
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 6,
+    "ms": 96.5
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 7,
+    "ms": 98.05
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 7,
+    "ms": 97.83
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 8,
+    "ms": 94.51
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 8,
+    "ms": 96.76
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 9,
+    "ms": 97.04
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 9,
+    "ms": 95.15
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 10,
+    "ms": 95.53
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 10,
+    "ms": 103.73
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 11,
+    "ms": 104.41
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 11,
+    "ms": 94.68
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 12,
+    "ms": 137.46
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 12,
+    "ms": 98.12
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 13,
+    "ms": 104.68
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 13,
+    "ms": 95.16
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 14,
+    "ms": 95.6
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 14,
+    "ms": 107.58
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 15,
+    "ms": 103.01
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 15,
+    "ms": 103.02
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 16,
+    "ms": 99.5
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 16,
+    "ms": 97.1
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 17,
+    "ms": 96.46
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 17,
+    "ms": 94.7
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 18,
+    "ms": 94.77
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 18,
+    "ms": 101.98
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 19,
+    "ms": 96.53
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 19,
+    "ms": 102.41
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 20,
+    "ms": 94.26
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 20,
+    "ms": 96.93
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 21,
+    "ms": 96.19
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 21,
+    "ms": 100.94
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 22,
+    "ms": 93.7
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 22,
+    "ms": 97.57
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 23,
+    "ms": 96.0
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 23,
+    "ms": 94.58
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 24,
+    "ms": 93.99
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 24,
+    "ms": 96.04
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 25,
+    "ms": 97.28
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 25,
+    "ms": 94.48
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 26,
+    "ms": 102.12
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 26,
+    "ms": 96.99
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 27,
+    "ms": 97.26
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 27,
+    "ms": 94.79
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 28,
+    "ms": 109.76
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 28,
+    "ms": 97.48
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 29,
+    "ms": 98.42
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 29,
+    "ms": 95.23
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 30,
+    "ms": 94.53
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 30,
+    "ms": 95.4
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 31,
+    "ms": 97.54
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 31,
+    "ms": 94.17
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 32,
+    "ms": 94.85
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 32,
+    "ms": 97.08
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 33,
+    "ms": 96.33
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 33,
+    "ms": 95.0
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 34,
+    "ms": 97.36
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 34,
+    "ms": 96.44
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 35,
+    "ms": 95.54
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 35,
+    "ms": 98.41
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 36,
+    "ms": 93.98
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 36,
+    "ms": 95.76
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 37,
+    "ms": 96.2
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 37,
+    "ms": 95.62
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 38,
+    "ms": 94.39
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 38,
+    "ms": 95.21
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 39,
+    "ms": 96.52
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 39,
+    "ms": 98.94
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 40,
+    "ms": 95.48
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 40,
+    "ms": 97.23
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 41,
+    "ms": 106.22
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 41,
+    "ms": 95.17
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 42,
+    "ms": 97.03
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 42,
+    "ms": 95.58
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 43,
+    "ms": 96.67
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 43,
+    "ms": 95.24
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 44,
+    "ms": 96.84
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 44,
+    "ms": 96.51
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 45,
+    "ms": 105.07
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 45,
+    "ms": 96.2
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 46,
+    "ms": 96.25
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 46,
+    "ms": 96.72
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 47,
+    "ms": 95.42
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 47,
+    "ms": 100.22
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 48,
+    "ms": 98.75
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 48,
+    "ms": 101.2
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 49,
+    "ms": 105.17
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 49,
+    "ms": 94.31
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 50,
+    "ms": 94.24
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 50,
+    "ms": 103.19
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 51,
+    "ms": 95.77
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 51,
+    "ms": 94.56
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 52,
+    "ms": 93.27
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 52,
+    "ms": 96.83
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 53,
+    "ms": 96.6
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 53,
+    "ms": 95.26
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 54,
+    "ms": 94.31
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 54,
+    "ms": 99.25
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 55,
+    "ms": 96.87
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 55,
+    "ms": 104.73
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 56,
+    "ms": 96.49
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 56,
+    "ms": 95.13
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 57,
+    "ms": 96.23
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 57,
+    "ms": 95.24
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 58,
+    "ms": 95.19
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 58,
+    "ms": 95.25
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 59,
+    "ms": 96.08
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 59,
+    "ms": 93.87
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 60,
+    "ms": 95.17
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 60,
+    "ms": 95.93
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 61,
+    "ms": 96.57
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 61,
+    "ms": 97.37
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 62,
+    "ms": 94.79
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 62,
+    "ms": 96.88
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 63,
+    "ms": 96.26
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 63,
+    "ms": 95.33
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 64,
+    "ms": 93.04
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 64,
+    "ms": 96.16
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 65,
+    "ms": 96.55
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 65,
+    "ms": 93.16
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 66,
+    "ms": 101.19
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 66,
+    "ms": 103.88
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 67,
+    "ms": 97.38
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 67,
+    "ms": 94.25
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 68,
+    "ms": 95.55
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 68,
+    "ms": 95.94
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 69,
+    "ms": 97.0
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 69,
+    "ms": 94.86
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 70,
+    "ms": 95.77
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 70,
+    "ms": 95.42
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 71,
+    "ms": 95.81
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 71,
+    "ms": 96.03
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 72,
+    "ms": 94.29
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 72,
+    "ms": 116.81
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 73,
+    "ms": 97.51
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 73,
+    "ms": 95.25
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 74,
+    "ms": 99.53
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 74,
+    "ms": 95.71
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 75,
+    "ms": 96.32
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 75,
+    "ms": 94.72
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 76,
+    "ms": 94.6
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 76,
+    "ms": 95.6
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 77,
+    "ms": 99.48
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 77,
+    "ms": 93.72
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 78,
+    "ms": 93.66
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 78,
+    "ms": 97.75
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 79,
+    "ms": 95.19
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 79,
+    "ms": 100.12
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 80,
+    "ms": 95.16
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 80,
+    "ms": 95.49
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 81,
+    "ms": 96.35
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 81,
+    "ms": 102.9
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 82,
+    "ms": 95.63
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 82,
+    "ms": 105.49
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 83,
+    "ms": 96.48
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 83,
+    "ms": 93.97
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 84,
+    "ms": 94.64
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 84,
+    "ms": 96.4
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 85,
+    "ms": 96.98
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 85,
+    "ms": 93.98
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 86,
+    "ms": 96.06
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 86,
+    "ms": 97.11
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 87,
+    "ms": 103.29
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 87,
+    "ms": 95.67
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 88,
+    "ms": 103.04
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 88,
+    "ms": 98.15
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 89,
+    "ms": 99.29
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 89,
+    "ms": 95.9
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 90,
+    "ms": 96.49
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 90,
+    "ms": 97.26
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 91,
+    "ms": 102.88
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 91,
+    "ms": 94.39
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 92,
+    "ms": 94.9
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 92,
+    "ms": 97.14
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 93,
+    "ms": 96.01
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 93,
+    "ms": 94.29
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 94,
+    "ms": 94.58
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 94,
+    "ms": 96.55
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 95,
+    "ms": 104.87
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 95,
+    "ms": 94.5
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 96,
+    "ms": 92.97
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 96,
+    "ms": 104.4
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 97,
+    "ms": 95.67
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 97,
+    "ms": 93.2
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 98,
+    "ms": 94.92
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 98,
+    "ms": 96.15
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "round": 99,
+    "ms": 95.51
+  },
+  {
+    "mode": "WARP-VLESS",
+    "round": 99,
+    "ms": 95.14
+  }
+]

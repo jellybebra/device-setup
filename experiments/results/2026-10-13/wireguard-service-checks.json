@@ -1,0 +1,30 @@
+[
+  {
+    "mode": "WARP-VLESS",
+    "test": "chatgpt-trace",
+    "http": "200",
+    "exit": 0,
+    "body": "fl=11f721\nh=chatgpt.com\nip=89.187.179.56\nts=1791897235.000\nvisit_scheme=https\nuag=curl/8.21.0\ncolo=EWR\nsliver=050-tier1\nhttp=http/1.1\nloc=US\ntls=TLSv1.3\nsni=plaintext\nwarp=off\ngateway=off\nrbi=off\nkex=X25519\n"
+  },
+  {
+    "mode": "WARP-VLESS",
+    "test": "openai-api",
+    "http": "401",
+    "exit": 0,
+    "body": "{\n  \"error\": {\n    \"message\": \"Missing bearer authentication in header\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "test": "chatgpt-trace",
+    "http": "200",
+    "exit": 0,
+    "body": "fl=471f286\nh=chatgpt.com\nip=138.124.114.237\nts=1791897237.000\nvisit_scheme=https\nuag=curl/8.21.0\ncolo=FRA\nsliver=none\nhttp=http/1.1\nloc=DE\ntls=TLSv1.3\nsni=plaintext\nwarp=off\ngateway=off\nrbi=off\nkex=X25519\n"
+  },
+  {
+    "mode": "WARP-WireGuard",
+    "test": "openai-api",
+    "http": "401",
+    "exit": 0,
+    "body": "{\n  \"error\": {\n    \"message\": \"Missing bearer authentication in header\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+  }
+]
