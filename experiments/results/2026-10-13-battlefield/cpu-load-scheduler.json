@@ -1,0 +1,25 @@
+{
+  "target_pid": 22380,
+  "ready_to_run_ms": {
+    "n": 37559,
+    "median": 0.006,
+    "p99": 0.028,
+    "max": 5.216
+  },
+  "old_states": {
+    "Waiting": 37376,
+    "Standby": 300,
+    "Ready": 321,
+    "DeferredReady": 85,
+    "Running": 20
+  },
+  "bam_qos": {
+    "Unimportant": 38102
+  },
+  "limitations": [
+    "ReadyThread-to-CSwitch pairs only, not a complete per-thread scheduling-state reconstruction.",
+    "CPU-only load without Battlefield does not reproduce its GPU, memory, driver or packet-rate workload."
+  ],
+  "lost_etw_events": 0,
+  "lost_etw_buffers": 0
+}

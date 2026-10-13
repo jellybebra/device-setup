@@ -9,6 +9,7 @@
 | [AGENTS.md](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация и деплой |
 | [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN, исключения Cloudflare Tunnel и [приоритет sing-box для игр](docs/v2rayn-routing.md#приоритет-sing-box-в-windows) |
 | [WARP перед VLESS](docs/warp-windows.md) | Windows | Альтернативный путь до зарубежного сервера, usque, автозапуск и возврат к прямому VLESS |
+| [Сохранённая сеть: WARP → WireGuard](docs/network-checkpoint-20261013.md) | Windows, сервер | Состояние на 13 октября, восстановление запуска, результаты и открытые вопросы Battlefield/TUN |
 | [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [SSH Server Manager](docs/ssh-server-manager.md) | macOS, Windows → Linux | Запуск менеджера SSH-подключений, алиас и установка Fail2Ban |
 | [UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |

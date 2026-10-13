@@ -1,0 +1,134 @@
+{
+  "duration_seconds": 120.072,
+  "packets": 33819,
+  "pairs": 16728,
+  "ambiguous_keys": 1,
+  "unmatched_keys_away_from_capture_edges": 330,
+  "unmatched_by_interface_remote_port": {
+    "if7:remote-port-3478": 304,
+    "if7:remote-port-21018": 26
+  },
+  "invalid_order_keys": 0,
+  "game_servers": {
+    "5.60.100.239": 15247,
+    "18.199.104.251": 468,
+    "3.66.235.248": 696
+  },
+  "summary": [
+    {
+      "kind": "game",
+      "direction": "in",
+      "n": 8383,
+      "median_ms": 1.345,
+      "p95_ms": 21.687,
+      "p99_ms": 70.15,
+      "max_ms": 161.902,
+      "over50": 141
+    },
+    {
+      "kind": "game",
+      "direction": "out",
+      "n": 8028,
+      "median_ms": 1.241,
+      "p95_ms": 4.771,
+      "p99_ms": 7.696,
+      "max_ms": 25.559,
+      "over50": 0
+    },
+    {
+      "kind": "stun",
+      "direction": "in",
+      "n": 158,
+      "median_ms": 0.927,
+      "p95_ms": 42.267,
+      "p99_ms": 109.51,
+      "max_ms": 123.565,
+      "over50": 7
+    },
+    {
+      "kind": "stun",
+      "direction": "out",
+      "n": 159,
+      "median_ms": 0.332,
+      "p95_ms": 4.296,
+      "p99_ms": 8.916,
+      "max_ms": 14.27,
+      "over50": 0
+    }
+  ],
+  "by_phase": [],
+  "worst_game": [
+    {
+      "at": 1791901239.7495823,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 161.90218925476074
+    },
+    {
+      "at": 1791901239.7782936,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "18.199.104.251",
+      "port": 21005,
+      "ms": 161.62633895874023
+    },
+    {
+      "at": 1791901239.782067,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 158.09321403503418
+    },
+    {
+      "at": 1791901209.3881426,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 150.5143642425537
+    },
+    {
+      "at": 1791901240.1811938,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 146.31175994873047
+    },
+    {
+      "at": 1791901239.76555,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 146.1505889892578
+    },
+    {
+      "at": 1791901239.767615,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "5.60.100.239",
+      "port": 21339,
+      "ms": 144.19198036193848
+    },
+    {
+      "at": 1791901209.3947766,
+      "phase": "unlabelled",
+      "kind": "game",
+      "direction": "in",
+      "remote": "3.66.235.248",
+      "port": 21004,
+      "ms": 143.9368724822998
+    }
+  ]
+}

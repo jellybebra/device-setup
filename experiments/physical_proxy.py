@@ -1,4 +1,4 @@
-"""Task-local probes: bind external sockets to the physical Windows adapter.
+"""Task-local probes: bind external IPv4 sockets to a Windows/macOS adapter.
 
 No system routes, DNS, firewall rules, or existing VPN processes are changed.
 """
@@ -6,15 +6,29 @@ import argparse
 import asyncio
 import json
 import socket
+import sys
 import time
 
 
 def physical_socket(kind, source, interface):
+    if interface <= 0:
+        raise ValueError("A positive physical interface index is required")
+    if sys.platform not in ("win32", "darwin"):
+        raise OSError("Physical interface binding is implemented for Windows/macOS only")
     sock = socket.socket(socket.AF_INET, kind)
-    sock.setsockopt(socket.IPPROTO_IP, 31, socket.htonl(interface))
-    sock.bind((source, 0))
-    sock.setblocking(False)
-    return sock
+    try:
+        if sys.platform == "win32":
+            # IP_UNICAST_IF expects an interface index in network byte order.
+            sock.setsockopt(socket.IPPROTO_IP, 31, socket.htonl(interface))
+        else:
+            # Darwin IP_BOUND_IF takes a native int (bsd/netinet/in.h).
+            sock.setsockopt(socket.IPPROTO_IP, 25, interface)
+        sock.bind((source, 0))
+        sock.setblocking(False)
+        return sock
+    except BaseException:
+        sock.close()
+        raise
 
 
 async def connect(host, port, args):
