@@ -7,6 +7,8 @@
 | Инструкция | Платформа | Что внутри |
 | --- | --- | --- |
 | [AGENTS.md](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация и деплой |
+| [Clash Verge / Mihomo](docs/mihomo-windows-trial.md) | Windows | Текущая схема: TUN, WARP → WireGuard в одном ядре, прямой доступ через zapret, автозапуск и проверки |
+| [Добавить Proton в Clash](docs/proton-clash.md) | Windows | Отдельный WireGuard-конфиг, добавление узла и выбор VPN без изменения прямых маршрутов |
 | [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN, исключения Cloudflare Tunnel и [приоритет sing-box для игр](docs/v2rayn-routing.md#приоритет-sing-box-в-windows) |
 | [WARP перед VLESS](docs/warp-windows.md) | Windows | Альтернативный путь до зарубежного сервера, usque, автозапуск и возврат к прямому VLESS |
 | [Постоянный WARP → WireGuard](docs/warp-wireguard-windows.md) | Windows, сервер | Автозапуск, восстановление соединения, обслуживание и [история диагностики](docs/network-checkpoint-20261013.md) |
