@@ -1,0 +1,19 @@
+{
+  "valid_stack_measurements": false,
+  "working_stack_changed": false,
+  "attempts": [
+    {
+      "attempt": "b",
+      "failure": "Get-NetAdapter enumeration timed out after 40 seconds; no measurements"
+    },
+    {
+      "attempt": "c",
+      "failure": "route.exe PRINT -4 timed out after 15 seconds with secondary TUN; no measurements",
+      "cleanup": {
+        "default_routes_unchanged": true,
+        "residual_host_route": [],
+        "residual_adapter": null
+      }
+    }
+  ]
+}
