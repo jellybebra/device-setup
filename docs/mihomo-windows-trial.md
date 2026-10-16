@@ -48,6 +48,3 @@ python .\mihomo\build_profile.py --vless-xray-config 'C:\private\xray.json' --ge
 ```powershell
 python -m unittest discover -s mihomo -p 'test_*.py'
 ```
-
-Отдельная [история локальных задержек игровых пакетов TUN](battlefield-latency-20261013.md)
-не означает, что смена VPN-протокола устранила эти задержки.
