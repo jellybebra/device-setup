@@ -1,7 +1,6 @@
 # Run as the same Windows user, with administrator rights for legacy tasks/firewall.
 [CmdletBinding()]
 param(
-    [switch]$RetireLegacy,
     [switch]$CheckMinecraft,
     [switch]$CheckTunnel,
     [string]$PublicAddress,
@@ -11,7 +10,6 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $guiRoot = Join-Path $env:APPDATA 'io.github.clash-verge-rev.clash-verge-rev'
-$legacyRoot = Join-Path $env:USERPROFILE '.device-setup\warp-wireguard'
 $stateRoot = Join-Path $env:USERPROFILE ('.device-setup\mihomo-trial\maintenance-' + (Get-Date -Format yyyyMMdd-HHmmss))
 New-Item -ItemType Directory -Path $stateRoot | Out-Null
 $result = [ordered]@{ backup = $stateRoot }
@@ -25,62 +23,11 @@ function Assert-Clash {
     if ($LASTEXITCODE -ne 0 -or $status -ne '401') { throw 'Clash VPN connectivity check failed' }
 }
 
-function Restore-ClashProxy {
-    # v2rayN may clear/change this shared setting as it exits. TUN stays up.
-    Set-ItemProperty -LiteralPath $proxyKey -Name ProxyEnable -Value 1
-    Set-ItemProperty -LiteralPath $proxyKey -Name ProxyServer -Value '127.0.0.1:7897'
-    if (-not ('DeviceSetupProxyNotify' -as [type])) {
-        Add-Type 'using System; using System.Runtime.InteropServices; public class DeviceSetupProxyNotify { [DllImport("wininet.dll")] public static extern bool InternetSetOption(IntPtr h, int o, IntPtr b, int n); }'
-    }
-    [DeviceSetupProxyNotify]::InternetSetOption([IntPtr]::Zero,39,[IntPtr]::Zero,0) | Out-Null
-    [DeviceSetupProxyNotify]::InternetSetOption([IntPtr]::Zero,37,[IntPtr]::Zero,0) | Out-Null
-}
-
 try {
     Assert-Clash
-    if ($RetireLegacy -or $CheckMinecraft) {
+    if ($CheckMinecraft) {
         $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Run PowerShell as administrator' }
-    }
-    if ($RetireLegacy) {
-        if (-not (Select-String -LiteralPath (Join-Path $guiRoot 'verge.yaml') -Pattern '^enable_auto_launch:\s*true\s*$' -Quiet)) { throw 'Enable Auto Launch in Clash first' }
-        $v2rayExe = Join-Path $env:USERPROFILE 'Downloads\v2rayN-windows-64\v2rayN-windows-64\v2rayN.exe'
-        $tasks = @(Get-ScheduledTask | Where-Object {
-            $_.TaskName -eq 'DeviceSetup WARP WireGuard' -or
-            ($_.TaskName -like 'v2rayNAutoRun_*' -and $_.Actions.Execute.Trim('"') -eq $v2rayExe)
-        })
-        if ($tasks.Count -ne 2) { throw 'Expected exactly the two known legacy tasks' }
-        foreach ($task in $tasks) {
-            Export-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath | Set-Content -LiteralPath (Join-Path $stateRoot ($task.TaskName + '.xml')) -Encoding UTF8
-        }
-        try {
-            foreach ($task in $tasks) { $task | Disable-ScheduledTask | Out-Null }
-            # The supervisor supports a graceful stop and owns its child processes.
-            Set-Content -LiteralPath (Join-Path $legacyRoot 'stop.request') -Value 'migration to Clash'
-            $deadline = (Get-Date).AddSeconds(15)
-            do {
-                $old = @(Get-CimInstance Win32_Process | Where-Object {
-                    $_.Name -eq 'pythonw.exe' -and $_.CommandLine -like ('*' + (Join-Path $legacyRoot 'warp-wireguard.py') + '*')
-                })
-                if (-not $old) { break }
-                Start-Sleep -Milliseconds 300
-            } while ((Get-Date) -lt $deadline)
-            if ($old) { throw 'Legacy supervisor did not stop gracefully; inspect before forcing termination' }
-            # Only the identified v2rayN installation and cores in its directory.
-            $v2root = Split-Path $v2rayExe -Parent
-            $processes = @(Get-CimInstance Win32_Process | Where-Object {
-                $_.ExecutablePath -eq $v2rayExe -or
-                ($_.Name -in @('xray.exe','sing-box.exe') -and $_.ExecutablePath -like ($v2root + '\*'))
-            })
-            foreach ($proc in $processes) {
-                $current = Get-CimInstance Win32_Process -Filter "ProcessId=$($proc.ProcessId)"
-                if ($current -and $current.CreationDate -eq $proc.CreationDate -and $current.ExecutablePath -eq $proc.ExecutablePath) {
-                    Stop-Process -Id $proc.ProcessId -ErrorAction Stop
-                }
-            }
-        } finally { Restore-ClashProxy }
-        Assert-Clash
-        $result.legacy = 'Disabled both scheduled tasks; stopped supervisor and identified v2rayN processes; files retained'
     }
     if ($CheckMinecraft) {
         foreach ($address in @($PublicAddress, $ProbeAddress)) {

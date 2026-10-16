@@ -4,7 +4,6 @@ Output is JSON, which is also valid YAML; use a .yaml extension for GUI import.
 The output directory must already exist with private filesystem permissions.
 """
 import argparse
-import configparser
 import ipaddress
 import json
 from pathlib import Path
@@ -13,33 +12,24 @@ import uuid
 from urllib.parse import quote
 
 VPN_GROUP = 'VPN — выход в интернет'
-WG_NODE = 'Мой сервер · WireGuard'
 VLESS_NODE = 'Мой сервер · VLESS'
-WG_PATH = 'WireGuard — путь до сервера'
-VLESS_PATH = 'VLESS — путь до сервера'
-DIRECT_NODE = 'Напрямую'
+ALTERNATE_NODE = 'Мой сервер · VLESS · 138.124.114.237'
 
 
-def connection_choices(own, warp, vless=None, proton=None):
-    """Independent upstream selectors; WARP never depends on either server."""
-    own = dict(own, name=WG_NODE, **{'dialer-proxy': WG_PATH})
-    warp = dict(warp, name='WARP')
-    warp.pop('dialer-proxy', None)
-    # MASQUE otherwise resolves the next hop with DefaultResolver. When the
-    # default DNS uses VLESS over WARP this recursively requires the same hop.
-    warp['remote-dns-resolve'] = True
-    warp['dns'] = ['https://1.1.1.1/dns-query']
-    nodes = [own, warp, {'name': DIRECT_NODE, 'type': 'direct', 'udp': True}]
-    exits = [WG_NODE, 'WARP']
-    paths = [{'name': WG_PATH, 'type': 'select', 'proxies': [DIRECT_NODE, 'WARP']}]
-    if vless is not None:
-        nodes.append(dict(vless, name=VLESS_NODE, **{'dialer-proxy': VLESS_PATH}))
-        exits.insert(0, VLESS_NODE)
-        paths.insert(0, {'name': VLESS_PATH, 'type': 'select', 'proxies': [DIRECT_NODE, 'WARP']})
-    if proton is not None:
-        nodes.append(dict(proton))
-        exits.append(proton['name'])
-    return nodes, [{'name': VPN_GROUP, 'type': 'select', 'proxies': exits}, *paths]
+def connection_choices(vless, primary='92.246.139.113', alternate='138.124.114.237'):
+    """Two direct ingress addresses of the same server, preserving Reality SNI."""
+    if vless.get('type') != 'vless' or not vless.get('servername'):
+        raise ValueError('Expected a VLESS Reality node with explicit TLS server name')
+    primary = str(ipaddress.IPv4Address(primary))
+    alternate = str(ipaddress.IPv4Address(alternate))
+    if primary == alternate:
+        raise ValueError('Primary and alternate ingress addresses must differ')
+    base = {k: v for k, v in vless.items() if k != 'dialer-proxy'}
+    alternate_name = ALTERNATE_NODE if alternate == '138.124.114.237' else f'Мой сервер · VLESS · {alternate}'
+    nodes = [dict(base, name=VLESS_NODE, server=primary),
+             dict(base, name=alternate_name, server=alternate)]
+    return nodes, [{'name': VPN_GROUP, 'type': 'select',
+                    'proxies': [node['name'] for node in nodes]}]
 
 
 def vless_from_xray(path, name='My server (VLESS)', tag='proxy'):
@@ -77,36 +67,6 @@ def vless_from_xray(path, name='My server (VLESS)', tag='proxy'):
     }
     if user.get('flow'):
         node['flow'] = user['flow']
-    return node
-
-
-def wireguard(path, name, mtu=None):
-    conf = configparser.ConfigParser(interpolation=None, inline_comment_prefixes=('#', ';'))
-    conf.read_string(Path(path).read_text(encoding='utf-8-sig'))
-    if set(conf.sections()) != {'Interface', 'Peer'}:
-        raise ValueError('Expected one Interface and one Peer')
-    iface, peer = conf['Interface'], conf['Peer']
-    if set(iface) - {'address', 'privatekey', 'dns', 'mtu', 'listenport'}:
-        raise ValueError('Unsupported Interface fields; hooks are not imported')
-    if set(peer) - {'publickey', 'presharedkey', 'allowedips', 'endpoint', 'persistentkeepalive'}:
-        raise ValueError('Unsupported Peer fields')
-    host, port = peer['endpoint'].rsplit(':', 1)
-    node = {'name': name, 'type': 'wireguard', 'server': host.strip('[]'),
-            'port': int(port), 'private-key': iface['privatekey'],
-            'public-key': peer['publickey'], 'udp': True,
-            'mtu': mtu or iface.getint('mtu', 1280)}
-    # These profiles provide a full Internet exit; routing is managed by Mihomo.
-    allowed = {str(ipaddress.ip_network(x.strip())) for x in peer['allowedips'].split(',')}
-    if '0.0.0.0/0' not in allowed:
-        raise ValueError('Provider must support a full IPv4 Internet exit')
-    for address in iface['address'].split(','):
-        ip = ipaddress.ip_interface(address.strip()).ip
-        node['ip' if ip.version == 4 else 'ipv6'] = str(ip)
-    if 'ip' not in node:
-        raise ValueError('Provider needs an IPv4 address')
-    if peer.get('presharedkey'):
-        node['pre-shared-key'] = peer['presharedkey']
-    node['persistent-keepalive'] = peer.getint('persistentkeepalive', 25)
     return node
 
 
@@ -160,18 +120,8 @@ def routes(path, vpn_group='VPN'):
 
 
 def build(args):
-    account = json.loads(Path(args.warp_account).read_text(encoding='utf-8-sig'))
-    warp = {'name': 'WARP', 'type': 'masque', 'server': args.warp_endpoint, 'port': 443,
-            'private-key': account['private_key'],
-            'public-key': ''.join(x for x in account['endpoint_pub_key'].splitlines()
-                                  if not x.startswith('-----')),
-            'ip': account['ipv4'], 'mtu': 1280, 'udp': True,
-            'sni': 'consumer-masque.cloudflareclient.com'}
-    own = wireguard(args.wireguard, 'My server', mtu=1280)
-    proton = wireguard(args.proton, 'Proton') if args.proton else None
-    vless = (vless_from_xray(args.vless_xray_config)
-             if getattr(args, 'vless_xray_config', None) else None)
-    nodes, groups = connection_choices(own, warp, vless, proton)
+    vless = vless_from_xray(args.vless_xray_config)
+    nodes, groups = connection_choices(vless, args.primary_ip, args.alternate_ip)
     return {
         'mixed-port': args.port, 'allow-lan': False, 'bind-address': '127.0.0.1',
         'mode': 'rule', 'log-level': 'warning', 'ipv6': False,
@@ -198,13 +148,11 @@ def build(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--warp-account', required=True)
-    parser.add_argument('--wireguard', required=True)
-    parser.add_argument('--proton', help='Optional Proton WireGuard .conf')
-    parser.add_argument('--vless-xray-config', help='Optional private Xray config: import its proxy VLESS Reality outbound')
+    parser.add_argument('--vless-xray-config', required=True, help='Private Xray config containing the proxy VLESS Reality outbound')
+    parser.add_argument('--primary-ip', default='92.246.139.113')
+    parser.add_argument('--alternate-ip', default='138.124.114.237')
     parser.add_argument('--rules', default=str(Path(__file__).resolve().parents[1] / 'configs/v2rayn/windows/routes.json'))
     parser.add_argument('--interface', default='Ethernet')
-    parser.add_argument('--warp-endpoint', default='162.159.198.2')
     parser.add_argument('--port', type=int, default=19606)
     parser.add_argument('--dns-port', type=int, default=19653)
     parser.add_argument('--controller-port', type=int, default=19690)
