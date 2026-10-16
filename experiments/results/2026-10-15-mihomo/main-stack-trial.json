@@ -1,0 +1,108 @@
+{
+  "started": "2026-10-15 21:00:42",
+  "context": "User had left the match; not a comparable in-match benchmark",
+  "stack": "gVisor",
+  "probes": {
+    "physical_128": {
+      "n": 25,
+      "timeouts": 0,
+      "median_ms": 50.48,
+      "p95_ms": 58.63,
+      "max_ms": 58.75
+    },
+    "physical_1280": {
+      "n": 25,
+      "timeouts": 0,
+      "median_ms": 46.49,
+      "p95_ms": 50.02,
+      "max_ms": 50.77
+    },
+    "tun_128": {
+      "n": 25,
+      "timeouts": 0,
+      "median_ms": 49.88,
+      "p95_ms": 60.96,
+      "max_ms": 62.62
+    },
+    "tun_1280": {
+      "n": 25,
+      "timeouts": 0,
+      "median_ms": 50.34,
+      "p95_ms": 53.83,
+      "max_ms": 58.96
+    },
+    "telegram": {
+      "n": 6,
+      "timeouts": 0,
+      "median_ms": 230.38,
+      "p95_ms": 250.52,
+      "max_ms": 250.52
+    }
+  },
+  "http_comparison": {
+    "mips": [
+      {
+        "url": "https://www.youtube.com",
+        "exit": 28,
+        "result": "000 8.013466",
+        "error": "curl: (28) Connection timed out after 8012 milliseconds\n"
+      },
+      {
+        "url": "https://discord.com",
+        "exit": 0,
+        "result": "200 0.310009",
+        "error": ""
+      },
+      {
+        "url": "https://api.openai.com/v1/models",
+        "exit": 0,
+        "result": "401 0.534467",
+        "error": ""
+      }
+    ],
+    "gvisor": [
+      {
+        "url": "https://www.youtube.com",
+        "exit": 35,
+        "result": "000 0.181585",
+        "error": "curl: (35) schannel: next InitializeSecurityContext failed: SEC_E_DECRYPT_FAILURE (0x80090330) - The specified data could not be decrypted.\n"
+      },
+      {
+        "url": "https://discord.com",
+        "exit": 28,
+        "result": "000 8.008812",
+        "error": "curl: (28) Connection timed out after 8008 milliseconds\n"
+      },
+      {
+        "url": "https://api.openai.com/v1/models",
+        "exit": 0,
+        "result": "401 0.558473",
+        "error": ""
+      }
+    ]
+  },
+  "mixed": {
+    "checks": [
+      {
+        "url": "https://www.youtube.com",
+        "exit": 28,
+        "result": "000 8.006164",
+        "error": "curl: (28) Connection timed out after 8005 milliseconds\n"
+      },
+      {
+        "url": "https://discord.com",
+        "exit": 28,
+        "result": "000 8.010188",
+        "error": "curl: (28) Connection timed out after 8009 milliseconds\n"
+      },
+      {
+        "url": "https://api.openai.com/v1/models",
+        "exit": 0,
+        "result": "401 0.806370",
+        "error": ""
+      }
+    ],
+    "current_stack": "Mips"
+  },
+  "outcome": "Rolled working TUN back to mips; neither alternative passed Discord connectivity checks. No persistent stack change."
+}

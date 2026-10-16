@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-15",
+  "core": "Mihomo 1.19.32",
+  "tun_stack": "mips",
+  "core_priority": "AboveNormal",
+  "vpn": "WARP -> own WireGuard server",
+  "probe_duration_seconds": 90,
+  "cpu_median": 99.5,
+  "game_foreground_samples": 89,
+  "cpu_samples": 90,
+  "probe_summary": [
+    {
+      "kind": "stun",
+      "path": "physical",
+      "size": 128,
+      "sent": 90,
+      "timeouts": 0,
+      "median_ms": 50.68,
+      "p95_ms": 60.9,
+      "max_ms": 69.35
+    },
+    {
+      "kind": "stun",
+      "path": "physical",
+      "size": 1280,
+      "sent": 90,
+      "timeouts": 1,
+      "median_ms": 49.55,
+      "p95_ms": 58.39,
+      "max_ms": 61.07
+    },
+    {
+      "kind": "stun",
+      "path": "tun",
+      "size": 128,
+      "sent": 90,
+      "timeouts": 0,
+      "median_ms": 55.315,
+      "p95_ms": 140.94,
+      "max_ms": 278.5
+    },
+    {
+      "kind": "stun",
+      "path": "tun",
+      "size": 1280,
+      "sent": 90,
+      "timeouts": 0,
+      "median_ms": 53.775,
+      "p95_ms": 135.9,
+      "max_ms": 273.44
+    },
+    {
+      "kind": "telegram",
+      "path": "tun",
+      "size": null,
+      "sent": 18,
+      "timeouts": 0,
+      "median_ms": 263.0,
+      "p95_ms": 2271.47,
+      "max_ms": 2271.47
+    },
+    {
+      "kind": "telegram",
+      "path": "socks",
+      "size": null,
+      "sent": 18,
+      "timeouts": 0,
+      "median_ms": 249.98000000000002,
+      "p95_ms": 2266.18,
+      "max_ms": 2266.18
+    }
+  ],
+  "simultaneous_telegram_spike": {
+    "elapsed_seconds": 12.3,
+    "tun_ms": 2271.47,
+    "socks_ms": 2266.18
+  },
+  "passive_capture": {
+    "duration_seconds": 60.058,
+    "packets": 16340,
+    "pairs": 8135,
+    "ambiguous_keys": 16,
+    "unmatched_keys_away_from_capture_edges": 12,
+    "invalid_order_keys": 0,
+    "summary": [
+      {
+        "kind": "game",
+        "direction": "in",
+        "n": 4217,
+        "median_ms": 5.087,
+        "p95_ms": 115.896,
+        "p99_ms": 204.953,
+        "max_ms": 318.062,
+        "over50": 768
+      },
+      {
+        "kind": "game",
+        "direction": "out",
+        "n": 3918,
+        "median_ms": 1.841,
+        "p95_ms": 5.0,
+        "p99_ms": 8.268,
+        "max_ms": 22.288,
+        "over50": 0
+      }
+    ]
+  },
+  "limitations": [
+    "MTProto probe only validates unauthenticated req_pq/resPQ, not sending user messages.",
+    "TUN and SOCKS Telegram spikes occurred together; TUN ingress alone cannot explain them.",
+    "Passive capture used kernel timestamps. Focus sampling began after the capture, so no simultaneous foreground subset is available.",
+    "12 unmatched keys do not establish Internet packet loss.",
+    "This does not prove CPU saturation is the sole cause. FPS limiting was declined because the user had already tried it."
+  ]
+}

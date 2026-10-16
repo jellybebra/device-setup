@@ -140,6 +140,8 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=19606)
     parser.add_argument('--dns-port', type=int, default=19653)
     parser.add_argument('--controller-port', type=int, default=19690)
+    parser.add_argument('--geodata-dir', type=Path,
+                        help='Export ru-blocked from these DAT files to separate local rule providers')
     parser.add_argument('--output', required=True)
     args = parser.parse_args()
     target = Path(args.output)
@@ -148,6 +150,14 @@ if __name__ == '__main__':
     if target.exists():
         parser.error('Refusing to overwrite an existing profile')
     profile = build(args)
+    if args.geodata_dir:
+        from freeze_ru_rules import export, isolate
+        export(args.geodata_dir, target.parent / 'rule-providers' / 'device-setup')
+        isolate(profile)
     with target.open('x', encoding='utf-8') as output:
         json.dump(profile, output, indent=2, ensure_ascii=False)
     print(f'Profile written: {target}; TUN disabled; {len(profile["rules"])} routing rules')
+    if args.geodata_dir:
+        print('For Clash Verge, also copy rule-providers/device-setup into its configuration directory.')
+    else:
+        print('Warning: ru-blocked depends on custom DAT files. For Clash Verge use --geodata-dir; bundled databases lack this category.')
