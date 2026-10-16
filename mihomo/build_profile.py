@@ -9,6 +9,75 @@ import ipaddress
 import json
 from pathlib import Path
 import secrets
+import uuid
+from urllib.parse import quote
+
+VPN_GROUP = 'VPN — выход в интернет'
+WG_NODE = 'Мой сервер · WireGuard'
+VLESS_NODE = 'Мой сервер · VLESS'
+WG_PATH = 'WireGuard — путь до сервера'
+VLESS_PATH = 'VLESS — путь до сервера'
+DIRECT_NODE = 'Напрямую'
+
+
+def connection_choices(own, warp, vless=None, proton=None):
+    """Independent upstream selectors; WARP never depends on either server."""
+    own = dict(own, name=WG_NODE, **{'dialer-proxy': WG_PATH})
+    warp = dict(warp, name='WARP')
+    warp.pop('dialer-proxy', None)
+    # MASQUE otherwise resolves the next hop with DefaultResolver. When the
+    # default DNS uses VLESS over WARP this recursively requires the same hop.
+    warp['remote-dns-resolve'] = True
+    warp['dns'] = ['https://1.1.1.1/dns-query']
+    nodes = [own, warp, {'name': DIRECT_NODE, 'type': 'direct', 'udp': True}]
+    exits = [WG_NODE, 'WARP']
+    paths = [{'name': WG_PATH, 'type': 'select', 'proxies': [DIRECT_NODE, 'WARP']}]
+    if vless is not None:
+        nodes.append(dict(vless, name=VLESS_NODE, **{'dialer-proxy': VLESS_PATH}))
+        exits.insert(0, VLESS_NODE)
+        paths.insert(0, {'name': VLESS_PATH, 'type': 'select', 'proxies': [DIRECT_NODE, 'WARP']})
+    if proton is not None:
+        nodes.append(dict(proton))
+        exits.append(proton['name'])
+    return nodes, [{'name': VPN_GROUP, 'type': 'select', 'proxies': exits}, *paths]
+
+
+def vless_from_xray(path, name='My server (VLESS)', tag='proxy'):
+    """Import the raw/TCP Reality outbound, never Xray's routing or listeners."""
+    config = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    matches = [node for node in config.get('outbounds', []) if node.get('tag') == tag]
+    if len(matches) != 1 or matches[0].get('protocol') != 'vless':
+        raise ValueError('Expected one VLESS outbound with the requested tag')
+    source = matches[0]
+    if source.get('proxySettings') or source.get('mux', {}).get('enabled'):
+        raise ValueError('Chained or multiplexed Xray outbounds need manual conversion')
+    stream = source.get('streamSettings', {})
+    if stream.get('network', 'tcp') not in ('tcp', 'raw') or stream.get('security') != 'reality':
+        raise ValueError('Only VLESS TCP/raw with Reality is supported')
+    if any(value for key, value in stream.items()
+           if key not in ('network', 'security', 'realitySettings')):
+        raise ValueError('Additional transport/socket settings need manual conversion')
+    servers = source.get('settings', {}).get('vnext', [])
+    if len(servers) != 1 or len(servers[0].get('users', [])) != 1:
+        raise ValueError('Expected one VLESS server and user')
+    server, user = servers[0], servers[0]['users'][0]
+    if user.get('encryption', 'none') != 'none' or user.get('flow', '') not in ('', 'xtls-rprx-vision'):
+        raise ValueError('Unsupported VLESS encryption or flow')
+    reality = stream.get('realitySettings', {})
+    if reality.get('mldsa65Verify'):
+        raise ValueError('Post-quantum Reality verification needs manual conversion')
+    if not reality.get('publicKey') or not reality.get('serverName'):
+        raise ValueError('Reality public key and server name are required')
+    node = {
+        'name': name, 'type': 'vless', 'server': server['address'], 'port': int(server['port']),
+        'uuid': str(uuid.UUID(user['id'])), 'network': 'tcp', 'tls': True,
+        'servername': reality['serverName'], 'client-fingerprint': reality.get('fingerprint') or 'chrome',
+        'reality-opts': {'public-key': reality['publicKey'], 'short-id': reality.get('shortId', '')},
+        'udp': True, 'packet-encoding': 'xudp',
+    }
+    if user.get('flow'):
+        node['flow'] = user['flow']
+    return node
 
 
 def wireguard(path, name, mtu=None):
@@ -41,10 +110,10 @@ def wireguard(path, name, mtu=None):
     return node
 
 
-def routes(path):
+def routes(path, vpn_group='VPN'):
     """Translate this repository's Windows policy; fail on unsupported semantics."""
     result = []
-    mapping = {'direct': 'DIRECT', 'proxy': 'VPN', 'block': 'REJECT'}
+    mapping = {'direct': 'DIRECT', 'proxy': vpn_group, 'block': 'REJECT'}
     for rule in json.loads(Path(path).read_text(encoding='utf-8-sig')):
         if not rule.get('enabled', True):
             continue
@@ -99,10 +168,10 @@ def build(args):
             'ip': account['ipv4'], 'mtu': 1280, 'udp': True,
             'sni': 'consumer-masque.cloudflareclient.com'}
     own = wireguard(args.wireguard, 'My server', mtu=1280)
-    own['dialer-proxy'] = 'Server transport'
-    nodes = [own, warp]
-    if args.proton:
-        nodes.append(wireguard(args.proton, 'Proton'))
+    proton = wireguard(args.proton, 'Proton') if args.proton else None
+    vless = (vless_from_xray(args.vless_xray_config)
+             if getattr(args, 'vless_xray_config', None) else None)
+    nodes, groups = connection_choices(own, warp, vless, proton)
     return {
         'mixed-port': args.port, 'allow-lan': False, 'bind-address': '127.0.0.1',
         'mode': 'rule', 'log-level': 'warning', 'ipv6': False,
@@ -118,14 +187,12 @@ def build(args):
         'dns': {'enable': True, 'listen': f'127.0.0.1:{args.dns_port}', 'ipv6': False,
                 'enhanced-mode': 'fake-ip', 'fake-ip-range': '198.18.0.1/16',
                 'fake-ip-filter': ['*.lan', '*.local', 'localhost'],
-                'nameserver': ['https://1.1.1.1/dns-query#VPN'],
+                'nameserver': ['https://1.1.1.1/dns-query#' + quote(VPN_GROUP, safe='')],
                 'direct-nameserver': ['https://1.1.1.1/dns-query#DIRECT'],
                 'proxy-server-nameserver': ['https://1.1.1.1/dns-query#DIRECT']},
         'proxies': nodes,
-        'proxy-groups': [
-            {'name': 'VPN', 'type': 'select', 'proxies': [node['name'] for node in nodes]},
-            {'name': 'Server transport', 'type': 'select', 'proxies': ['WARP', 'DIRECT']}],
-        'rules': routes(args.rules),
+        'proxy-groups': groups,
+        'rules': routes(args.rules, VPN_GROUP),
     }
 
 
@@ -134,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--warp-account', required=True)
     parser.add_argument('--wireguard', required=True)
     parser.add_argument('--proton', help='Optional Proton WireGuard .conf')
+    parser.add_argument('--vless-xray-config', help='Optional private Xray config: import its proxy VLESS Reality outbound')
     parser.add_argument('--rules', default=str(Path(__file__).resolve().parents[1] / 'configs/v2rayn/windows/routes.json'))
     parser.add_argument('--interface', default='Ethernet')
     parser.add_argument('--warp-endpoint', default='162.159.198.2')
