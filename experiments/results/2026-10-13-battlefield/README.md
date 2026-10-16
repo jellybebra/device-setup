@@ -9,8 +9,6 @@
 - `control-probes.json`: STUN через физический интерфейс и обычный маршрут через TUN, загрузка CPU.
 - `isolated-stacks-partial.json`: отдельные mixed/system без default route; третья фаза gvisor не завершилась, её результата нет.
 - `isolated-stacks-cleanup.json`: независимая проверка отсутствия тестовых адаптеров, маршрутов и процессов после частичного теста.
-- `native-wg-idle.json`: 60 секунд, официальный Windows WireGuard и прежний sing-box WireGuard через общий WARP и частный UDP echo; Battlefield закрыт, основной v2rayN TUN выключен.
-- `native-wg-idle-cleanup.json`: автоматическое удаление service/маршрута, проверка default routes после первой native-серии.
 - `system-tun-idle.json`: успешный запуск основного TUN system, 15 секунд без игры.
 - `system-tun-probes.json`: 120 секунд контрольных STUN/CPU с основным system; матч закончился в начале серии.
 - `system-tun-kernel.json`: метки ядра той же серии, отдельно устойчивый фокус. Включает экран после матча; не считать полноценным игровым сравнением.
