@@ -1,0 +1,214 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "tag": "test-socks",
+      "listen": "192.168.3.1",
+      "port": 10808,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ],
+        "routeOnly": false
+      }
+    },
+    {
+      "tag": "transparent-tcp",
+      "listen": "0.0.0.0",
+      "port": 12345,
+      "protocol": "dokodemo-door",
+      "settings": {
+        "network": "tcp",
+        "followRedirect": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ],
+        "routeOnly": false
+      }
+    },
+    {
+      "tag": "udp-tunnel",
+      "listen": "127.0.0.1",
+      "port": 10810,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "ip": "127.0.0.1"
+      }
+    },
+    {
+      "tag": "lan-dns",
+      "listen": "0.0.0.0",
+      "port": 1053,
+      "protocol": "dokodemo-door",
+      "settings": {
+        "address": "1.1.1.1",
+        "port": 53,
+        "network": "tcp,udp"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIPv4"
+      }
+    },
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "server.example.com",
+            "port": 443,
+            "users": [
+              {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "server.example.com",
+          "fingerprint": "chrome",
+          "allowInsecure": false
+        }
+      }
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
+    },
+    {
+      "tag": "dpi",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "127.0.0.1",
+            "port": 10809
+          }
+        ]
+      }
+    },
+    {
+      "tag": "dns-out",
+      "protocol": "dns",
+      "settings": {
+        "network": "tcp",
+        "address": "1.1.1.1",
+        "port": 53,
+        "nonIPQuery": "skip"
+      },
+      "proxySettings": {
+        "tag": "proxy"
+      }
+    }
+  ],
+  "dns": {
+    "servers": [
+      "https+local://1.1.1.1/dns-query",
+      "https+local://8.8.8.8/dns-query"
+    ],
+    "queryStrategy": "UseIPv4",
+    "disableCache": false
+  },
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "type": "field",
+        "inboundTag": [
+          "lan-dns"
+        ],
+        "outboundTag": "dns-out"
+      },
+      {
+        "type": "field",
+        "ip": [
+          "10.0.0.0/8",
+          "127.0.0.0/8",
+          "169.254.0.0/16",
+          "172.16.0.0/12",
+          "192.168.0.0/16"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "network": "tcp",
+        "domain": [
+          "domain:youtube.com",
+          "domain:youtu.be",
+          "domain:youtube-nocookie.com",
+          "domain:googlevideo.com",
+          "domain:ytimg.com",
+          "domain:youtube.googleapis.com",
+          "domain:youtubei.googleapis.com",
+          "domain:youtubeembeddedplayer.googleapis.com",
+          "domain:jnn-pa.googleapis.com",
+          "domain:wide-youtube.l.google.com",
+          "domain:youtube-ui.l.google.com",
+          "domain:youtubekids.com",
+          "domain:yt3.ggpht.com",
+          "domain:yt4.ggpht.com",
+          "domain:yt3.googleusercontent.com",
+          "domain:ytimg.l.google.com"
+        ],
+        "outboundTag": "dpi"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:x.com",
+          "domain:twitter.com",
+          "domain:twimg.com",
+          "domain:t.co",
+          "domain:discord.com",
+          "domain:discord.gg",
+          "domain:discordapp.com",
+          "domain:discordapp.net",
+          "domain:discord.media",
+          "domain:discordcdn.com",
+          "domain:discordstatus.com",
+          "domain:dis.gd",
+          "domain:chatgpt.com",
+          "domain:openai.com",
+          "domain:oaistatic.com",
+          "domain:oaiusercontent.com",
+          "domain:claude.ai",
+          "domain:claude.com",
+          "domain:anthropic.com",
+          "domain:claudeusercontent.com",
+          "domain:telegram.org",
+          "domain:telegram.me",
+          "domain:t.me",
+          "domain:telesco.pe"
+        ],
+        "outboundTag": "proxy"
+      }
+    ]
+  }
+}
