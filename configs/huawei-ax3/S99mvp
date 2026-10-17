@@ -1,0 +1,9 @@
+#!/bin/sh
+case "$1" in
+    start)
+        # Never block Huawei's startup if our optional service is unavailable.
+        [ -r /data/mvp/boot.sh ] || exit 0
+        /bin/sh /data/mvp/boot.sh >/tmp/mvp-boot.log 2>&1 &
+        ;;
+esac
+exit 0

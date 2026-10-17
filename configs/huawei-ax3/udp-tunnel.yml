@@ -1,0 +1,16 @@
+tunnel:
+  name: mvpudp
+  mtu: 1500
+  multi-queue: false
+  ipv4: 198.18.0.1
+socks5:
+  address: 127.0.0.1
+  port: 10810
+  udp: udp
+misc:
+  task-stack-size: 24576
+  tcp-buffer-size: 4096
+  max-session-count: 128
+  udp-read-write-timeout: 60000
+  log-level: warn
+  log-file: stderr
