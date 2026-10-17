@@ -19,7 +19,7 @@ alive() {
     [ -r "/proc/$p/cmdline" ] && grep -q "$D/xray" "/proc/$p/cmdline"
 }
 ready() {
-    alive && netstat -lnt | grep -q ':12345 .*LISTEN' && netstat -lnt | grep -q '127.0.0.1:10810 .*LISTEN'
+    alive && netstat -lnt | grep -q ':12345 .*LISTEN' && netstat -lnt | grep -q '127.0.0.1:10810 .*LISTEN' && netstat -lnt | grep -q ':1053 .*LISTEN'
 }
 tun_alive() {
     [ -r "$TUNPID" ] || return 1
@@ -55,6 +55,11 @@ start_tun() {
     [ -f /proc/sys/net/ipv4/conf/$TUN/rp_filter ] && echo 0 > /proc/sys/net/ipv4/conf/$TUN/rp_filter
 }
 detach() {
+    for dns_addr in 192.168.3.1 192.168.155.1; do
+        for proto in udp tcp; do
+            while iptables -t nat -D PREROUTING -i br+ -s "$LAN" -d "$dns_addr" -p "$proto" --dport 53 -j REDIRECT --to-ports 1053 2>/dev/null; do :; done
+        done
+    done
     while iptables -D FORWARD -i br+ -s "$LAN" -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable 2>/dev/null; do :; done
     while iptables -t mangle -D PREROUTING -i br+ -s "$LAN" -p udp -j MVP_UDP 2>/dev/null; do :; done
     while iptables -t nat -D PREROUTING -i br+ -s "$LAN" -p tcp -j MVP_TCP 2>/dev/null; do :; done
@@ -77,9 +82,19 @@ guard() {
         iptables -A MVP_LAN -j DROP
     fi
     iptables -C INPUT -p tcp -m multiport --dports 10808,12345 -j MVP_LAN 2>/dev/null || iptables -I INPUT 1 -p tcp -m multiport --dports 10808,12345 -j MVP_LAN
+    for proto in tcp udp; do
+        iptables -C INPUT -p "$proto" --dport 1053 -j MVP_LAN 2>/dev/null || iptables -I INPUT 1 -p "$proto" --dport 1053 -j MVP_LAN
+    done
     iptables -C INPUT -p udp --dport 10808 -j MVP_LAN 2>/dev/null || iptables -I INPUT 1 -p udp --dport 10808 -j MVP_LAN
 }
 attach() {
+    # Replace only queries to Huawei's own DNS addresses, preserving explicit
+    # private DNS servers and LAN/mDNS traffic. Xray uses its existing DoH cache.
+    for dns_addr in 192.168.3.1 192.168.155.1; do
+        for proto in udp tcp; do
+            iptables -t nat -C PREROUTING -i br+ -s "$LAN" -d "$dns_addr" -p "$proto" --dport 53 -j REDIRECT --to-ports 1053 2>/dev/null || iptables -t nat -I PREROUTING 1 -i br+ -s "$LAN" -d "$dns_addr" -p "$proto" --dport 53 -j REDIRECT --to-ports 1053
+        done
+    done
     if ! iptables -t nat -n -L MVP_TCP >/dev/null 2>&1; then
         iptables -t nat -N MVP_TCP || return 1
         for cidr in $BYPASS; do

@@ -11,6 +11,7 @@ Keenetic не изменялся. Huawei LAN: 192.168.3.1. Правила рас
 - YouTube, googlevideo и связанные домены из списков Windows Zapret:
   напрямую через локальный tpws с разделением TLS-запроса.
 - Discord: сайт, API и служебные TCP-соединения через выбранный VLESS.
+- X/Twitter: x.com, twitter.com, twimg.com и t.co явно через VLESS.
 - Голос Discord: UDP-порты 19294–19344 и 50000–50100 напрямую,
   диапазоны взяты из пользовательского general (EXP).bat.
   Исключение действует по порту: другой UDP на тех же портах также прямой.
@@ -27,6 +28,57 @@ Keenetic не изменялся. Huawei LAN: 192.168.3.1. Правила рас
 поэтому его TCP оставлен через VLESS, а голос — напрямую ради низкого пинга.
 Процессные правила Windows на роутере недоступны. IPv6 не проксируется;
 во время проверки глобального IPv6 на LAN не было.
+
+## DNS для клиентов Huawei
+
+Штатный DNS через Keenetic возвращал REFUSED для abs.twimg.com; Huawei
+отвечал ошибкой или не отвечал. Сам x.com открывался, но его файлы не загружались.
+Теперь TCP/UDP-запросы к DNS Huawei (192.168.3.1 и 192.168.155.1, порт 53)
+перенаправляются на вход Xray 1053. Это действует на br0/br1, только после
+готовности Xray. При выключении сервиса перехват снимается и возвращается
+штатный DNS. Явно заданные другие локальные DNS-серверы не перехватываются.
+
+Оба приватных профиля дополнены следующими объектами (добавить к существующим
+массивам; два правила маршрутизации поставить первыми):
+
+```json
+{
+  "inbounds": [{
+    "tag": "lan-dns", "listen": "0.0.0.0", "port": 1053,
+    "protocol": "dokodemo-door",
+    "settings": {"address": "1.1.1.1", "port": 53, "network": "tcp,udp"}
+  }],
+  "outbounds": [{
+    "tag": "dns-out", "protocol": "dns",
+    "settings": {"network": "tcp", "address": "1.1.1.1", "port": 53, "nonIPQuery": "skip"},
+    "proxySettings": {"tag": "proxy"}
+  }],
+  "routing": {"rules": [
+    {"type": "field", "inboundTag": ["lan-dns"], "outboundTag": "dns-out"},
+    {"type": "field", "domain": ["domain:x.com", "domain:twitter.com", "domain:twimg.com", "domain:t.co"], "outboundTag": "proxy"}
+  ]},
+  "dns": {
+    "servers": ["https+local://1.1.1.1/dns-query", "https+local://8.8.8.8/dns-query"],
+    "queryStrategy": "UseIPv4", "disableCache": false
+  }
+}
+```
+
+A-запросы обслуживаются встроенным DNS-over-HTTPS с кешем; AAAA получают
+пустой успешный ответ в соответствии с IPv4-схемой. Остальные поддерживаемые
+типы запросов пересылаются по TCP через VLESS. Ограничение Xray 1.8.17:
+запросы HTTPS (тип 65) отбрасываются самим DNS outbound.
+Порт 1053 защищён тем же LAN-фильтром, что остальные служебные входы.
+
+Проверено после установки: UDP A/AAAA к X, трём доменам twimg, YouTube,
+Discord и example.com; TCP A к abs.twimg.com. Страница X и JavaScript
+с abs.twimg.com вернули HTTP 200; пользователь подтвердил загрузку X.
+Профили проверены командой Xray `run -test`; DNS-изменение проверено после
+перезапуска служб, отдельная перезагрузка всего роутера не выполнялась.
+Копии до изменения сохранены на роутере как profile-N.before-dns.json
+и mvp-service.before-dns.sh. При откате нужно вернуть вместе оба профиля
+и скрипт, предварительно остановив supervisor/watchdog и сняв перехват
+командой `off` текущего скрипта.
 
 ## Автозапуск
 
