@@ -7,13 +7,7 @@
 | Windows | Напрямую | Напрямую | [windows/routes.json](../configs/v2rayn/windows/routes.json) | [windows/xray-template.json](../configs/v2rayn/windows/xray-template.json) |
 | macOS | Через прокси | Через прокси | [macos/routes.json](../configs/v2rayn/macos/routes.json) | [macos/xray-template.json](../configs/v2rayn/macos/xray-template.json) |
 
-## Mozilla Add-ons
-
-В обоих профилях `addons.mozilla.org` и `addons.mozilla.net`, включая поддомены, направляются напрямую. Правило стоит первым в Routing Setting и в шаблоне Xray, выше блокировки рекламы и общих Geo-правил.
-
-12 октября 2026 года страница `https://addons.mozilla.org/en-US/firefox/user/20098860/` и главная Mozilla Add-ons возвращали HTTP 406 с пустым телом через текущий VPN. Запрос с сервера `test` дал тот же результат; его выходной IP совпал с выходом VPN. Через физический Ethernet без VPN страница отвечала HTTP 200 с `Client Challenge` от Fastly. Пользователь подтвердил, что профиль открывается с телефона без VPN, а после применения прямого маршрута — и на компьютере. Результаты указывают на отклонение VPN-выхода защитой сайта.
-
-После применения правил нажми **Reload** в v2rayN и повторно открой страницу. Если старая ошибка остаётся, переподключи TUN и полностью перезапусти браузер.
+## Mozilla Add-ons - напрямую (иначе не работают)
 
 ## Загрузки Steam
 
