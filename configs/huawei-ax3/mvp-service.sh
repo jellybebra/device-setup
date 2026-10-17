@@ -1,11 +1,13 @@
 #!/bin/sh
-# Huawei WS7100-20 debug firmware: LAN bridges, IPv4 TCP rules + VLESS UDP.
+# Huawei WS7100-20 debug firmware: TCP routing and selective UDP tunneling.
 D=/data/mvp
 LAN=192.168.0.0/16 # Main 192.168.3.0/24 and Huawei guest 192.168.155.0/24
 ADMIN=192.168.3.2/32
 TUNPID=/tmp/mvp-tun.pid
 DPIPID=/tmp/mvp-tpws.pid
 TUN=mvpudp
+# All other UDP uses native forwarding; do not send every game through tun2socks.
+UDP_TUNNEL_PORTS=53,7844
 BYPASS="0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 198.18.0.0/15 224.0.0.0/4 240.0.0.0/4"
 PID=/tmp/mvp-xray.pid
 LOCK=/tmp/mvp-watchdog.lock
@@ -107,10 +109,11 @@ attach() {
         for cidr in $BYPASS; do
             iptables -t mangle -A MVP_UDP -d "$cidr" -j RETURN || return 1
         done
-        iptables -t mangle -A MVP_UDP -j MARK --set-xmark 0x42/0xff || return 1
     fi
-    # Match voice ranges from the user's Windows Zapret EXP profile.
-    iptables -t mangle -C MVP_UDP -p udp -m multiport --dports 19294:19344,50000:50100 -j RETURN 2>/dev/null || iptables -t mangle -I MVP_UDP 1 -p udp -m multiport --dports 19294:19344,50000:50100 -j RETURN
+    # Install selective capture before removing the legacy catch-all rule.
+    iptables -t mangle -C MVP_UDP -p udp -m multiport --dports "$UDP_TUNNEL_PORTS" -j MARK --set-xmark 0x42/0xff 2>/dev/null || iptables -t mangle -A MVP_UDP -p udp -m multiport --dports "$UDP_TUNNEL_PORTS" -j MARK --set-xmark 0x42/0xff || return 1
+    while iptables -t mangle -D MVP_UDP -j MARK --set-xmark 0x42/0xff 2>/dev/null; do :; done
+    while iptables -t mangle -D MVP_UDP -p udp -m multiport --dports 19294:19344,50000:50100 -j RETURN 2>/dev/null; do :; done
     # tpws handles TCP only: make browsers fall back from QUIC without delay.
     iptables -C FORWARD -i br+ -s "$LAN" -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable 2>/dev/null || iptables -I FORWARD 1 -i br+ -s "$LAN" -p udp --dport 443 -j REJECT --reject-with icmp-port-unreachable
     ip route replace default dev "$TUN" table 142 || return 1
@@ -189,7 +192,7 @@ case "$1" in
         if [ -f "$D/enabled" ]; then echo 'Enabled'; else echo 'Disabled (direct Internet)'; fi
         if ready; then echo 'Xray ready'; else echo 'Xray not ready'; fi
         if iptables -t nat -C PREROUTING -i br+ -s "$LAN" -p tcp -j MVP_TCP 2>/dev/null; then echo 'TCP routing ACTIVE for Huawei LAN bridges (main and guest)'; else echo 'TCP routing inactive (direct Internet)'; fi
-        if tun_alive && iptables -t mangle -C PREROUTING -i br+ -s "$LAN" -p udp -j MVP_UDP 2>/dev/null; then echo 'UDP routing ACTIVE (EXP voice ports bypass; other UDP uses Xray rules)'; else echo 'UDP routing inactive'; fi
+        if tun_alive && iptables -t mangle -C PREROUTING -i br+ -s "$LAN" -p udp -j MVP_UDP 2>/dev/null; then echo "UDP native by default; ports $UDP_TUNNEL_PORTS use Xray rules; UDP/443 rejected"; else echo 'UDP routing inactive'; fi
         if dpi_alive; then echo 'Local tpws running (direct DPI bypass)'; else echo 'tpws not ready'; fi
         iptables -t nat -L MVP_TCP -n -v
         iptables -t mangle -L MVP_UDP -n -v
