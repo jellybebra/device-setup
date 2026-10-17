@@ -166,21 +166,28 @@
         "type": "field",
         "network": "tcp",
         "domain": [
+          "domain:youtubei.googleapis.com",
+          "domain:youtube.googleapis.com",
+          "domain:youtubeembeddedplayer.googleapis.com",
+          "domain:jnn-pa.googleapis.com",
+          "domain:ytimg.com",
+          "domain:yt3.ggpht.com",
+          "domain:yt4.ggpht.com",
+          "domain:yt3.googleusercontent.com"
+        ],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "network": "tcp",
+        "domain": [
           "domain:youtube.com",
           "domain:youtu.be",
           "domain:youtube-nocookie.com",
           "domain:googlevideo.com",
-          "domain:ytimg.com",
-          "domain:youtube.googleapis.com",
-          "domain:youtubei.googleapis.com",
-          "domain:youtubeembeddedplayer.googleapis.com",
-          "domain:jnn-pa.googleapis.com",
           "domain:wide-youtube.l.google.com",
           "domain:youtube-ui.l.google.com",
           "domain:youtubekids.com",
-          "domain:yt3.ggpht.com",
-          "domain:yt4.ggpht.com",
-          "domain:yt3.googleusercontent.com",
           "domain:ytimg.l.google.com"
         ],
         "outboundTag": "dpi"
