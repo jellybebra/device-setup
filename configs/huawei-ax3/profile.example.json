@@ -18,7 +18,12 @@
           "http",
           "tls"
         ],
-        "routeOnly": false
+        "routeOnly": false,
+        "domainsExcluded": [
+          "h2.cftunnel.com",
+          "quic.cftunnel.com",
+          "probe.cftunnel.com"
+        ]
       }
     },
     {
@@ -36,7 +41,12 @@
           "http",
           "tls"
         ],
-        "routeOnly": false
+        "routeOnly": false,
+        "domainsExcluded": [
+          "h2.cftunnel.com",
+          "quic.cftunnel.com",
+          "probe.cftunnel.com"
+        ]
       }
     },
     {
