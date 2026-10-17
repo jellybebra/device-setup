@@ -140,6 +140,12 @@
     "rules": [
       {
         "type": "field",
+        "network": "udp",
+        "port": "7844",
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
         "inboundTag": [
           "lan-dns"
         ],
