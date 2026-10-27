@@ -7,7 +7,7 @@ TUNPID=/tmp/mvp-tun.pid
 DPIPID=/tmp/mvp-tpws.pid
 TUN=mvpudp
 # All other UDP uses native forwarding; do not send every game through tun2socks.
-UDP_TUNNEL_PORTS=53,7844
+UDP_TUNNEL_PORTS=53,7844,19294:19344,50000:50099
 BYPASS="0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 198.18.0.0/15 224.0.0.0/4 240.0.0.0/4"
 PID=/tmp/mvp-xray.pid
 LOCK=/tmp/mvp-watchdog.lock

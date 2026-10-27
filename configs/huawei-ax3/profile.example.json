@@ -1,6 +1,7 @@
 {
   "log": {
-    "loglevel": "warning"
+    "loglevel": "warning",
+    "access": "none"
   },
   "inbounds": [
     {
@@ -132,8 +133,10 @@
         "port": 53,
         "nonIPQuery": "skip"
       },
-      "proxySettings": {
-        "tag": "proxy"
+      "streamSettings": {
+        "sockopt": {
+          "dialerProxy": "proxy"
+        }
       }
     }
   ],
@@ -151,7 +154,7 @@
       {
         "type": "field",
         "network": "udp",
-        "port": "7844",
+        "port": "7844,19294-19344,50000-50099",
         "outboundTag": "proxy"
       },
       {

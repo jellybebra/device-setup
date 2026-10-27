@@ -14,15 +14,16 @@
 | Веб-страницы YouTube и видеосерверы googlevideo | Напрямую через tpws, который разделяет TLS-запросы для обхода DPI |
 | API приложения YouTube, обложки ytimg и аватары | Через VLESS: отдельное правило перед прямым маршрутом YouTube |
 | X, служебные соединения Discord, перечисленные домены ChatGPT, Claude и Telegram | Через ваш VLESS-сервер |
-| Игровой UDP, голос Discord и другой UDP, кроме исключений ниже | Напрямую через обычный NAT роутера, без HEV/Xray |
+| Игровой и другой UDP, кроме исключений ниже | Напрямую через обычный NAT роутера, без HEV/Xray |
 | UDP/53 к внешним DNS и UDP/7844 | Через HEV/Xray; direct или proxy определяется профилем |
+| Голос Discord: UDP/19294–19344 и UDP/50000–50099 | Через HEV/Xray и VLESS |
 | DNS к адресу Huawei | Через встроенный DNS-over-HTTPS Xray |
 | Остальное | Напрямую; дополнительные правила добавляются в профиль |
 
 TCP обрабатывает Xray. UDP по умолчанию не проходит через пользовательский
 туннель: игры на разных серверах не требуют списка исключений по IP.
 Через hev-socks5-tunnel в Xray попадают только порты из `UDP_TUNNEL_PORTS`
-в скрипте; изначально это `53,7844`. В шаблоне UDP/7844 направлен через VLESS.
+в скрипте: `53,7844,19294:19344,50000:50099`. Голос Discord и UDP/7844 идут через VLESS.
 UDP/443 отклоняется, чтобы браузеры использовали TCP вместо QUIC.
 
 Cloudflare Tunnel использует `7844 → proxy` для TCP (HTTP/2) и UDP (QUIC).
@@ -87,18 +88,28 @@ su
 
 | Файл в папке | Откуда взять |
 | --- | --- |
-| `xray` | [Xray 1.8.17, Linux ARMv5](https://github.com/XTLS/Xray-core/releases/download/v1.8.17/Xray-linux-arm32-v5.zip): файл `xray` из ZIP |
+| `xray` | Xray 26.10.21, Linux ARMv5: совместимая сборка по инструкции ниже |
 | `hev-socks5-tunnel` | [Hev 2.19.0, linux-arm32](https://github.com/heiher/hev-socks5-tunnel/releases/download/2.19.0/hev-socks5-tunnel-linux-arm32), переименовать без суффикса платформы |
 | `tpws` | [Zapret v72.13](https://github.com/bol-van/zapret/releases/download/v72.13/zapret-v72.13.zip): `binaries/linux-arm/tpws` внутри архива |
 | `ca-certificates.crt` | [Набор корневых сертификатов curl](https://curl.se/ca/cacert.pem), сохранить под этим именем |
 | `mvp-service.sh`, `boot.sh`, `S99mvp`, `udp-tunnel.yml` | [Папка configs/huawei-ax3](../configs/huawei-ax3/) |
 | `profile-1.json`, `profile-2.json` | Подготовить на следующем шаге |
 
-Берите именно указанные ARM-сборки: варианты с аппаратным floating point
-на этой платформе не подходят. Версия Xray зафиксирована из-за совместимости
-со старым ядром; её нельзя без проверки заменить последним релизом.
-Шаблон не использует `geoip.dat` и `geosite.dat`, поэтому они не нужны.
-Shell-скрипты сохраняйте с переводами строк **LF**, без BOM.
+Для WS7100-20 нужен ARMv5 soft-float: у CPU нет VFP, а у ядра — `eventfd`.
+Xray 1.8.17 несовместим с новым REALITY; готовый 26.10.21 падает с `eventfd failed with 38`.
+Соберите 26.10.21 из отдельного worktree на теге `v26.10.21`:
+
+```sh
+python3 configs/huawei-ax3/build-xray-compatible.py \
+  --source /path/to/xray-worktree --work /path/to/build --output /path/to/upload/xray
+```
+
+Скрипт использует Go 1.27.3 и overlay с `pipe2` вместо отсутствующего `eventfd`;
+общая установка Go не меняется. Проверка `netpoll-smoke.go` с тем же overlay
+пройдена на роутере (TCP, UDP, таймеры). Перед заменой сохраните старый бинарник вне
+роутера и проверьте SHA-256; два Xray одновременно не запускайте — памяти мало.
+В старых профилях перенесите `proxySettings.tag` в `streamSettings.sockopt.dialerProxy`.
+Шаблону не нужны `geoip.dat`/`geosite.dat`. Shell-файлы сохраняйте с LF без BOM.
 
 ### 3. Подставьте свой VLESS-профиль
 
@@ -116,10 +127,9 @@ Shell-скрипты сохраняйте с переводами строк **L
 Пример рассчитан на VLESS TCP + TLS без Vision. Для REALITY, Vision или другого
 транспорта удобнее экспортировать **Xray JSON** рабочего профиля из клиента
 и заменить целиком только outbound VLESS, сохранив его тег `proxy`.
-Входы, DNS и остальные outbounds оставьте из шаблона. Для REALITY Xray 1.8.17
-использует `security: "reality"` и `realitySettings` с `serverName`, `fingerprint`,
-`publicKey`, `shortId`; новые поля и транспорты из свежих клиентов могут быть
-несовместимы с этой версией. Не отключайте проверку TLS-сертификата.
+Входы, DNS и остальные outbounds оставьте из шаблона. Для REALITY
+используйте `security: "reality"` и `realitySettings` с `serverName`, `fingerprint`,
+`publicKey`, `shortId`. Не отключайте проверку TLS-сертификата.
 
 `profile-2.json` подготовьте таким же способом для второго сервера. Если сервер
 один, скопируйте первый файл во второй. Скрипт выбирает готовые JSON-профили
@@ -293,6 +303,6 @@ supervisor продолжает работать до перезагрузки. 
   `Xray ready` и `TCP routing ACTIVE` в `status`; обычного обновления вкладки
   может быть недостаточно.
 - DNS использует DoH Cloudflare/Google; AAAA возвращается пустым из-за режима
-  `UseIPv4`. DNS outbound Xray 1.8.17 отбрасывает запросы типа HTTPS (65).
+  `UseIPv4`. DNS outbound отбрасывает запросы типа HTTPS (65).
 - Скрипты привязаны к старой debug-прошивке и версиям компонентов выше.
   Обновления прошивки и бинарников требуют отдельной проверки совместимости.
