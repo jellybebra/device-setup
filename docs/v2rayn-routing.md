@@ -46,6 +46,48 @@ python .\update-v2rayn.py --app-dir 'C:\Tools\v2rayN'
 
 Для отката закрой v2rayN и восстанови `guiNDB.db` из нужной резервной копии в его `guiConfigs`. Копия содержит также серверы и подписки на момент обновления. `guiNConfig.json` скрипт не меняет; его копия сохраняется для справки.
 
+## TUN включён, но sing-box не запущен
+
+Проверено на macOS с v2rayN 7.25.6 и sing-box 1.14.3. Переключатель
+**Enable Tun** может оставаться включённым после ошибки запуска ядра. При этом
+системный прокси продолжает обслуживать HTTP, а голос Discord может идти напрямую.
+Проверяйте процесс sing-box и его журнал, а не только переключатель.
+
+Если журнал содержит `Response Match Fields ... require match_response to be enabled`,
+причиной может быть сохранённый **sing-box Custom DNS** с правилом
+`{"server":"hosts_dns","ip_accept_any":true}`. Изменение Basic DNS Settings
+не исправляет уже включённый пользовательский JSON. Требования к таким правилам
+изменились в [sing-box 1.14](https://sing-box.sagernet.org/migration/#migrate-address-filter-fields-to-response-matching).
+
+Для этого конкретного случая используйте [repair-v2rayn-tun.py](../repair-v2rayn-tun.py):
+
+```bash
+# macOS: проверить сохранённые DNS-профили без изменения настроек
+python3 repair-v2rayn-tun.py --check
+# Применить исправление
+python3 repair-v2rayn-tun.py
+```
+
+На Windows укажите папку данных явно: `python repair-v2rayn-tun.py --data-dir 'C:\Tools\v2rayN'`.
+Она должна содержать `guiConfigs`, `binConfigs/configPre.json` от попытки запуска TUN
+и установленное ядро `bin/sing_box/sing-box` (на Windows — `sing-box.exe`).
+
+Скрипт исправляет оба сохранённых поля NormalDNS/TunDNS активного пользовательского
+DNS-профиля sing-box: вместо проверки ответа `ip_accept_any` задаёт точный список
+имён из того же `hosts.predefined`. Остальные DNS-правила, серверы и маршруты
+сохраняются. У исправляемого профиля также удаляется устаревший `independent_cache`.
+Нестандартные hosts-правила с файлами или дополнительными условиями скрипт не меняет.
+Перед записью проверяется конфигурация установленным sing-box и создаётся копия
+SQLite и `guiNConfig.json` в `backups/tun-dns-*` внутри папки данных.
+Повторное применение ничего не меняет. Это исправление пользовательского DNS,
+а не универсальное решение всех ошибок запуска TUN.
+
+После применения нажмите **Reload**. Убедитесь, что sing-box продолжает работать;
+на macOS `pgrep -fl sing-box` показывает процесс, а `route -n get IP_ГОЛОСОВОГО_СЕРВЕРА`
+— интерфейс `utun`. Переподключите голос при необходимости. Для отката закройте
+v2rayN и восстановите `guiNDB.db` из созданной копии; это вернёт всю базу на момент
+резервирования, включая серверы и подписки. Копию не публикуйте.
+
 ## Скачки пинга в Battlefield 6
 
 sing-box: Normal → AboveNormal/High - помогло, но не полноценно
