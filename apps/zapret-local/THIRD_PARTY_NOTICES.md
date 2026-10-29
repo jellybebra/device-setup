@@ -181,3 +181,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *******************************************************************************/
 ```
+
+## Telegram transport
+
+The application includes Flowseal/tg-ws-proxy at revision `307a384ab7f522e34bb1a045884d0bd90f40bee5` (MIT), with a local SOCKS transport adapter and application-owned lifecycle. The upstream source is unmodified. Python and its frozen dependencies are bundled; pinned package versions are in `telegram/build-requirements.txt`. Full notices, including the PSF, PyInstaller and dependency licenses, are included under `Contents/Resources/telegram/_internal/licenses/`.
+
+Upstream: https://github.com/Flowseal/tg-ws-proxy

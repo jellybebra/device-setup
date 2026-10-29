@@ -1,10 +1,10 @@
 # Zapret Local
 
-Нативное SwiftUI-приложение для строки меню macOS с сетевым помощником на Rust: единый локальный SOCKS5-прокси для YouTube и Discord, включая UDP. Интерфейс — включение, порт и запуск при входе в систему. Чёрно-белая иконка имеет прозрачный фон и адаптируется к светлой и тёмной строке меню.
+Нативное SwiftUI-приложение для строки меню macOS с сетевым помощником на Rust: единый локальный SOCKS5-прокси для YouTube, Discord, Instagram и медиа X/Twitter, включая UDP. Интерфейс — включение, порт и запуск при входе в систему. Чёрно-белая иконка имеет прозрачный фон и адаптируется к светлой и тёмной строке меню.
 
 ## Установка
 
-1. Скачайте `Zapret-Local_<версия>_universal.dmg` из GitHub Releases.
+1. Скачайте DMG из GitHub Releases: `Zapret-Local_<версия>_aarch64.dmg` для Apple Silicon или `Zapret-Local_<версия>_x86_64.dmg` для Intel.
 2. Перенесите **Zapret Local** в **Applications**, затем запустите.
 3. При первом включении подтвердите установку сетевого помощника системным паролем macOS. Python, Homebrew и окно Терминала для работы не нужны.
 
@@ -20,7 +20,7 @@
 socks://127.0.0.1:49946#Zapret-Local
 ```
 
-Направьте на этот профиль YouTube и Discord; остальные правила и выбранный VLESS остаются под управлением v2rayN. Приложение само не меняет настройки v2rayN, системного прокси или DNS и не отключает существующий TUN.
+Направьте на этот профиль YouTube, Discord, Instagram и X/Twitter; остальные правила и выбранный VLESS остаются под управлением v2rayN. Приложение само не меняет настройки v2rayN, системного прокси или DNS и не отключает существующий TUN.
 
 «Запускать при входе» управляет запуском приложения после входа в macOS. Приложение восстанавливает сохранённое состояние включения прокси. Закрытие маленькой панели оставляет приложение в строке меню; выход из приложения останавливает его прокси.
 
@@ -60,7 +60,7 @@ cargo test --locked --package zapret-core --package zapret-helper
 
 ## Релиз
 
-Workflow `.github/workflows/zapret-local-release.yml` запускается при push тега `zapret-vX.Y.Z` или вручную для уже существующего тега. Версия тега должна совпадать с `package.json` и workspace `Cargo.toml`.
+Workflow `.github/workflows/zapret-local-release.yml` запускается при push тега `zapret-vX.Y.Z` или вручную для уже существующего тега. Версия тега должна совпадать с `package.json` и workspace `Cargo.toml`. Apple Silicon и Intel собираются на отдельных нативных runners вместе со встроенным Telegram-мостом; релиз содержит два DMG и общий файл контрольных сумм.
 
 GitHub Actions выполняет проверки, собирает универсальное приложение и публикует DMG, SHA-256 и точные исходники Flowseal в GitHub Release. Для нынешней сборки Apple-секреты не требуются. Публикация начинается только после отправки тега, а не при обычном push ветки.
 
@@ -68,7 +68,7 @@ GitHub Actions выполняет проверки, собирает униве�
 
 Rust-прокси принимает SOCKS5 TCP CONNECT и UDP ASSOCIATE только на loopback. Исходящие сокеты, в том числе проверенный DoH, привязаны к физическому интерфейсу. Отдельное PF-правило направляет только трафик собственного broker UID и диапазона исходящих портов в частный utun движка. Общие правила PF, маршруты по умолчанию и чужие процессы не изменяются.
 
-Внутри одного Flowseal-процесса YouTube использует TCP `multidisorder`, а Discord — проверенную стратегию TCP fake и UDP fake для Discord/STUN. Поддерживаются публичные IPv4-назначения; это не VPN-сервер и не смена внешнего IP. Лицензии движка и зависимостей входят в пакет; см. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Внутри одного Flowseal-процесса YouTube, Instagram и медиа X используют TCP `multidisorder`, сам `x.com` — TCP fake с 12 повторами, а Discord — TCP fake и UDP fake для Discord/STUN. Для файлов интерфейса `abs.twimg.com` и фотографий `pbs.twimg.com` DNS запрашивает `twimg.twitter.map.fastly.net`, для `video.twimg.com` — `dualstack.video.twitter.map.fastly.net`. Эти Fastly-серверы обслуживают исходные имена X; на другом CDN наблюдались обрывы JS и изображений после первых 15 КБ. IP берётся из DNS, исходные URL, SNI и проверка сертификата сохраняются. Поддерживаются публичные IPv4-назначения; это не VPN-сервер и не смена внешнего IP. Лицензии движка и зависимостей входят в пакет; см. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Удаление
 
@@ -79,3 +79,11 @@ sudo /Library/PrivilegedHelperTools/com.jellybebra.zapret-local/zapret-helper --
 ```
 
 После этого удалите `Zapret Local.app` из Applications. Команда удаляет только собственный launchd-сервис, его сокет и установленный помощник.
+
+## Telegram Desktop
+
+Для Telegram используется [локальный MTProto → WebSocket-мост](telegram/README.md)
+на базе Flowseal/tg-ws-proxy с исходящим транспортом через SOCKS Zapret Local.
+Он входит в `.app` и DMG вместе с Python и зависимостями. Запускается и
+останавливается вместе с Zapret Local; отдельной установки и автозапуска нет.
+В меню приложения отображается статус и кнопка **Подключить Telegram**.

@@ -47,6 +47,9 @@ const FILES: [&str; 4] = [
     "tls_clienthello_www_google_com.bin",
 ];
 const YOUTUBE: &str = "youtube.com,youtu.be,youtube-nocookie.com,youtubekids.com,googlevideo.com,ytimg.com,youtubei.googleapis.com,youtube.googleapis.com,youtubeembeddedplayer.googleapis.com,yt3.ggpht.com,yt4.ggpht.com,yt3.googleusercontent.com,ytimg.l.google.com,wide-youtube.l.google.com,youtube-ui.l.google.com,yt-video-upload.l.google.com,jnn-pa.googleapis.com";
+// X itself works with the existing fake profile; its media needs multidisorder.
+const SOCIAL: &str =
+    "instagram.com,cdninstagram.com,igcdn.com,ig.me,fbcdn.net,twitter.com,twimg.com,t.co";
 static STOP: AtomicBool = AtomicBool::new(false);
 extern "C" fn stop_signal(_: libc::c_int) {
     STOP.store(true, Ordering::SeqCst);
@@ -338,7 +341,23 @@ fn engine_args(dir: &Path, drop_root: bool) -> Vec<String> {
         dir.join(FILES[2]).display()
     ));
     args.extend(["--new", "--filter-tcp=80,443"].map(String::from));
-    args.push(format!("--hostlist-domains={YOUTUBE}"));
+    // X itself needs fake TLS rather than the media split profile. Extra
+    // repeats reduce intermittent first-response stalls on its rotating edges.
+    args.extend(
+        [
+            "--hostlist-domains=x.com",
+            "--dpi-desync=fake",
+            "--dpi-desync-repeats=12",
+            "--dpi-desync-fooling=ts",
+        ]
+        .map(String::from),
+    );
+    args.push(format!(
+        "--dpi-desync-fake-tls={}",
+        dir.join(FILES[3]).display()
+    ));
+    args.extend(["--new", "--filter-tcp=80,443"].map(String::from));
+    args.push(format!("--hostlist-domains={YOUTUBE},{SOCIAL}"));
     args.extend(
         [
             "--dpi-desync=multidisorder",
@@ -1047,6 +1066,9 @@ fn handle_client(
     session: u64,
     shared: Arc<Mutex<Controller>>,
 ) -> Result<()> {
+    // Darwin accept inherits O_NONBLOCK from the listener. SO_RCVTIMEO does
+    // not make a nonblocking descriptor wait, so EAGAIN would busy-spin.
+    stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_millis(250)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let mut pending = Vec::new();
@@ -1279,17 +1301,42 @@ mod tests {
         assert!(!r.contains("60002"));
     }
     #[test]
-    fn engine_profiles_keep_youtube_before_discord_fallback() {
+    fn engine_profiles_keep_youtube_and_social_before_discord_fallback() {
         let args = engine_args(Path::new("/engine"), true);
         let yt = args
             .iter()
-            .position(|s| s.starts_with("--hostlist-domains="))
+            .position(|s| s.starts_with("--hostlist-domains=youtube.com,"))
             .unwrap();
         let fallback = args
             .iter()
             .position(|s| s == "--filter-tcp=80,443,2053,2083,2087,2096,8443")
             .unwrap();
         assert!(yt < fallback);
+        let x = args
+            .iter()
+            .position(|s| s == "--hostlist-domains=x.com")
+            .unwrap();
+        assert!(x < yt);
+        assert_eq!(
+            &args[x + 1..x + 4],
+            &[
+                "--dpi-desync=fake",
+                "--dpi-desync-repeats=12",
+                "--dpi-desync-fooling=ts"
+            ]
+        );
+        let hosts = args[yt].strip_prefix("--hostlist-domains=").unwrap();
+        let domains: Vec<_> = hosts.split(',').collect();
+        for domain in [
+            "youtube.com",
+            "instagram.com",
+            "cdninstagram.com",
+            "fbcdn.net",
+            "twimg.com",
+        ] {
+            assert!(domains.contains(&domain));
+        }
+        assert!(!domains.contains(&"x.com"));
         assert!(args.contains(&"--dpi-desync=multidisorder".into()));
         assert!(args.contains(&"--filter-l7=discord,stun".into()));
         assert_eq!(args[0], "--uid=60005:65534");
@@ -1385,6 +1432,33 @@ mod tests {
             .contains("PF cleanup failed"));
         assert!(controller.worker.is_none());
     }
+    #[test]
+    fn accepted_nonblocking_ipc_socket_is_reset_before_waiting() {
+        let (mut client, server) = UnixStream::pair().unwrap();
+        // Darwin accept inherits O_NONBLOCK from our nonblocking listener.
+        server.set_nonblocking(true).unwrap();
+        let observed = server.try_clone().unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        let state = Arc::new(Mutex::new(Controller::new()));
+        let handler = thread::spawn(move || handle_client(server, 77, state).unwrap());
+        client.write_all(b"{\"command\":\"status\"}\n").unwrap();
+        let mut response = String::new();
+        BufReader::new(client.try_clone().unwrap())
+            .read_line(&mut response)
+            .unwrap();
+        let flags = unsafe { libc::fcntl(observed.as_raw_fd(), libc::F_GETFL) };
+        drop(client);
+        handler.join().unwrap();
+        assert!(flags >= 0);
+        assert_eq!(
+            flags & libc::O_NONBLOCK,
+            0,
+            "idle IPC reads must wait instead of spinning"
+        );
+    }
+
     #[test]
     fn another_connection_cannot_stop_or_release_the_owner() {
         let shared = Arc::new(Mutex::new(Controller::new()));
