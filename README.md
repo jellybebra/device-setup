@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | [AGENTS.md](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация, деплой и настройка Ubuntu Server |
 | [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN, исключения Cloudflare Tunnel и [приоритет sing-box для игр](docs/v2rayn-routing.md#приоритет-sing-box-в-windows) |
+| [Zapret Local](apps/zapret-local/README.md) | macOS 14+ | Приложение в строке меню: локальный SOCKS5 для YouTube и Discord, настройка порта, автозапуск и готовый DMG |
 | [Huawei AX3](docs/huawei-ax3.md) | Huawei WS7100-20 | Установка VLESS на роутер: свой профиль, прямой UDP для игр и голоса, YouTube через tpws, DNS-over-HTTPS и автозапуск |
 | [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
 | [UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |

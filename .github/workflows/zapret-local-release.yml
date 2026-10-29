@@ -1,0 +1,112 @@
+name: Zapret Local macOS release
+
+on:
+  push:
+    tags:
+      - 'zapret-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag, for example zapret-v0.1.0'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zapret-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/zapret-local
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '14.0'
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/zapret-local/package-lock.json
+      - name: Validate release tag and versions
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const tag = process.env.RELEASE_TAG;
+          if (!/^zapret-v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?$/.test(tag)) throw new Error('Invalid release tag');
+          const version = tag.slice('zapret-v'.length);
+          const pkg = JSON.parse(readFileSync('package.json'));
+          const cargo = readFileSync('Cargo.toml', 'utf8').match(/^version = "([^"]+)"$/m)?.[1];
+          if ([pkg.version, cargo].some(value => value !== version)) throw new Error('Tag and application versions differ');
+          JS
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "$RELEASE_TAG^{commit}")"
+      - name: Prepare Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+          rustup default stable
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - name: Install locked build dependencies
+        run: npm ci
+      - name: Prepare bundled engine and helper
+        run: node scripts/prepare-release.mjs --target universal-apple-darwin
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Test broker and privileged-helper logic
+        run: cargo test --locked --package zapret-core --package zapret-helper
+      - name: Check Rust diagnostics
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Build universal app and sealed DMG
+        run: npm run build -- --target universal-apple-darwin --ui-only
+      - name: Verify app dependencies and signatures
+        run: |
+          codesign --verify --deep --strict 'dist/universal-apple-darwin/Zapret Local.app'
+          lipo -verify_arch arm64 x86_64 'dist/universal-apple-darwin/Zapret Local.app/Contents/MacOS/zapret-helper'
+          cd .build/dist
+          shasum -a 256 -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zapret-local-release
+          path: |
+            apps/zapret-local/.build/dist/*.dmg
+            apps/zapret-local/.build/dist/flowseal-source-*.tar.gz
+            apps/zapret-local/.build/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: zapret-local-release
+          path: release
+      - name: Publish ready-to-install DMG
+        run: |
+          cat > release-notes.txt <<'NOTES'
+          Zapret Local для macOS 14 и новее, Apple Silicon и Intel.
+
+          Скачайте DMG, перенесите приложение в Applications и запустите его. Прокси управляется из строки меню. Python и Homebrew не нужны.
+
+          Эта сборка имеет локальную ad-hoc подпись, без Developer ID и нотарификации Apple. При первом открытии macOS может потребовать «Открыть всё равно» в разделе «Конфиденциальность и безопасность». Сетевой помощник устанавливается с отдельным системным подтверждением администратора.
+
+          SHA256SUMS.txt содержит контрольные суммы; исходники включённого движка приложены отдельным архивом.
+          NOTES
+          gh release create "$RELEASE_TAG" release/* --verify-tag \
+            --title "Zapret Local ${RELEASE_TAG#zapret-v}" --notes-file release-notes.txt
