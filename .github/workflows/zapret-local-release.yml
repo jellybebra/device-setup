@@ -84,6 +84,9 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Test broker and privileged-helper logic
         run: cargo test --locked --package zapret-core --package zapret-helper
+      - name: Test v2rayN routing priorities
+        working-directory: .
+        run: python3 -m unittest -v test_v2rayn_zapret.py
       - name: Check Rust diagnostics
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Build native app and sealed DMG

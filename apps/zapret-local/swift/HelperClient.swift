@@ -7,6 +7,8 @@ struct HelperReply: Decodable, Sendable {
     let port: UInt16
     let error: String?
     let version: String
+    let protocolVersion: Int?
+    let selection: StrategySelection?
 }
 
 struct ProxyError: LocalizedError, Sendable {
@@ -61,9 +63,10 @@ final class HelperClient {
         descriptor = -1
     }
 
-    func request(_ command: String, port: UInt16? = nil) throws -> HelperReply {
+    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil) throws -> HelperReply {
         var request: [String: Any] = ["command": command]
         if let port { request["port"] = Int(port) }
+        if let selection { request["selection"] = ["strategy": selection.strategy, "ipset": selection.ipset] }
         var data = try JSONSerialization.data(withJSONObject: request)
         data.append(10)
         try data.withUnsafeBytes { buffer in
@@ -90,6 +93,7 @@ final class HelperClient {
         guard reply.version == (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") else {
             throw ProxyError("Сетевой помощник требует обновления")
         }
+        guard reply.protocolVersion == 2 else { throw ProxyError("Сетевой помощник требует обновления для выбора стратегий") }
         return reply
     }
 }
