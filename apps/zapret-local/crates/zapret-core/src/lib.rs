@@ -455,6 +455,33 @@ impl Resolver {
         self.resolve_using(host, false).await
     }
 
+    fn discard_failed_address(&self, host: &Host, address: Ipv4Addr) {
+        if let Host::Domain(name) = host {
+            let mut cache = self.cache.lock().unwrap();
+            // Another connection may already have found a working CDN edge.
+            if cache
+                .get(name)
+                .is_some_and(|(_, cached)| *cached == address)
+            {
+                cache.remove(name);
+            }
+        }
+    }
+
+    async fn connect(&self, host: Host, port: u16, alternate: bool) -> Result<(TcpStream, Lease)> {
+        let address = self.resolve_using(host.clone(), alternate).await?;
+        match self.pool.tcp(SocketAddrV4::new(address, port)).await {
+            Ok(connection) => Ok(connection),
+            Err(error) => {
+                // DNS success is not evidence that the returned edge is
+                // reachable. In particular, don't retain a failed fallback
+                // answer and force every subsequent request to wait on it.
+                self.discard_failed_address(&host, address);
+                Err(error)
+            }
+        }
+    }
+
     async fn resolve_using(&self, host: Host, google: bool) -> Result<Ipv4Addr> {
         let name = match host {
             Host::Ip(ip) => return public_ipv4(ip, self.pool.test_loopback),
@@ -621,19 +648,14 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
     match command {
         1 if port != 0 => {
             let remote = async {
-                let first = async {
-                    let address = resolver.resolve(host.clone()).await?;
-                    pool.tcp(SocketAddrV4::new(address, port)).await
-                }
-                .await;
+                let first = resolver.connect(host.clone(), port, false).await;
                 if first.is_ok() || matches!(host, Host::Ip(_)) {
                     return first;
                 }
                 // Different DoH providers can return different CDN edges. Retry
                 // failed DNS/TCP setup through Google, still on our physical
                 // interface and source-port pool, never through the system VPN.
-                let address = resolver.resolve_using(host, true).await?;
-                pool.tcp(SocketAddrV4::new(address, port)).await
+                resolver.connect(host, port, true).await
             }
             .await;
             match remote {
