@@ -3,9 +3,27 @@ import ServiceManagement
 import AppKit
 import Darwin
 
+struct StrategySelection: Codable, Equatable, Sendable {
+    var strategy = "local"
+    var ipset = "cloudflare"
+}
+
+struct StrategyPreset: Decodable, Identifiable, Sendable {
+    let id: String
+    let title: String
+    static let all: [StrategyPreset] = {
+        let local = StrategyPreset(id: "local", title: "Моя проверенная настройка")
+        guard let file = Bundle.main.resourceURL?.appendingPathComponent("engine/strategies.json"),
+              let data = try? Data(contentsOf: file),
+              let presets = try? JSONDecoder().decode([StrategyPreset].self, from: data) else { return [local] }
+        return [local] + presets
+    }()
+}
+
 struct ProxySettings: Codable, Sendable {
     var port: UInt16 = 49946
     var lastEnabled = false
+    var selection: StrategySelection?
 }
 
 struct ProxyState: Sendable {
@@ -13,6 +31,7 @@ struct ProxyState: Sendable {
     var running = false
     var error: String?
     var telegram = TelegramState()
+    var selection = StrategySelection()
 }
 
 actor ProxyService {
@@ -21,6 +40,7 @@ actor ProxyService {
     private var client: HelperClient?
     private var running = false
     private var error: String?
+    private var reconnectAfter = Date.distantPast
     private let settingsURL: URL
 
     init() {
@@ -94,7 +114,7 @@ actor ProxyService {
         if running { return }
         try checkPort(settings.port)
         try connect(allowInstall: allowInstall)
-        let reply = try client!.request("start", port: settings.port)
+        let reply = try client!.request("start", port: settings.port, selection: settings.selection ?? StrategySelection())
         running = reply.running
         guard reply.ok, reply.running, reply.port == settings.port else {
             throw ProxyError(reply.error ?? "Не удалось запустить прокси")
@@ -113,10 +133,17 @@ actor ProxyService {
 
     func state() -> ProxyState {
         telegram.sync(enabled: running, socks: settings.port)
-        return ProxyState(port: settings.port, running: running, error: error, telegram: telegram.state)
+        return ProxyState(port: settings.port, running: running, error: error, telegram: telegram.state, selection: settings.selection ?? StrategySelection())
     }
 
     func telegramURL() -> URL? { telegram.connectionURL() }
+
+    func setTelegramPort(_ port: UInt16) -> ProxyState {
+        error = nil
+        do { try telegram.setPort(port, socks: settings.port, enabled: running) }
+        catch { self.error = error.localizedDescription }
+        return state()
+    }
 
     func resume() -> ProxyState {
         if settings.lastEnabled {
@@ -142,6 +169,7 @@ actor ProxyService {
         let previous = settings.port
         let wasRunning = running
         do {
+            guard port != telegram.state.port else { throw ProxyError("Порты Telegram и Zapret должны отличаться") }
             try checkPort(port)
             if wasRunning { try stop() }
             settings.port = port
@@ -151,6 +179,31 @@ actor ProxyService {
             } catch {
                 try? stop()
                 settings.port = previous
+                if wasRunning { try? start(allowInstall: false) }
+                throw error
+            }
+        } catch { self.error = error.localizedDescription }
+        return state()
+    }
+
+    func setSelection(_ selection: StrategySelection, force: Bool = false) -> ProxyState {
+        guard force || selection != (settings.selection ?? StrategySelection()) else { return state() }
+        guard StrategyPreset.all.contains(where: { $0.id == selection.strategy }),
+              ["none", "cloudflare", "loaded", "any"].contains(selection.ipset) else {
+            error = "Неизвестная стратегия"; return state()
+        }
+        let previous = settings.selection
+        let wasRunning = running || settings.lastEnabled
+        error = nil
+        do {
+            try stop()
+            settings.selection = selection
+            do {
+                if wasRunning { try start(allowInstall: true) }
+                try save()
+            } catch {
+                try? stop()
+                settings.selection = previous
                 if wasRunning { try? start(allowInstall: false) }
                 throw error
             }
@@ -173,6 +226,11 @@ actor ProxyService {
                 self.error = error.localizedDescription
             }
         }
+        if !running && settings.lastEnabled && Date() >= reconnectAfter {
+            reconnectAfter = Date().addingTimeInterval(10)
+            do { try start(allowInstall: false); error = nil }
+            catch { self.error = error.localizedDescription }
+        }
         return state()
     }
 
@@ -190,6 +248,7 @@ final class ProxyModel: ObservableObject {
     @Published private(set) var busy = false
     @Published private(set) var autostart = false
     @Published var portText = "49946"
+    @Published var telegramPortText = "44950"
     @Published var notice: String?
     private let service = ProxyService()
     private var monitor: Task<Void, Never>?
@@ -211,7 +270,10 @@ final class ProxyModel: ObservableObject {
 
     private func update(_ newState: ProxyState, updatePort: Bool = true) {
         state = newState
-        if updatePort { portText = String(newState.port) }
+        if updatePort {
+            portText = String(newState.port)
+            telegramPortText = String(newState.telegram.port)
+        }
     }
 
     func toggle() {
@@ -239,6 +301,47 @@ final class ProxyModel: ObservableObject {
         }
     }
 
+    func selectStrategy(_ id: String) {
+        var selection = state.selection; selection.strategy = id; applySelection(selection)
+    }
+
+    func applyTelegramPort() {
+        guard !busy else { return }
+        guard let port = UInt16(telegramPortText), (try? ProxyService.validatePort(port)) != nil else {
+            notice = "Порт: 1024–65535, кроме служебных 42600–43623"
+            return
+        }
+        busy = true; notice = nil
+        Task {
+            update(await service.setTelegramPort(port))
+            busy = false
+        }
+    }
+
+    func copyTelegram() {
+        Task {
+            if let url = await service.telegramURL() {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(url.absoluteString, forType: .string)
+            }
+        }
+    }
+
+    func selectIPSet(_ mode: String) {
+        var selection = state.selection; selection.ipset = mode; applySelection(selection)
+    }
+
+    func reconnect() { applySelection(state.selection, force: true) }
+
+    private func applySelection(_ selection: StrategySelection, force: Bool = false) {
+        guard !busy else { return }
+        busy = true; notice = nil
+        Task {
+            update(await service.setSelection(selection, force: force))
+            busy = false
+        }
+    }
+
     func setAutostart(_ enabled: Bool) {
         guard !busy else { return }
         notice = nil
@@ -261,11 +364,6 @@ final class ProxyModel: ObservableObject {
     func copyProxy() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString("socks://127.0.0.1:\(state.port)#Zapret-Local", forType: .string)
-        notice = "Ссылка скопирована"
-        Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            if notice == "Ссылка скопирована" { notice = nil }
-        }
     }
 
     func connectTelegram() {

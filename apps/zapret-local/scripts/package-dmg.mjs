@@ -1,7 +1,7 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { root, revision, payloads, run, targetArgument, output } from './common.mjs';
+import { root, revision, payloads, lists, run, targetArgument, output } from './common.mjs';
 
 const target = targetArgument();
 const config = JSON.parse(readFileSync(join(root, 'package.json')));
@@ -19,7 +19,7 @@ const manifest = JSON.parse(readFileSync(manifestPath));
 if (manifest.commit !== revision) throw new Error('Unexpected engine revision in bundle.');
 // The build signs nested executables while assembling the app. Signing can change
 // Mach-O bytes, so the installer manifest must describe the final binary.
-for (const file of ['utunws', ...payloads]) {
+for (const file of ['utunws', ...payloads, ...lists]) {
   manifest.sha256[file] = createHash('sha256').update(readFileSync(join(engine, file))).digest('hex');
 }
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');

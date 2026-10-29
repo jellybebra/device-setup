@@ -5,7 +5,8 @@ import { dirname, resolve } from 'node:path';
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const revision = '94c3b5125b4904ce2f6aec0e2197fe17f2fadf14';
 export const upstream = 'https://github.com/Flowseal/zapret-mac-discord-youtube.git';
-export const payloads = ['ACTIVE_DISCORD_UDP.bin', 'quic_initial_www_google_com.bin', 'tls_clienthello_www_google_com.bin'];
+export const payloads = ['ACTIVE_DISCORD_UDP.bin', 'quic_initial_www_google_com.bin', 'tls_clienthello_www_google_com.bin', 'tls_clienthello_4pda_to.bin', 'tls_clienthello_max_ru.bin', 'stun.bin', 'stun2.bin'];
+export const lists = ['list-general.txt', 'list-google.txt', 'list-general-user.txt', 'list-exclude.txt', 'list-exclude-user.txt', 'ipset-all.txt', 'ipset-exclude.txt', 'ipset-exclude-user.txt', 'ipset-any.txt', 'ipset-none.txt', 'cloudflare-ipv4.txt', 'strategies.json'];
 
 export function run(program, args, options = {}) {
   return execFileSync(program, args, { cwd: root, stdio: 'inherit', ...options });

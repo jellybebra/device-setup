@@ -1,5 +1,8 @@
 //! Root helper with a deliberately small local API. Never modifies default
 //! routes, system DNS, other PF anchors, v2rayN or unrelated processes.
+mod strategies;
+use strategies::Selection;
+
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -40,11 +43,27 @@ const PORT_FIRST: u16 = 42600;
 const PORT_LAST: u16 = 43623;
 const DEFAULT_PORT: u16 = 49946;
 const COMMIT: &str = "94c3b5125b4904ce2f6aec0e2197fe17f2fadf14";
-const FILES: [&str; 4] = [
+const FILES: [&str; 20] = [
     "utunws",
     "ACTIVE_DISCORD_UDP.bin",
     "quic_initial_www_google_com.bin",
     "tls_clienthello_www_google_com.bin",
+    "tls_clienthello_4pda_to.bin",
+    "tls_clienthello_max_ru.bin",
+    "list-general.txt",
+    "list-google.txt",
+    "list-general-user.txt",
+    "list-exclude.txt",
+    "list-exclude-user.txt",
+    "ipset-all.txt",
+    "ipset-exclude.txt",
+    "ipset-exclude-user.txt",
+    "ipset-any.txt",
+    "ipset-none.txt",
+    "cloudflare-ipv4.txt",
+    "strategies.json",
+    "stun.bin",
+    "stun2.bin",
 ];
 const YOUTUBE: &str = "youtube.com,youtu.be,youtube-nocookie.com,youtubekids.com,googlevideo.com,ytimg.com,youtubei.googleapis.com,youtube.googleapis.com,youtubeembeddedplayer.googleapis.com,yt3.ggpht.com,yt4.ggpht.com,yt3.googleusercontent.com,ytimg.l.google.com,wide-youtube.l.google.com,youtube-ui.l.google.com,yt-video-upload.l.google.com,jnn-pa.googleapis.com";
 // X itself works with the existing fake profile; its media needs multidisorder.
@@ -60,6 +79,7 @@ extern "C" fn stop_signal(_: libc::c_int) {
 struct Request {
     command: String,
     port: Option<u16>,
+    selection: Option<Selection>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +89,10 @@ struct Response {
     port: u16,
     error: Option<String>,
     version: String,
+    #[serde(default)]
+    selection: Selection,
+    #[serde(rename = "protocolVersion", default)]
+    protocol_version: u32,
 }
 impl Response {
     fn stopped(port: u16) -> Self {
@@ -78,6 +102,8 @@ impl Response {
             port,
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
+            selection: Selection::default(),
+            protocol_version: 2,
         }
     }
     fn failure(port: u16, error: impl ToString) -> Self {
@@ -706,7 +732,12 @@ fn interrupted() -> Result<()> {
     Ok(())
 }
 
-fn preflight(port: u16, directory: &Path, protected: bool) -> Result<Network> {
+fn preflight(
+    port: u16,
+    directory: &Path,
+    protected: bool,
+    selection: &Selection,
+) -> Result<Network> {
     valid_port(port)?;
     resources(directory, protected)?;
     assert_unused_uid(BROKER_UID)?;
@@ -725,7 +756,7 @@ fn preflight(port: u16, directory: &Path, protected: bool) -> Result<Network> {
         }
     }
     ensure!(free >= 64, "Too few free source ports for the proxy");
-    let mut args = engine_args(directory, false);
+    let mut args = selection.args(directory, false)?;
     args.push("--dry-run".into());
     checked(
         directory
@@ -738,13 +769,13 @@ fn preflight(port: u16, directory: &Path, protected: bool) -> Result<Network> {
     Ok(network)
 }
 
-fn worker(port: u16) -> Result<()> {
+fn worker(port: u16, selection: Selection) -> Result<()> {
     root_required()?;
     signals();
     descriptor_limit()?;
     let _lock = lock_file(WORKER_LOCK)?;
     let directory = Path::new(INSTALL).join("engine");
-    let network = preflight(port, &directory, true)?;
+    let network = preflight(port, &directory, true, &selection)?;
     let (unit, utun, local, peer) = choose_utun()?;
     let main = checked("/sbin/pfctl", &["-sr"], None)?;
     ensure!(
@@ -769,7 +800,7 @@ fn worker(port: u16) -> Result<()> {
         .open(stage.path().join("engine.log"))?;
     let mut command = Command::new(directory.join("utunws"));
     command
-        .args(engine_args(&directory, true))
+        .args(selection.args(&directory, true)?)
         .env_clear()
         .env("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
         .env("ZAPRET_IFACE", &network.interface)
@@ -883,9 +914,17 @@ struct WorkerProcess {
     output: BufReader<ChildStdout>,
 }
 impl WorkerProcess {
-    fn start(port: u16) -> Result<Self> {
+    fn start(port: u16, selection: &Selection) -> Result<Self> {
         let mut child = Command::new(Path::new(INSTALL).join("zapret-helper"))
-            .args(["--worker", "--port", &port.to_string()])
+            .args([
+                "--worker",
+                "--port",
+                &port.to_string(),
+                "--strategy",
+                &selection.strategy,
+                "--ipset",
+                &selection.ipset,
+            ])
             .env_clear()
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -1022,27 +1061,34 @@ impl Controller {
         if req.command != "start" {
             return self.reject("Unknown command");
         }
+        let selection = req.selection.unwrap_or_default();
+        if let Err(e) = selection.validate() {
+            return self.reject(e);
+        }
         let port = req.port.unwrap_or(DEFAULT_PORT);
         if let Err(e) = valid_port(port) {
             return self.reject(e);
         }
-        if self.worker.is_some() && self.status.port == port {
+        if self.worker.is_some() && self.status.port == port && self.status.selection == selection {
             return self.status.clone();
         }
         // Check a new port before stopping an existing listener.
-        if TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_err() {
+        if (self.worker.is_none() || self.status.port != port)
+            && TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_err()
+        {
             return self.reject("Proxy port is already occupied");
         }
         self.stop();
         if !self.status.ok {
             return self.status.clone();
         }
-        match WorkerProcess::start(port) {
+        match WorkerProcess::start(port, &selection) {
             Ok(worker) => {
                 self.worker = Some(worker);
                 self.owner = Some(session);
                 self.status = Response {
                     running: true,
+                    selection,
                     ..Response::stopped(port)
                 };
             }
@@ -1243,6 +1289,11 @@ fn main_inner() -> Result<()> {
         .map(|v| v.parse())
         .transpose()?
         .unwrap_or(DEFAULT_PORT);
+    let selection = Selection {
+        strategy: value(&args, "--strategy")?.unwrap_or_else(|| "local".into()),
+        ipset: value(&args, "--ipset")?.unwrap_or_else(|| "cloudflare".into()),
+    };
+    selection.validate()?;
     match args.first().map(String::as_str) {
         Some("--version") => println!("{}", env!("CARGO_PKG_VERSION")),
         Some("--install") => {
@@ -1252,11 +1303,11 @@ fn main_inner() -> Result<()> {
         }
         Some("--serve") => serve()?,
         Some("--uninstall") => uninstall()?,
-        Some("--worker") => worker(port)?,
+        Some("--worker") => worker(port, selection.clone())?,
         Some("--broker") => broker(value(&args, "--interface")?.context("Missing interface")?, value(&args, "--source-ip")?.context("Missing source IP")?.parse()?, port)?,
         Some("--check") => {
             let resources = value(&args, "--resources")?.map(PathBuf::from).unwrap_or(bundled_resources()?);
-            let net = preflight(port, &resources, false)?;
+            let net = preflight(port, &resources, false, &selection)?;
             let (_, tun, _, peer) = choose_utun()?;
             println!("{}", serde_json::json!({"ready":true,"port":port,"network":net,"anchor":ANCHOR,"rules":rules(net.source,&tun,&peer)}));
         }

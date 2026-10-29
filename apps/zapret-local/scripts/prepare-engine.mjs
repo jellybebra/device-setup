@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { root, revision, upstream, payloads, run, output } from './common.mjs';
+import { root, revision, upstream, payloads, lists, run, output } from './common.mjs';
 
 if (process.platform !== 'darwin') throw new Error('The native engine must be built on macOS.');
 const build = join(root, '.build');
@@ -31,10 +31,18 @@ for (const name of ['utunws', ...payloads]) {
   copyFileSync(source, join(destination, name));
   chmodSync(join(destination, name), name === 'utunws' ? 0o755 : 0o644);
 }
+for (const name of lists) {
+  const source = ['strategies.json', 'cloudflare-ipv4.txt'].includes(name)
+    ? join(root, 'resources', name)
+    : join(checkout, 'macos/Payload', name.startsWith('ipset-any') || name.startsWith('ipset-none') ? '' : 'default-lists', name);
+  copyFileSync(source, join(destination, name));
+}
+// Keep the application's existing social sites available in every upstream preset.
+writeFileSync(join(destination, 'list-general-user.txt'), 'instagram.com\ncdninstagram.com\nigcdn.com\nig.me\nfbcdn.net\nx.com\ntwitter.com\ntwimg.com\nt.co\n');
 // Sign before hashing. The final bundle step refreshes the manifest after
 // nested-code signing, then signs the outer app without modifying nested code.
 run('/usr/bin/codesign', ['--force', '--sign', '-', join(destination, 'utunws')]);
-const hashes = Object.fromEntries(['utunws', ...payloads].map(name => [name,
+const hashes = Object.fromEntries(['utunws', ...payloads, ...lists].map(name => [name,
   createHash('sha256').update(readFileSync(join(destination, name))).digest('hex')]));
 writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ source: upstream.replace(/\.git$/, ''), commit: revision, sha256: hashes }, null, 2) + '\n');
 copyFileSync(join(checkout, 'LICENSE'), join(destination, 'FLOWSEAL-LICENSE.txt'));

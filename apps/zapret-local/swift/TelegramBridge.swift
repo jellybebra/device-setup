@@ -27,6 +27,12 @@ final class TelegramBridge {
     init() {
         root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("com.jellybebra.zapret-local/telegram", isDirectory: true)
+        if let data = try? Data(contentsOf: root.appendingPathComponent("settings.json")),
+           let saved = try? JSONDecoder().decode(TelegramSettings.self, from: data),
+           (try? valid(saved)) != nil {
+            settings = saved
+            state.port = saved.port
+        }
     }
 
     private func valid(_ value: TelegramSettings) throws {
@@ -201,6 +207,53 @@ final class TelegramBridge {
         try? log?.close()
         log = nil
         state.running = false
+    }
+
+    func setPort(_ port: UInt16, socks: UInt16, enabled: Bool) throws {
+        try ProxyService.validatePort(port)
+        guard port != socks else { throw ProxyError("Порты Telegram и Zapret должны отличаться") }
+        try prepare(socks: socks)
+        guard let previous = settings, previous.port != port else { return }
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard fd >= 0 else { throw ProxyError("Не удалось проверить порт Telegram") }
+        var reuse: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, socklen_t(MemoryLayout<Int32>.size))
+        var address = sockaddr_in()
+        address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_addr.s_addr = inet_addr("127.0.0.1")
+        address.sin_port = port.bigEndian
+        let available = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0
+            }
+        }
+        Darwin.close(fd)
+        guard available else { throw ProxyError("Порт \(port) уже занят") }
+        func persist(_ value: TelegramSettings) throws {
+            let file = root.appendingPathComponent("settings.json")
+            try JSONEncoder().encode(value).write(to: file, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        }
+        stop()
+        settings = TelegramSettings(port: port, secret: previous.secret)
+        state.port = port
+        retryAfter = .distantPast
+        do {
+            try persist(settings!)
+            sync(enabled: enabled, socks: socks)
+            if enabled && !state.running { throw ProxyError(state.error ?? "Не удалось запустить Telegram") }
+            state.error = nil
+        } catch {
+            let failure = error
+            stop()
+            settings = previous
+            state.port = previous.port
+            try persist(previous)
+            retryAfter = .distantPast
+            sync(enabled: enabled, socks: socks)
+            throw failure
+        }
     }
 
     func connectionURL() -> URL? {

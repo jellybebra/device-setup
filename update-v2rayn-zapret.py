@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add social routes to an existing macOS v2rayN Zapret profile, without Reload."""
+"""Update social or general web routes in an existing macOS v2rayN Zapret profile."""
 import argparse
 from contextlib import closing
 from datetime import datetime
@@ -26,7 +26,46 @@ def patch_rules(existing, additions, title_key):
     return additions + [r for r in existing if r.get(title_key) not in titles]
 
 
-def update(app, backup_root, check=False):
+GENERAL_TITLES = {'Zapret Local: веб без отдельных доменов', 'Zapret Local: TCP вместо QUIC'}
+
+
+def general_web_rules(existing, tag):
+    """Keep explicit exceptions ahead of general web routing and broad blocklists."""
+    original = [r for r in existing if r.get('Remarks') not in GENERAL_TITLES]
+    broad = []
+    exceptions = []
+    for rule in original:
+        matches = set(rule.get('Domain', []) + rule.get('Ip', []))
+        catch_all = (rule.get('Port') == '0-65535'
+                     and not any(rule.get(k) for k in ('Domain', 'Ip', 'Protocol', 'InboundTag', 'Process', 'Network')))
+        if (matches and matches <= {'geosite:ru-blocked', 'geoip:ru-blocked'}) or catch_all:
+            broad.append(rule)
+        else:
+            exceptions.append(rule)
+    if not any(r.get('Enabled', True) and r.get('OutboundTag') == 'direct'
+               and r.get('Ip') == ['geoip:private']
+               and not any(r.get(k) for k in ('Domain', 'Port', 'Protocol', 'InboundTag', 'Process', 'Network'))
+               for r in exceptions):
+        raise ValueError('General web routing requires an explicit private-IP direct rule')
+    additions = [
+        {'Remarks': 'Zapret Local: TCP вместо QUIC', 'Network': 'udp', 'Port': '443', 'OutboundTag': 'block'},
+        {'Remarks': 'Zapret Local: веб без отдельных доменов', 'Network': 'tcp',
+         'Port': '80,443,2053,2083,2087,2096,8443', 'OutboundTag': tag},
+    ]
+    for rule in additions:
+        previous = next((r for r in existing if r.get('Remarks') == rule['Remarks']), None)
+        rule.update(Enabled=True, Id=previous['Id'] if previous else uuid.uuid4().hex)
+    return exceptions + additions + broad
+
+
+def runtime_rules(saved, tag, runtime_tag):
+    return [{'type': 'field', **{
+        k[0].lower() + k[1:]: runtime_tag if k == 'OutboundTag' and v == tag else v
+        for k, v in rule.items() if k not in ('Id', 'Remarks', 'Enabled') and v is not None
+    }} for rule in saved if rule.get('Enabled', True)]
+
+
+def update(app, backup_root, check=False, general=False):
     db_path = app / 'guiConfigs/guiNDB.db'
     config_path = app / 'guiConfigs/guiNConfig.json'
     config_bytes = config_path.read_bytes()
@@ -74,9 +113,11 @@ def update(app, backup_root, check=False):
                                if k not in ('remarks', 'enabled', 'outboundTag')},
                                'outboundTag': runtime_tag if rule['outboundTag'] == 'zapret' else rule['outboundTag']})
         new = patch_rules(old, additions, 'Remarks')
+        if general:
+            new = general_web_rules(new, tag)
         # Test with the actual installed geosite assets and existing outbounds.
         candidate = json.loads(json.dumps(runtime))
-        candidate['routing']['rules'] = xray_rules + candidate['routing']['rules']
+        candidate['routing']['rules'] = runtime_rules(new, tag, runtime_tag) if general else xray_rules + candidate['routing']['rules']
         env = dict(os.environ, XRAY_LOCATION_ASSET=str(app / 'bin'))
         with tempfile.TemporaryDirectory(prefix='v2rayn-zapret-check-') as folder:
             path = Path(folder) / 'config.json'
@@ -126,8 +167,9 @@ def main():
     parser.add_argument('--app-dir', type=Path, default=Path.home() / 'Library/Application Support/v2rayN')
     parser.add_argument('--backup-root', type=Path, default=Path.home() / 'Library/Application Support/v2rayN-backups')
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--general-web', action='store_true', help='Route general web traffic through Zapret after explicit VPN/direct exceptions')
     args = parser.parse_args()
-    update(args.app_dir.resolve(), args.backup_root.resolve(), args.check)
+    update(args.app_dir.resolve(), args.backup_root.resolve(), args.check, args.general_web)
 
 
 if __name__ == '__main__':
