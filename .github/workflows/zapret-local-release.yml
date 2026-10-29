@@ -70,7 +70,8 @@ jobs:
       - name: Verify app dependencies and signatures
         run: |
           codesign --verify --deep --strict 'dist/universal-apple-darwin/Zapret Local.app'
-          lipo -verify_arch arm64 x86_64 'dist/universal-apple-darwin/Zapret Local.app/Contents/MacOS/zapret-helper'
+          helper_arches="$(/usr/bin/lipo -archs 'dist/universal-apple-darwin/Zapret Local.app/Contents/MacOS/zapret-helper')"
+          [[ " $helper_arches " == *" arm64 "* && " $helper_arches " == *" x86_64 "* ]]
           cd .build/dist
           shasum -a 256 -c SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
