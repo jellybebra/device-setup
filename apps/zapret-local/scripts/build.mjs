@@ -11,6 +11,11 @@ if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version)) throw new Error('Inval
 if (!process.argv.includes('--ui-only')) {
   run(process.execPath, [join(root, 'scripts/prepare-release.mjs'), '--target', target]);
 }
+const telegram = join(root, 'binaries', `telegram-${target}`);
+if (!process.argv.includes('--ui-only')) {
+  run(process.env.ZAPRET_BUILD_PYTHON || 'python3', [join(root, 'telegram/build.py'), '--target', target]);
+}
+if (!existsSync(join(telegram, 'zapret-telegram'))) throw new Error('Prepared Telegram runtime missing. Run the full build first.');
 const resources = join(root, 'resources/engine');
 const helper = join(root, 'binaries', `zapret-helper-${target}`);
 if (!existsSync(helper) || !existsSync(join(resources, 'manifest.json'))) {
@@ -40,6 +45,7 @@ if (binaries.length === 2) run('/usr/bin/lipo', ['-create', ...binaries, '-outpu
 else cpSync(binaries[0], join(macos, 'zapret-local'));
 cpSync(helper, join(macos, 'zapret-helper'));
 cpSync(resources, join(bundledResources, 'engine'), { recursive: true });
+cpSync(telegram, join(bundledResources, 'telegram'), { recursive: true, verbatimSymlinks: true });
 for (const name of ['icon.icns', 'tray.png', 'tray@2x.png']) {
   cpSync(join(root, 'resources/icons', name), join(bundledResources, name));
 }

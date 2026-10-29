@@ -12,9 +12,11 @@ struct ProxyState: Sendable {
     var port: UInt16 = 49946
     var running = false
     var error: String?
+    var telegram = TelegramState()
 }
 
 actor ProxyService {
+    private let telegram = TelegramBridge()
     private var settings = ProxySettings()
     private var client: HelperClient?
     private var running = false
@@ -54,10 +56,13 @@ actor ProxyService {
         address.sin_addr.s_addr = inet_addr("127.0.0.1")
         let result = withUnsafePointer(to: &address) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
         }
-        guard result == 0 else { throw ProxyError("Порт \(port) уже занят. Выберите другой") }
+        // A user-owned bind can fail on TIME_WAIT sockets from the broker's UID
+        // after a clean restart. Detect listeners here; the helper owns the final bind.
+        guard result != 0 else { throw ProxyError("Порт \(port) уже занят. Выберите другой") }
+        guard errno == ECONNREFUSED else { throw ProxyError("Не удалось проверить порт \(port)") }
     }
 
     private func save() throws {
@@ -97,6 +102,7 @@ actor ProxyService {
     }
 
     private func stop() throws {
+        telegram.stop()
         if let client {
             let reply = try client.request("stop")
             running = reply.running
@@ -105,7 +111,12 @@ actor ProxyService {
         running = false
     }
 
-    func state() -> ProxyState { ProxyState(port: settings.port, running: running, error: error) }
+    func state() -> ProxyState {
+        telegram.sync(enabled: running, socks: settings.port)
+        return ProxyState(port: settings.port, running: running, error: error, telegram: telegram.state)
+    }
+
+    func telegramURL() -> URL? { telegram.connectionURL() }
 
     func resume() -> ProxyState {
         if settings.lastEnabled {
@@ -254,6 +265,12 @@ final class ProxyModel: ObservableObject {
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             if notice == "Ссылка скопирована" { notice = nil }
+        }
+    }
+
+    func connectTelegram() {
+        Task {
+            if let url = await service.telegramURL() { NSWorkspace.shared.open(url) }
         }
     }
 

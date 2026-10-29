@@ -1,0 +1,92 @@
+[
+  {
+    "domain": [
+      "geosite:instagram",
+      "domain:instagram.com",
+      "domain:cdninstagram.com",
+      "domain:igcdn.com",
+      "domain:ig.me",
+      "domain:fbcdn.net"
+    ],
+    "network": "udp",
+    "port": "443",
+    "remarks": "Instagram: TCP вместо QUIC",
+    "outboundTag": "block",
+    "enabled": true
+  },
+  {
+    "domain": [
+      "geosite:twitter",
+      "domain:x.com",
+      "domain:twitter.com",
+      "domain:twimg.com",
+      "domain:t.co"
+    ],
+    "network": "udp",
+    "port": "443",
+    "remarks": "X / Twitter: TCP вместо QUIC",
+    "outboundTag": "block",
+    "enabled": true
+  },
+  {
+    "domain": [
+      "geosite:instagram",
+      "domain:instagram.com",
+      "domain:cdninstagram.com",
+      "domain:igcdn.com",
+      "domain:ig.me",
+      "domain:fbcdn.net"
+    ],
+    "remarks": "Instagram через локальный zapret",
+    "outboundTag": "zapret",
+    "enabled": true
+  },
+  {
+    "domain": [
+      "geosite:twitter",
+      "domain:x.com",
+      "domain:twitter.com",
+      "domain:twimg.com",
+      "domain:t.co"
+    ],
+    "remarks": "X / Twitter через локальный zapret",
+    "outboundTag": "zapret",
+    "enabled": true
+  },
+  {
+    "domain": [
+      "geosite:telegram"
+    ],
+    "remarks": "Telegram через локальный zapret",
+    "outboundTag": "zapret",
+    "enabled": true
+  },
+  {
+    "ip": [
+      "91.108.56.0/22",
+      "91.108.4.0/22",
+      "91.108.8.0/22",
+      "91.108.16.0/22",
+      "91.108.12.0/22",
+      "149.154.160.0/20",
+      "91.105.192.0/23",
+      "91.108.20.0/22",
+      "185.76.151.0/24"
+    ],
+    "remarks": "Telegram: IPv4-сети через локальный zapret",
+    "outboundTag": "zapret",
+    "enabled": true
+  },
+  {
+    "inboundTag": [
+      "tun"
+    ],
+    "process": [
+      "Telegram",
+      "Telegram Desktop"
+    ],
+    "remarks": "Telegram: приложение и звонки через локальный zapret",
+    "outboundTag": "zapret",
+    "enabled": true
+  }
+]

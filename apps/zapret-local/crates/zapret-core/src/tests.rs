@@ -1,5 +1,63 @@
 use super::*;
 
+#[test]
+fn cdn_resolution_preserves_unrelated_names_and_meta_fallback() {
+    for alternate in [false, true] {
+        for name in ["abs.twimg.com", "pbs.twimg.com"] {
+            assert_eq!(
+                dns_query_name(name, alternate),
+                "twimg.twitter.map.fastly.net"
+            );
+        }
+        assert_eq!(
+            dns_query_name("video.twimg.com", alternate),
+            "dualstack.video.twitter.map.fastly.net"
+        );
+        for name in [
+            "x.com",
+            "api.x.com",
+            "twimg.com",
+            "abs.twimg.com.example.org",
+            "other.twimg.com",
+        ] {
+            assert_eq!(dns_query_name(name, alternate), name);
+        }
+    }
+    assert_eq!(
+        dns_query_name("scontent-arn2-1.cdninstagram.com", false),
+        "scontent-arn2-1.cdninstagram.com"
+    );
+    assert_eq!(
+        dns_query_name("scontent-arn2-1.cdninstagram.com", true),
+        "scontent.cdninstagram.com"
+    );
+}
+
+#[test]
+fn media_fallback_is_limited_to_regional_meta_edges() {
+    assert_eq!(
+        media_fallback_name("scontent-arn2-1.cdninstagram.com"),
+        "scontent.cdninstagram.com"
+    );
+    assert_eq!(
+        media_fallback_name("scontent-hel3-1.xx.fbcdn.net"),
+        "scontent.xx.fbcdn.net"
+    );
+    assert_eq!(
+        media_fallback_name("video-hel3-1.xx.fbcdn.net"),
+        "scontent.xx.fbcdn.net"
+    );
+    for name in [
+        "scontent.cdninstagram.com",
+        "pbs.twimg.com",
+        "example.com",
+        "scontent-a.cdninstagram.com.example.com",
+        "scontent-a.foo.cdninstagram.com",
+    ] {
+        assert_eq!(media_fallback_name(name), name);
+    }
+}
+
 fn free_port() -> u16 {
     std::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
         .unwrap()

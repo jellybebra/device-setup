@@ -45,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.setAccessibilityLabel("Zapret Local")
         }
         popover.behavior = .transient
-        popover.animates = true
+        popover.animates = false
         popover.contentViewController = NSHostingController(rootView: ProxyPanel(model: model))
         observation = model.$state.sink { [weak self] state in
             self?.statusItem?.button?.toolTip = state.running
@@ -135,6 +135,25 @@ struct ProxyPanel: View {
                         .accessibilityLabel("Скопировать прокси")
                 }
             }
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Text("Telegram").font(.system(size: 13, weight: .medium))
+                    Spacer()
+                    Text(model.state.telegram.running ? "Готов" : "Выключен")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                }
+                if model.state.telegram.running {
+                    Text("127.0.0.1:\(String(model.state.telegram.port))")
+                        .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                    Button("Подключить Telegram") { model.connectTelegram() }
+                        .font(.system(size: 12)).disabled(model.busy)
+                }
+                if let error = model.state.telegram.error, model.state.running {
+                    Text(error).font(.system(size: 11)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Divider()
             Toggle("Запускать при входе", isOn: Binding(get: { model.autostart }, set: { model.setAutostart($0) }))
                 .font(.system(size: 13)).toggleStyle(.switch).controlSize(.mini).disabled(model.busy)
             if let message = model.notice ?? model.state.error {

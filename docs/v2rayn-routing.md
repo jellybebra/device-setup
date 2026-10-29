@@ -208,3 +208,53 @@ SNI этот флаг не исправляет. Преимущество по �
    - Нажми **Reload / Перезапустить службу**.
    - Включи **Enable Tun / Включить TUN**.
    - Если TUN уже включён, выключи и снова включи **Enable Tun / Включить TUN**.
+
+## Instagram, X и Telegram через Zapret Local на macOS
+
+Для уже настроенного профиля с Discord через локальный SOCKS Zapret:
+
+```sh
+python3 update-v2rayn-zapret.py --check
+python3 update-v2rayn-zapret.py
+```
+
+После выполнения нажми **Reload** в v2rayN. Скрипт находит локальный выход по
+существующему правилу Discord и проверяет SOCKS-порт, добавляет семь правил
+в начало активного профиля, сохраняя остальные правила и выбранный VPN.
+Полные шаблоны конфигурации должны быть отключены: они обходят Routing Setting.
+Скрипт проверяет конфигурацию установленным Xray, делает SQLite backup и не
+перезапускает приложения. Повторный запуск не дублирует правила.
+Резервные копии лежат в `~/Library/Application Support/v2rayN-backups/`.
+
+[Дополнительные правила](../configs/v2rayn/macos/zapret/social-routes.json)
+охватывают Instagram и его CDN, X/Twitter и медиа, домены Telegram,
+[официальные IPv4-сети Telegram](https://core.telegram.org/resources/cidr.txt)
+и процессы Telegram в TUN. `fbcdn.net` используется как общий CDN Meta:
+это правило может затронуть также ресурсы Facebook. Категории доменов берутся
+из установленного `geosite.dat`. Отдельно выбраны Instagram, Twitter и Telegram,
+без перевода всего Meta или остальных сервисов в Zapret.
+
+Instagram и X используют проверенный TCP-путь: дополнительные правила
+блокируют только UDP/443 этих сервисов, чтобы браузер переходил с QUIC на TCP.
+В Zapret Local для Instagram и медиа X включён `multidisorder`; самому x.com
+выделен fake-профиль с 12 повторами. Для `abs.twimg.com` и `pbs.twimg.com`
+DNS использует `twimg.twitter.map.fastly.net`, для `video.twimg.com` —
+`dualstack.video.twitter.map.fastly.net`: на другом CDN наблюдались обрывы
+загрузок после первых 15 КБ. Исходные URL, SNI и проверка TLS сохраняются.
+При ошибке DNS/TCP по имени помощник пробует
+Google DoH с альтернативным CDN-регионом (`edns_client_subnet=8.8.8.0/24`).
+Запрос идёт через тот же физический интерфейс; IP пользователя не отправляется
+в ECS, конкретные адреса CDN не закрепляются. Это не переключение на VPN.
+Для недоступных региональных медиасерверов `scontent-*.cdninstagram.com`,
+`scontent-*.xx.fbcdn.net` и `video-*.xx.fbcdn.net` резервный DNS-запрос использует
+глобальный адрес соответствующего CDN. Исходные URL, SNI и проверка TLS
+остаются прежними. Это необходимо для аватаров и видео: проверка только HTML,
+CSS и JS не подтверждает доступность регионального медиасервера.
+
+Telegram Desktop использует [встроенный локальный MTProto-мост](../apps/zapret-local/telegram/README.md)
+на базе Flowseal/tg-ws-proxy, включённый в `.app` и DMG: одних правил для заблокированных TCP-адресов DC
+недостаточно. У него включён WebSocket и резерв CF, все исходящие соединения
+направлены через SOCKS Zapret. В Desktop выбран `127.0.0.1:49950`, отображается
+`online`. Проверены корректные ответы MTProto для DC1–5 и DC203. Правила
+v2rayN для Telegram сами по себе не заменяют настройку этого моста и не
+гарантируют работу Telegram Web, `t.me` или звонков.

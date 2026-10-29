@@ -405,6 +405,32 @@ struct Resolver {
     tls: TlsConnector,
 }
 
+// Regional Meta media names always resolve to the same edge, even with a
+// different DNS provider. Their global endpoint can serve the same signed URL;
+// only the destination IP changes, preserving the client's SNI and TLS checks.
+fn media_fallback_name(name: &str) -> &str {
+    if let Some(label) = name.strip_suffix(".cdninstagram.com") {
+        if label.starts_with("scontent-") && !label.contains('.') {
+            return "scontent.cdninstagram.com";
+        }
+    }
+    if let Some(label) = name.strip_suffix(".xx.fbcdn.net") {
+        if (label.starts_with("scontent-") || label.starts_with("video-")) && !label.contains('.') {
+            return "scontent.xx.fbcdn.net";
+        }
+    }
+    name
+}
+
+fn dns_query_name(name: &str, alternate: bool) -> &str {
+    match name {
+        "abs.twimg.com" | "pbs.twimg.com" => "twimg.twitter.map.fastly.net",
+        "video.twimg.com" => "dualstack.video.twitter.map.fastly.net",
+        _ if alternate => media_fallback_name(name),
+        _ => name,
+    }
+}
+
 impl Resolver {
     fn new(pool: Arc<Pool>) -> Self {
         let roots = rustls::RootCertStore {
@@ -426,6 +452,10 @@ impl Resolver {
     }
 
     async fn resolve(&self, host: Host) -> Result<Ipv4Addr> {
+        self.resolve_using(host, false).await
+    }
+
+    async fn resolve_using(&self, host: Host, google: bool) -> Result<Ipv4Addr> {
         let name = match host {
             Host::Ip(ip) => return public_ipv4(ip, self.pool.test_loopback),
             Host::Domain(name) => name,
@@ -434,16 +464,31 @@ impl Resolver {
             return public_ipv4(ip, self.pool.test_loopback);
         }
         if let Some((until, ip)) = self.cache.lock().unwrap().get(&name) {
-            if *until > Instant::now() {
+            if !google && *until > Instant::now() {
                 return Ok(*ip);
             }
         }
         timeout(Duration::from_secs(15), async {
             let _slot = self.slots.acquire().await?;
-            let (stream, _lease) = self.pool.tcp(SocketAddrV4::new(Ipv4Addr::new(1, 1, 1, 1), 443)).await?;
-            let server = rustls::pki_types::ServerName::try_from("cloudflare-dns.com")?;
+            let (ip, dns_host, path) = if google {
+                (Ipv4Addr::new(8, 8, 8, 8), "dns.google", "/resolve")
+            } else {
+                (Ipv4Addr::new(1, 1, 1, 1), "cloudflare-dns.com", "/dns-query")
+            };
+            let (stream, _lease) = self.pool.tcp(SocketAddrV4::new(ip, 443)).await?;
+            let server = rustls::pki_types::ServerName::try_from(dns_host)?;
             let mut tls = self.tls.connect(server, stream).await?;
-            let request = format!("GET /dns-query?name={name}&type=A HTTP/1.1\r\nHost: cloudflare-dns.com\r\nAccept: application/dns-json\r\nConnection: close\r\n\r\n");
+            // Request an alternate CDN region using a public resolver subnet,
+            // without sending the user's subnet or pinning a CDN IP address.
+            let subnet = if google { "&edns_client_subnet=8.8.8.0/24" } else { "" };
+            // X rotates twimg hosts between CDN providers. The Cloudflare
+            // edge can complete TLS then stall partway through a JS response
+            // with our split strategy, which a SOCKS proxy cannot safely retry.
+            // Resolve its observed Fastly CNAME directly; retain the client's
+            // original hostname/SNI and end-to-end certificate verification.
+            // DNS still supplies the live edge address (no hard-coded CDN IP).
+            let query_name = dns_query_name(&name, google);
+            let request = format!("GET {path}?name={query_name}&type=A{subnet} HTTP/1.1\r\nHost: {dns_host}\r\nAccept: application/dns-json\r\nConnection: close\r\n\r\n");
             tls.write_all(request.as_bytes()).await?;
             let body = http_body(tls).await?;
             #[derive(Deserialize)]
@@ -576,7 +621,18 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
     match command {
         1 if port != 0 => {
             let remote = async {
-                let address = resolver.resolve(host).await?;
+                let first = async {
+                    let address = resolver.resolve(host.clone()).await?;
+                    pool.tcp(SocketAddrV4::new(address, port)).await
+                }
+                .await;
+                if first.is_ok() || matches!(host, Host::Ip(_)) {
+                    return first;
+                }
+                // Different DoH providers can return different CDN edges. Retry
+                // failed DNS/TCP setup through Google, still on our physical
+                // interface and source-port pool, never through the system VPN.
+                let address = resolver.resolve_using(host, true).await?;
                 pool.tcp(SocketAddrV4::new(address, port)).await
             }
             .await;
