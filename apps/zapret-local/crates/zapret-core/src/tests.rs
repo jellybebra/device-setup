@@ -1,5 +1,68 @@
 use super::*;
 
+#[tokio::test]
+async fn unreachable_dns_answer_is_evicted_and_releases_source_port() {
+    let pool = test_pool();
+    let resolver = Resolver::new(pool.clone());
+    let host = Host::Domain("unreachable.example".into());
+    resolver.cache.lock().unwrap().insert(
+        "unreachable.example".into(),
+        (
+            Instant::now() + Duration::from_secs(60),
+            Ipv4Addr::LOCALHOST,
+        ),
+    );
+    assert!(resolver.connect(host, free_port(), false).await.is_err());
+    assert!(!resolver
+        .cache
+        .lock()
+        .unwrap()
+        .contains_key("unreachable.example"));
+    assert!(pool.ports.lock().unwrap().busy.is_empty());
+}
+
+#[tokio::test]
+async fn reachable_dns_answer_remains_cached() {
+    let resolver = Resolver::new(test_pool());
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+    resolver.cache.lock().unwrap().insert(
+        "reachable.example".into(),
+        (
+            Instant::now() + Duration::from_secs(60),
+            Ipv4Addr::LOCALHOST,
+        ),
+    );
+    let connection = resolver
+        .connect(
+            Host::Domain("reachable.example".into()),
+            listener.local_addr().unwrap().port(),
+            false,
+        )
+        .await
+        .unwrap();
+    assert!(resolver
+        .cache
+        .lock()
+        .unwrap()
+        .contains_key("reachable.example"));
+    drop(connection);
+}
+
+#[test]
+fn failed_connection_does_not_evict_a_newer_dns_address() {
+    let resolver = Resolver::new(test_pool());
+    let newer = Ipv4Addr::new(104, 21, 77, 110);
+    resolver.cache.lock().unwrap().insert(
+        "cdn.example".into(),
+        (Instant::now() + Duration::from_secs(60), newer),
+    );
+    resolver.discard_failed_address(
+        &Host::Domain("cdn.example".into()),
+        Ipv4Addr::new(188, 114, 96, 3),
+    );
+    assert_eq!(resolver.cache.lock().unwrap()["cdn.example"].1, newer);
+}
+
 #[test]
 fn cdn_resolution_preserves_unrelated_names_and_meta_fallback() {
     for alternate in [false, true] {
