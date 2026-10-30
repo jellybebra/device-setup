@@ -14,7 +14,8 @@ def main():
     for name, values in [('google',GOOGLE),('social',SOCIAL),('web',GOOGLE+SOCIAL)]:
         (a.output / f'{name}.txt').write_text('\n'.join(values)+'\n', newline='\n')
     base = '/opt/zapret2'
-    exclusions = f'--ipset-exclude={base}/ipset/vpn-endpoints.txt --hostlist-exclude={base}/ipset/exclude-hosts.txt'
+    ip_exclusions = f'--ipset-exclude={base}/ipset/vpn-endpoints.txt'
+    exclusions = f'{ip_exclusions} --hostlist-exclude={base}/ipset/exclude-hosts.txt'
     for mode in ['alt9','alt11','exp']:
         blobs = ' '.join(f'--blob={name}:@{base}/files/{file}' for name,file in {
             'flow_quic':'quic_initial_www_google_com.bin','flow_google':'tls_clienthello_www_google_com.bin',
@@ -37,11 +38,13 @@ def main():
             f'--filter-udp=7844 --filter-l7=quic --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=quic_initial --lua-desync=fake:blob=flow_quic:repeats=6',
             f'--filter-tcp=80,443 --hostlist-domains=x.com {exclusions} --payload=tls_client_hello --lua-desync=fake:blob=flow_google:repeats=12:tcp_ts=-600000',
             f'--filter-tcp=443,8443 --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=tls_client_hello --lua-desync=fake:blob=flow_google:repeats=12:tcp_ts=-600000',
-            f'--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun {exclusions} --payload=discord_ip_discovery,stun --lua-desync=fake:blob=flow_discord:repeats=6',
+            # Discord discovery/STUN have no hostname. Even a hostlist exclusion
+            # prevents nfqws2 from selecting this profile for those packets.
+            f'--filter-udp=19294-19344,50000-50100 --filter-l7=discord,stun {ip_exclusions} --payload=discord_ip_discovery,stun --lua-desync=fake:blob=flow_quic:repeats=6',
             f'--filter-udp=443 --filter-l7=quic --hostlist={base}/ipset/web.txt {exclusions} {quic}',
             f'--filter-udp=443 --filter-l7=quic --ipset={base}/ipset/cloudflare.txt {exclusions} {quic}',
             f'--filter-tcp=443 --hostlist={base}/ipset/google.txt {exclusions} --payload=tls_client_hello {tcp(True)}',
-            f'--filter-tcp=2053,2083,2087,2096,8443 --hostlist-domains=discord.media {exclusions} --payload=tls_client_hello {tcp(True)}',
+            f'--filter-tcp=2053,2083,2087,2096,8443 --hostlist-domains=discord.media {exclusions} --payload=tls_client_hello --lua-desync=fake:blob=flow_google:repeats=12:tcp_ts=-600000',
             f'--filter-tcp=80,443 --hostlist={base}/ipset/social.txt {exclusions} --payload=tls_client_hello,http_req {tcp()}',
             f'--filter-tcp=80,443,8443 --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=tls_client_hello,http_req {tcp(cloudflare=True)}',
         ]
