@@ -1,6 +1,18 @@
 [
   {
     "domain": [
+      "domain:notion.com",
+      "domain:notion.so",
+      "domain:notion.site",
+      "domain:notionusercontent.com",
+      "domain:notion-static.com"
+    ],
+    "remarks": "Notion: приложение и изображения через прокси",
+    "outboundTag": "proxy",
+    "enabled": true
+  },
+  {
+    "domain": [
       "domain:addons.mozilla.org",
       "domain:addons.mozilla.net"
     ],

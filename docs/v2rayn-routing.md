@@ -17,6 +17,14 @@ Brevo -> proxy
 
 Claude -> proxy
 
+Notion (приложение и изображения) -> proxy. Явное правило для `notion.com`,
+`notion.so`, `notion.site`, `notionusercontent.com`, `notion-static.com` должно
+стоять выше общего TCP-маршрута Zapret. 30 октября 2026 на macOS запросы
+к `app.notion.com` и `img.notionusercontent.com` через Zapret зависали,
+а через VLESS получали ответ. Домены ресурсов сверены с
+[документацией Notion](https://www.notion.com/help/allowlist-ip).
+Правило включено также в обновление `update-v2rayn-zapret.py`.
+
 ## Применение конфигов v2rayN на Windows
 
 1. Запусти v2rayN
