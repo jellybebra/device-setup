@@ -43,14 +43,35 @@ Xray из пакета (`/usr/bin/xray`, 26.10.21) оставлен как за�
 | Cloudflare Tunnel: TCP/UDP 7844, служебный HTTPS `trycloudflare.com` | Прямое соединение + отдельные профили zapret2 |
 | Telegram: домены и IPv4-сети из geosite/geoip | Через VLESS |
 | ChatGPT / OpenAI и Claude / Anthropic | Через VLESS |
+| Notion, включая изображения и вложения на доменах Notion | Через VLESS |
 | Остальное | Прямое соединение |
 
 PassWall2 использует шунтирующий узел `split` с Direct по умолчанию,
-правилами `Telegram`, `AI` и выключенными `Cloudflare` / `VPNFallback`. FakeDNS отключён.
+правилами `Telegram`, `AI`, `Notion` и выключенными `Cloudflare` / `VPNFallback`. FakeDNS отключён.
 Пустое правило нельзя назначать на VPN: без условий оно может совпасть со всем
 оставшимся трафиком. `VPNFallback` пока не назначен никакому узлу.
 Результаты прямого DNS записываются в nftset, чтобы последующие соединения
 могли обходить пользовательское ядро Xray.
+
+31 октября добавлено правило `Notion` для `notion.com`, `notion.so`,
+`notion.site`, `notionusercontent.com`, `notion-static.com` и их поддоменов.
+С Windows через прямой маршрут запросы к приложению и картинкам зависали;
+через действующий 3x-ui/WARP тестовое изображение возвращало HTTP 200.
+После применения правила с Windows проверены `app.notion.com` (HTTP 200)
+и `/images/page-cover/gradients_2.png` на `www.notion.so` (HTTP 200, 135875 байт);
+`img.notionusercontent.com` также отвечает вместо тайм-аута.
+После смены маршрута уже открытый Notion продолжал получать Cloudflare HTTP 403
+на запросы `/api/v3/`, а база показывала `Something went wrong` даже после Reload.
+Полный выход через меню приложения **File → Exit** и повторный запуск восстановили
+загрузку базы и изображений. Перед изменением серверного выхода проверьте приложение
+с заново установленными соединениями; проверки только главной страницы недостаточно.
+Для существующей настройки применяется
+[notion-vpn.sh](../configs/cudy-tr3000/notion-vpn.sh): скрипт сохраняет
+`/etc/config/passwall2` в `/root/notion-routing-backup.XXXXXX/passwall2`,
+добавляет правило и перезапускает PassWall2 и DNS. Настройки 3x-ui не меняются.
+Для отката только этого маршрута удалите `passwall2.split.Notion` и
+`passwall2.Notion` через `uci delete`, выполните `uci commit passwall2`,
+перезапустите PassWall2 и dnsmasq.
 
 Cloudflare определяется по 15 официальным IPv4-диапазонам, сверенным с
 <https://www.cloudflare.com/ips-v4> 29 октября 2026 года. Официальный список

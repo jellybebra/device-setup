@@ -76,7 +76,7 @@ def main():
         'remarks': 'Direct + zapret2 / selected VPN', 'type': 'Xray', 'protocol': '_shunt',
         'default_node': '_direct', 'domainStrategy': 'IPIfNonMatch', 'domainMatcher': 'hybrid',
         'write_ipset_direct': 1, 'enable_geoview_ip': 1, 'shunt_group': 'Custom',
-        'Telegram': 'vpn', 'AI': 'vpn',
+        'Telegram': 'vpn', 'AI': 'vpn', 'Notion': 'vpn',
     })
     config += section('shunt_rules', 'Telegram', {
         'remarks': 'Telegram including media', 'group': 'Custom', 'network': 'tcp,udp',
@@ -85,6 +85,10 @@ def main():
     config += section('shunt_rules', 'AI', {
         'remarks': 'AI services requiring foreign exit', 'group': 'Custom', 'network': 'tcp,udp',
         'domain_list': '\n'.join('domain:' + d for d in ['openai.com','chatgpt.com','oaistatic.com','oaiusercontent.com','auth0.com','anthropic.com','claude.ai']),
+    })
+    config += section('shunt_rules', 'Notion', {
+        'remarks': 'Notion including images', 'group': 'Custom', 'network': 'tcp,udp',
+        'domain_list': '\n'.join('domain:' + d for d in ['notion.com','notion.so','notion.site','notionusercontent.com','notion-static.com']),
     })
     config += section('shunt_rules', 'VPNFallback', {
         'remarks': 'Manual VPN exceptions', 'group': 'Custom', 'network': 'tcp,udp',
