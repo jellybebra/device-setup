@@ -84,6 +84,8 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Test broker and privileged-helper logic
         run: cargo test --locked --package zapret-core --package zapret-helper
+      - name: Test app lifecycle and helper timeouts
+        run: node scripts/test-swift.mjs
       - name: Test v2rayN routing priorities
         working-directory: .
         run: python3 -m unittest -v test_v2rayn_zapret.py

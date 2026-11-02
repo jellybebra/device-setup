@@ -81,9 +81,9 @@ struct ProxyPanel: View {
                     ProgressView().controlSize(.small).scaleEffect(0.75)
                         .frame(width: 16, height: 16).accessibilityLabel("Изменение состояния")
                 }
-                Toggle("Включить", isOn: Binding(get: { model.state.running }, set: { _ in model.toggle() }))
+                Toggle("Включить", isOn: Binding(get: { model.state.enabled }, set: { _ in model.toggle() }))
                     .labelsHidden().toggleStyle(.switch).controlSize(.small).disabled(model.busy)
-                    .accessibilityLabel(model.state.running ? "Выключить прокси" : "Включить прокси")
+                    .accessibilityLabel(model.state.enabled ? "Выключить прокси" : "Включить прокси")
             }
             Divider()
             VStack(alignment: .leading, spacing: 10) {
