@@ -22,13 +22,16 @@ final class HelperClient {
     private var descriptor: Int32 = -1
     private var pending = Data()
 
-    init() throws {
+    init(path: String = HelperClient.path, expectedUID: uid_t = 0) throws {
         let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
         guard fd >= 0 else { throw ProxyError("Не удалось открыть соединение с помощником") }
         var address = sockaddr_un()
         address.sun_family = sa_family_t(AF_UNIX)
         address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
-        let bytes = Array(Self.path.utf8CString)
+        let bytes = Array(path.utf8CString)
+        guard bytes.count <= MemoryLayout.size(ofValue: address.sun_path) else {
+            Darwin.close(fd); throw ProxyError("Некорректный путь помощника")
+        }
         withUnsafeMutableBytes(of: &address.sun_path) { destination in
             bytes.withUnsafeBytes { destination.copyBytes(from: $0) }
         }
@@ -40,17 +43,15 @@ final class HelperClient {
         guard connected == 0 else { Darwin.close(fd); throw ProxyError("Сетевой помощник не установлен") }
         var uid: uid_t = .max
         var gid: gid_t = .max
-        guard getpeereid(fd, &uid, &gid) == 0, uid == 0 else {
+        guard getpeereid(fd, &uid, &gid) == 0, uid == expectedUID else {
             Darwin.close(fd)
             throw ProxyError("Не удалось проверить сетевой помощник")
         }
         var noSignal: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
-        // Allow the helper's 40 s startup and 45 s cleanup budgets to finish.
-        var timeout = timeval(tv_sec: 60, tv_usec: 0)
-        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-        timeout.tv_sec = 5
-        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+        guard fcntl(fd, F_SETFL, O_NONBLOCK) == 0 else {
+            Darwin.close(fd); throw ProxyError("Не удалось настроить соединение с помощником")
+        }
         descriptor = fd
     }
 
@@ -61,9 +62,16 @@ final class HelperClient {
         Darwin.shutdown(descriptor, SHUT_RDWR)
         Darwin.close(descriptor)
         descriptor = -1
+        pending.removeAll()
     }
 
-    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil) throws -> HelperReply {
+    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil, timeout: TimeInterval? = nil) throws -> HelperReply {
+        // A status check must not hold the service actor for a full minute.
+        // Start/stop retain the helper's existing startup and cleanup budgets.
+        let deadline = ContinuousClock.now.advanced(by: .milliseconds(Int64((timeout ?? (command == "status" ? 3 : 60)) * 1000)))
+        var completed = false
+        defer { if !completed { disconnect() } }
+        guard descriptor >= 0 else { throw ProxyError("Нет связи с сетевым помощником") }
         var request: [String: Any] = ["command": command]
         if let port { request["port"] = Int(port) }
         if let selection { request["selection"] = ["strategy": selection.strategy, "ipset": selection.ipset] }
@@ -72,16 +80,18 @@ final class HelperClient {
         try data.withUnsafeBytes { buffer in
             var written = 0
             while written < buffer.count {
+                try wait(for: Int16(POLLOUT), until: deadline)
                 let count = Darwin.write(descriptor, buffer.baseAddress!.advanced(by: written), buffer.count - written)
-                if count < 0 && errno == EINTR { continue }
+                if count < 0 && [EINTR, EAGAIN].contains(errno) { continue }
                 guard count > 0 else { throw ProxyError("Нет связи с сетевым помощником") }
                 written += count
             }
         }
         while pending.firstIndex(of: 10) == nil {
+            try wait(for: Int16(POLLIN), until: deadline)
             var buffer = [UInt8](repeating: 0, count: 2048)
             let count = Darwin.read(descriptor, &buffer, buffer.count)
-            if count < 0 && errno == EINTR { continue }
+            if count < 0 && [EINTR, EAGAIN].contains(errno) { continue }
             guard count > 0 else { throw ProxyError("Сетевой помощник не отвечает") }
             pending.append(contentsOf: buffer.prefix(count))
             guard pending.count <= 16_384 else { throw ProxyError("Некорректный ответ помощника") }
@@ -94,6 +104,20 @@ final class HelperClient {
             throw ProxyError("Сетевой помощник требует обновления")
         }
         guard reply.protocolVersion == 2 else { throw ProxyError("Сетевой помощник требует обновления для выбора стратегий") }
+        completed = true
         return reply
+    }
+
+    private func wait(for events: Int16, until deadline: ContinuousClock.Instant) throws {
+        while true {
+            let remaining = ContinuousClock.now.duration(to: deadline).components
+            let milliseconds = remaining.seconds * 1000 + remaining.attoseconds / 1_000_000_000_000_000
+            guard milliseconds > 0 else { throw ProxyError("Сетевой помощник не отвечает: время ожидания истекло") }
+            var event = pollfd(fd: descriptor, events: events, revents: 0)
+            let result = Darwin.poll(&event, 1, Int32(min(milliseconds, 1000)))
+            if result < 0 && errno == EINTR { continue }
+            guard result >= 0 else { throw ProxyError("Нет связи с сетевым помощником") }
+            if result > 0 { return }
+        }
     }
 }

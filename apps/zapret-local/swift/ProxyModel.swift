@@ -2,6 +2,8 @@ import Foundation
 import ServiceManagement
 import AppKit
 import Darwin
+import Combine
+import OSLog
 
 struct StrategySelection: Codable, Equatable, Sendable {
     var strategy = "local"
@@ -29,13 +31,17 @@ struct ProxySettings: Codable, Sendable {
 struct ProxyState: Sendable {
     var port: UInt16 = 49946
     var running = false
+    var enabled = false
     var error: String?
     var telegram = TelegramState()
     var selection = StrategySelection()
 }
 
 actor ProxyService {
-    private let telegram = TelegramBridge()
+    private let telegram: TelegramBridge
+    private let clientFactory: () throws -> HelperClient
+    private let logger = Logger(subsystem: "com.jellybebra.zapret-local", category: "lifecycle")
+    private var recoveryPending = false
     private var settings = ProxySettings()
     private var client: HelperClient?
     private var running = false
@@ -43,13 +49,16 @@ actor ProxyService {
     private var reconnectAfter = Date.distantPast
     private let settingsURL: URL
 
-    init() {
-        settingsURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    init(settingsURL: URL? = nil, telegram: TelegramBridge = TelegramBridge(),
+         clientFactory: @escaping () throws -> HelperClient = { try HelperClient() }) {
+        self.telegram = telegram
+        self.clientFactory = clientFactory
+        self.settingsURL = settingsURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("com.jellybebra.zapret-local", isDirectory: true)
             .appendingPathComponent("settings.json")
-        if FileManager.default.fileExists(atPath: settingsURL.path) {
+        if FileManager.default.fileExists(atPath: self.settingsURL.path) {
             do {
-                settings = try JSONDecoder().decode(ProxySettings.self, from: Data(contentsOf: settingsURL))
+                settings = try JSONDecoder().decode(ProxySettings.self, from: Data(contentsOf: self.settingsURL))
                 try Self.validatePort(settings.port)
             } catch {
                 settings = ProxySettings()
@@ -94,14 +103,17 @@ actor ProxyService {
 
     private func connect(allowInstall: Bool) throws {
         if client != nil { return }
-        if let connection = try? HelperClient(), let status = try? connection.request("status"), status.ok {
+        // An authenticated error status describes the previous worker failure;
+        // it does not mean the helper needs reinstalling.
+        if let connection = try? clientFactory(), (try? connection.request("status")) != nil {
             client = connection
             return
         }
         guard allowInstall else { throw ProxyError("Нажмите «Включить», чтобы установить помощник") }
         try HelperInstaller.install()
-        for _ in 0..<50 {
-            if let connection = try? HelperClient(), let status = try? connection.request("status"), status.ok {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+        while ContinuousClock.now < deadline {
+            if let connection = try? clientFactory(), (try? connection.request("status")) != nil {
                 client = connection
                 return
             }
@@ -116,24 +128,35 @@ actor ProxyService {
         try connect(allowInstall: allowInstall)
         let reply = try client!.request("start", port: settings.port, selection: settings.selection ?? StrategySelection())
         running = reply.running
+        logger.notice("Proxy start replied: ok=\(reply.ok), running=\(reply.running)")
         guard reply.ok, reply.running, reply.port == settings.port else {
             throw ProxyError(reply.error ?? "Не удалось запустить прокси")
         }
     }
 
     private func stop() throws {
-        telegram.stop()
+        logger.notice("Stopping local proxy and Telegram bridge")
+        let telegramStopped = telegram.stop()
         if let client {
-            let reply = try client.request("stop")
+            let reply: HelperReply
+            do { reply = try client.request("stop") }
+            catch {
+                client.disconnect()
+                self.client = nil
+                running = false
+                throw error
+            }
             running = reply.running
+            logger.notice("Proxy stop replied: ok=\(reply.ok), running=\(reply.running)")
             guard reply.ok, !reply.running else { throw ProxyError(reply.error ?? "Не удалось остановить прокси") }
         }
         running = false
+        guard telegramStopped else { throw ProxyError(telegram.state.error ?? "Не удалось остановить Telegram") }
     }
 
     func state() -> ProxyState {
-        telegram.sync(enabled: running, socks: settings.port)
-        return ProxyState(port: settings.port, running: running, error: error, telegram: telegram.state, selection: settings.selection ?? StrategySelection())
+        telegram.sync(enabled: running && settings.lastEnabled, socks: settings.port)
+        return ProxyState(port: settings.port, running: running, enabled: settings.lastEnabled, error: error, telegram: telegram.state, selection: settings.selection ?? StrategySelection())
     }
 
     func telegramURL() -> URL? { telegram.connectionURL() }
@@ -156,9 +179,12 @@ actor ProxyService {
     func setEnabled(_ enabled: Bool) -> ProxyState {
         error = nil
         do {
-            if enabled { try start(allowInstall: true) } else { try stop() }
+            // Record user intent before cleanup: a failed stop must never re-enable us.
             settings.lastEnabled = enabled
+            recoveryPending = false
             try save()
+            logger.notice("User requested enabled=\(enabled)")
+            if enabled { try start(allowInstall: true) } else { try stop() }
         } catch { self.error = error.localizedDescription }
         return state()
     }
@@ -211,7 +237,25 @@ actor ProxyService {
         return state()
     }
 
+    func networkDidWake() {
+        recoveryPending = settings.lastEnabled
+        logger.notice("System woke; recovery pending=\(self.recoveryPending)")
+    }
+
     func refresh() -> ProxyState {
+        if recoveryPending {
+            recoveryPending = false
+            if settings.lastEnabled {
+                logger.notice("Restarting local proxy after wake")
+                do { try stop() }
+                catch {
+                    self.error = error.localizedDescription
+                    reconnectAfter = Date().addingTimeInterval(10)
+                    return state()
+                }
+                reconnectAfter = .distantPast
+            }
+        }
         if let client {
             do {
                 let reply = try client.request("status")
@@ -224,6 +268,7 @@ actor ProxyService {
                 self.client = nil
                 running = false
                 self.error = error.localizedDescription
+                logger.error("Helper status failed: \(error.localizedDescription, privacy: .public)")
             }
         }
         if !running && settings.lastEnabled && Date() >= reconnectAfter {
@@ -252,9 +297,14 @@ final class ProxyModel: ObservableObject {
     @Published var notice: String?
     private let service = ProxyService()
     private var monitor: Task<Void, Never>?
+    private var wakeObserver: AnyCancellable?
 
     init() {
         autostart = SMAppService.mainApp.status == .enabled
+        wakeObserver = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in await self?.service.networkDidWake() }
+            }
         monitor = Task { [weak self] in
             guard let self else { return }
             self.update(await service.state())
@@ -263,6 +313,7 @@ final class ProxyModel: ObservableObject {
             self.busy = false
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard !Task.isCancelled else { break }
                 if !self.busy { self.update(await service.refresh(), updatePort: false) }
             }
         }
@@ -280,7 +331,7 @@ final class ProxyModel: ObservableObject {
         guard !busy else { return }
         busy = true
         notice = nil
-        let enable = !state.running
+        let enable = !state.enabled
         Task {
             update(await service.setEnabled(enable))
             busy = false
@@ -373,6 +424,8 @@ final class ProxyModel: ObservableObject {
     }
 
     func shutdown(completion: @escaping @MainActor () -> Void) {
+        busy = true
+        wakeObserver?.cancel()
         monitor?.cancel()
         Task { await service.shutdown(); completion() }
     }

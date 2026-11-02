@@ -18,16 +18,17 @@ final class TelegramBridge {
     private let root: URL
     private var settings: TelegramSettings?
     private var process: Process?
+    private var stopping = false
     private var lifetime: Pipe?
     private var log: FileHandle?
     private var socksPort: UInt16?
     private var retryAfter = Date.distantPast
     private(set) var state = TelegramState()
 
-    init() {
-        root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    init(root: URL? = nil) {
+        self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("com.jellybebra.zapret-local/telegram", isDirectory: true)
-        if let data = try? Data(contentsOf: root.appendingPathComponent("settings.json")),
+        if let data = try? Data(contentsOf: self.root.appendingPathComponent("settings.json")),
            let saved = try? JSONDecoder().decode(TelegramSettings.self, from: data),
            (try? valid(saved)) != nil {
             settings = saved
@@ -128,7 +129,7 @@ final class TelegramBridge {
     func sync(enabled: Bool, socks: UInt16) {
         if !enabled { stop(); return }
         if let process {
-            if process.isRunning, socksPort == socks { return }
+            if process.isRunning, !stopping, socksPort == socks { return }
             if !process.isRunning {
                 stop()
                 state.error = "Telegram перезапустится через 10 секунд"
@@ -137,7 +138,7 @@ final class TelegramBridge {
             }
         }
         guard Date() >= retryAfter else { return }
-        stop()
+        guard stop() else { return }
         do {
             try prepare(socks: socks)
             guard let executable = Bundle.main.resourceURL?.appendingPathComponent("telegram/zapret-telegram"),
@@ -186,27 +187,23 @@ final class TelegramBridge {
         }
     }
 
-    func stop() {
+    @discardableResult
+    func stop() -> Bool {
+        stopping = true
         try? lifetime?.fileHandleForWriting.close()
         lifetime = nil
-        if let process {
-            for _ in 0..<40 {
-                if !process.isRunning { break }
-                Thread.sleep(forTimeInterval: 0.05)
-            }
-            if process.isRunning { process.terminate() }
-            for _ in 0..<20 {
-                if !process.isRunning { break }
-                Thread.sleep(forTimeInterval: 0.05)
-            }
-            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
-            process.waitUntilExit()
+        if let process, !ProcessShutdown.stop(process) {
+            state.running = false
+            state.error = "Модуль Telegram не завершился. Повторите выключение"
+            return false // Retain ownership and never launch a second copy over it.
         }
         process = nil
         socksPort = nil
         try? log?.close()
         log = nil
         state.running = false
+        stopping = false
+        return true
     }
 
     func setPort(_ port: UInt16, socks: UInt16, enabled: Bool) throws {
@@ -235,7 +232,7 @@ final class TelegramBridge {
             try JSONEncoder().encode(value).write(to: file, options: .atomic)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         }
-        stop()
+        guard stop() else { throw ProxyError(state.error ?? "Не удалось остановить Telegram") }
         settings = TelegramSettings(port: port, secret: previous.secret)
         state.port = port
         retryAfter = .distantPast
