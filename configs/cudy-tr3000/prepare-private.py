@@ -84,7 +84,7 @@ def main():
     })
     config += section('shunt_rules', 'AI', {
         'remarks': 'AI services requiring foreign exit', 'group': 'Custom', 'network': 'tcp,udp',
-        'domain_list': '\n'.join('domain:' + d for d in ['openai.com','chatgpt.com','oaistatic.com','oaiusercontent.com','auth0.com','anthropic.com','claude.ai']),
+        'domain_list': '\n'.join('domain:' + d for d in ['openai.com','chatgpt.com','oaistatic.com','oaiusercontent.com','auth0.com','anthropic.com','claude.ai']) + '\nfull:cdn.openaimerge.com',
     })
     config += section('shunt_rules', 'Notion', {
         'remarks': 'Notion including images', 'group': 'Custom', 'network': 'tcp,udp',
