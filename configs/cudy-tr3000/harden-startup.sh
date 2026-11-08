@@ -25,6 +25,6 @@ if [ -x /etc/init.d/dns-select ]; then
     /etc/init.d/dns-select enable
 fi
 # Include local program/configuration files in a normal OpenWrt backup.
-for path in /opt/zapret2/ /opt/xray/ /etc/vpn-dns.json /etc/vpn-host.txt /etc/init.d/vpn-dns /etc/init.d/zapret2 /etc/hotplug.d/iface/90-zapret2 /root/cudy-smoke.sh /root/cudy-forwarding-smoke.sh /etc/dns-select.conf /etc/init.d/dns-select; do
+for path in /opt/zapret2/ /opt/xray/ /etc/vpn-dns.json /etc/vpn-host.txt /etc/init.d/vpn-dns /etc/init.d/zapret2 /etc/hotplug.d/iface/90-zapret2 /root/cudy-smoke.sh /root/cudy-forwarding-smoke.sh /etc/dns-select.conf /etc/dns-direct.conf /etc/init.d/dns-select; do
     grep -qxF "$path" /etc/sysupgrade.conf || echo "$path" >> /etc/sysupgrade.conf
 done
