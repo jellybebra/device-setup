@@ -1,23 +1,18 @@
 # Device Setup
 
-Скрипты и инструкции для настройки macOS, Windows, iPhone, Linux-серверов и роутеров.
+Конфигурации домашних устройств. Сетевые правила зависят от точки подключения: например, Cloudflare Tunnel
+на Cudy выходит напрямую, а профиль v2rayN может отправить его через VLESS.
 
-## Навигация
+| Устройство или задача | Что здесь хранится |
+| --- | --- |
+| [Cudy TR3000](docs/cudy-tr3000.md) | Раздельные маршруты PassWall2 и zapret2, основной и резервный DoH, ограничения прошивки |
+| [Huawei AX3](docs/huawei-ax3.md) | Профиль VLESS для debug-прошивки, прямой игровой UDP, совместимая сборка Xray |
+| [v2rayN на Windows и macOS](docs/v2rayn-routing.md) | Различия клиентских профилей, исключения TUN и маршрутизация через Zapret Local |
+| [Happ на iPhone](docs/happ-ios.md) | Локальный профиль маршрутизации, серверная подписка и условия входа по passkey |
+| [Zapret Local](apps/zapret-local/README.md) | Локальный SOCKS5 для macOS и транспорт Telegram Desktop |
 
-| Инструкция | Платформа | Что внутри |
-| --- | --- | --- |
-| [AGENTS.md](AGENTS.md) | Все платформы | Работа с Git и worktree, локальный запуск, публикация, деплой и настройка Ubuntu Server |
-| [v2rayN](docs/v2rayn-routing.md) | macOS, Windows | Готовые профили Windows/macOS, TUN, исключения Cloudflare Tunnel и [приоритет sing-box для игр](docs/v2rayn-routing.md#приоритет-sing-box-в-windows) |
-| [Zapret Local](apps/zapret-local/README.md) | macOS 14+ | Приложение в строке меню: локальный SOCKS5 для YouTube и Discord, настройка порта, автозапуск и готовый DMG |
-| [Huawei AX3](docs/huawei-ax3.md) | Huawei WS7100-20 | Установка VLESS на роутер: свой профиль, прямой UDP для игр и голоса, YouTube через tpws, DNS-over-HTTPS и автозапуск |
-| [Cudy TR3000](docs/cudy-tr3000.md) | TR3000 256MB v1 | OpenWrt, zapret2 для YouTube/соцсетей/Cloudflare, прямой DoH, Telegram/AI через VLESS, резервные копии и откат |
-| [Happ](docs/happ-ios.md) | iOS | Готовый профиль: заблокированные сайты, Google/YouTube и ChatGPT через VPN, остальное напрямую |
-| [UPnP](docs/upnp-windows.md) | Windows | Создание, проверка и удаление проброса, особенности VPN, добавление IP друзей в брандмауэр Minecraft |
-| [Vencord](docs/vencord.md) | Windows | Установка и восстановление Vencord при запуске через панель задач |
-| [Голосовой ввод в Chrome](docs/chrome-voice-windows.md) | Windows | Параметры запуска, проверка, ограничения и откат |
-| [Windows Reinstall](docs/windows-reinstall.md) | Windows | Приложения и ссылки для установки после переустановки системы |
-| [Восстановление Windows](docs/windows.md) | Windows | Проверка и восстановление системных файлов |
-| [Исправление Xbox games](docs/xbox-games-windows.md) | Windows | Исправление прав доступа к папке Packages |
-| [Remove Quarantine](docs/macos.md) | macOS | Установка и удаление Quick Action для Finder |
+**Windows:** [набор приложений после переустановки](docs/windows-reinstall.md),
+[голосовой ввод Chrome](docs/chrome-voice-windows.md), [Vencord](docs/vencord.md),
+[Minecraft и UPnP](docs/upnp-windows.md), [системные файлы и приложения Xbox](docs/windows.md).
 
-Локальные команды в инструкциях выполняются из корня репозитория.
+**macOS:** [действие Finder для скачанных приложений](docs/macos.md).
