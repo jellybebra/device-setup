@@ -151,6 +151,18 @@ Google DoH с ECS `8.8.8.0/24` и без него продолжал выдав�
 - Общий список: `hostfakesplit`, `ozon.ru`, 4 повтора, timestamp + MD5 fooling.
 - Cloudflare HTTPS: отдельный приоритетный IP-профиль TLS fake Google,
   12 повторов, timestamp fooling. Для HTTP остаётся `hostfakesplit`.
+- Для Vercel HTTPS на TCP/443 использует `hostfakesplit` с `www.google.com`,
+  а QUIC на UDP/443 — поддельный QUIC Initial. Профили применяются к IPv4-сетям
+  [организации Vercel в ARIN](https://whois.arin.net/rest/org/ZEITI/nets.json)
+  и отдельному адресу `76.223.126.88`, который возвращает диагностика Vercel.
+  Правило также применяется к доменам `vercel.app`, `vercel.sh` с их поддоменами. Собственные домены
+  сайтов попадают под правило по IP назначения. Список сетей в генераторе
+  сверен 7 ноября 2026 года и обновляется вручную.
+  Для общего пула `vercel.app` DNS-селектор Cudy заменяет шесть недоступных
+  IPv4 в положительных ответах на два доступных адреса того же пула:
+  `64.29.17.195` и `216.198.79.195`. Чтобы пересмотреть подстановки,
+  сверьте адреса сайта с `ip-ranges.vercel.support` и проверьте загрузку
+  с LAN. Подстановки задаются в [dns-select.conf](../configs/cudy-tr3000/dns-select.conf).
 - Tunnel: TCP/7844 — TLS fake Google, 12 повторов; UDP/7844 — fake QUIC,
   6 повторов. HTTPS `trycloudflare.com` также имеет профиль TLS fake.
 - **X имеет приоритетное исключение:** TLS fake Google, 12 повторов,

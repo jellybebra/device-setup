@@ -6,6 +6,20 @@ GOOGLE = ['youtube.com','youtu.be','googlevideo.com','ytimg.com','ggpht.com','yo
 SOCIAL = ['discord.com','discord.gg','discordapp.com','discordapp.net','discord.media','discordcdn.com','discordstatus.com','discord.gift','discord.new','instagram.com','cdninstagram.com','ig.me','fbcdn.net','facebook.com','fbsbx.com','x.com','twitter.com','t.co','twimg.com','pscp.tv','periscope.tv']
 
 
+# ARIN organization ZEITI (Vercel), IPv4 allocations checked 2026-11-07.
+# https://whois.arin.net/rest/org/ZEITI/nets.json
+VERCEL_IPV4 = (
+    '64.29.17.0/24', '64.239.109.0/24', '64.239.123.0/24', '66.33.60.0/24',
+    '76.76.21.0/24', '143.13.0.0/16', '155.121.0.0/16', '198.169.1.0/24',
+    '198.169.2.0/24', '216.150.1.0/24', '216.150.16.0/24', '216.198.79.0/24',
+    '216.230.84.0/24', '216.230.86.0/24',
+)
+
+
+# Legacy ingress also returned by https://ip-ranges.vercel.support for svelte.dev.
+VERCEL_INGRESS = (*VERCEL_IPV4, '76.223.126.88/32')
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--output', type=Path, required=True)
@@ -48,6 +62,12 @@ def main():
             f'--filter-tcp=80,443 --hostlist={base}/ipset/social.txt {exclusions} --payload=tls_client_hello,http_req {tcp()}',
             f'--filter-tcp=80,443,8443 --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=tls_client_hello,http_req {tcp(cloudflare=True)}',
         ]
+        for match in ('--ipset-ip=' + ','.join(VERCEL_INGRESS), '--hostlist-domains=vercel.app,vercel.sh'):
+            profiles.extend([
+                f'--filter-tcp=443 {match} {exclusions} --payload=tls_client_hello '
+                '--lua-desync=hostfakesplit:host=www.google.com:repeats=4:tcp_ts=-600000',
+                f'--filter-udp=443 --filter-l7=quic {match} {exclusions} {quic}',
+            ])
         config = '\n'.join([
             'FWTYPE=nftables', 'NFQWS2_ENABLE=1', 'MODE_FILTER=none', 'FLOWOFFLOAD=none',
             'DISABLE_IPV6=1','INIT_APPLY_FW=1','POSTNAT=1','OPENWRT_WAN4=wan',
