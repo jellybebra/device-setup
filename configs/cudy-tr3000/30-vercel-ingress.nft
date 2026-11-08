@@ -1,0 +1,14 @@
+# firewall4 includes this file in table inet fw4.
+chain vercel_ingress {
+    ip daddr 216.150.1.1 meta l4proto . th dport { tcp . 80, tcp . 443, udp . 443 } counter dnat ip to 216.150.16.1
+}
+
+chain vercel_ingress_lan {
+    type nat hook prerouting priority dstnat + 1; policy accept;
+    iifname "br-lan" meta mark != 0x50535732 jump vercel_ingress
+}
+
+chain vercel_ingress_out {
+    type nat hook output priority filter + 1; policy accept;
+    jump vercel_ingress
+}
