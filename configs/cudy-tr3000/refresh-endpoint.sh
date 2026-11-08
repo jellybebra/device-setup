@@ -4,8 +4,8 @@ base=/opt/zapret2/ipset
 host=$(cat /etc/vpn-host.txt)
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
-# This resolver is reached directly on the upstream LAN, even before VPN starts.
-dig +short +time=2 +tries=2 @192.168.60.1 "$host" A |
+# The local DoH proxy reaches Cloudflare by IP before the VPN starts.
+dig +short +time=2 +tries=2 @127.0.0.1 -p 15354 "$host" A |
     grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' > "$tmp" || true
 if [ -s "$tmp" ]; then
     cp "$tmp" "$base/vpn-endpoints.txt"
