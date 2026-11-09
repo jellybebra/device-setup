@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { root, run, output, targetArgument } from './common.mjs';
 
@@ -11,11 +11,7 @@ if (!/^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(version)) throw new Error('Inval
 if (!process.argv.includes('--ui-only')) {
   run(process.execPath, [join(root, 'scripts/prepare-release.mjs'), '--target', target]);
 }
-const telegram = join(root, 'binaries', `telegram-${target}`);
-if (!process.argv.includes('--ui-only')) {
-  run(process.env.ZAPRET_BUILD_PYTHON || 'python3', [join(root, 'telegram/build.py'), '--target', target]);
-}
-if (!existsSync(join(telegram, 'zapret-telegram'))) throw new Error('Prepared Telegram runtime missing. Run the full build first.');
+const network = join(root, 'binaries', 'network-' + target);
 const resources = join(root, 'resources/engine');
 const helper = join(root, 'binaries', `zapret-helper-${target}`);
 if (!existsSync(helper) || !existsSync(join(resources, 'manifest.json'))) {
@@ -24,7 +20,7 @@ if (!existsSync(helper) || !existsSync(join(resources, 'manifest.json'))) {
 const compiled = join(root, '.build/swift', target);
 mkdirSync(compiled, { recursive: true });
 const sdk = output('xcrun', ['--show-sdk-path']);
-const sources = readdirSync(join(root, 'swift')).filter(name => name.endsWith('.swift')).sort().map(name => join(root, 'swift', name));
+const sources = ['App.swift','Authorization.swift','HelperClient.swift','ProxyModel.swift','VLESSProfile.swift','ProxyServer.swift','ServerLibrary.swift','ServerManager.swift'].map(name => join(root, 'swift', name));
 if (!sources.length) throw new Error('SwiftUI application sources are missing.');
 const binaries = [];
 for (const arch of archTargets) {
@@ -45,7 +41,7 @@ if (binaries.length === 2) run('/usr/bin/lipo', ['-create', ...binaries, '-outpu
 else cpSync(binaries[0], join(macos, 'zapret-local'));
 cpSync(helper, join(macos, 'zapret-helper'));
 cpSync(resources, join(bundledResources, 'engine'), { recursive: true });
-cpSync(telegram, join(bundledResources, 'telegram'), { recursive: true, verbatimSymlinks: true });
+cpSync(network, join(bundledResources, 'network'), { recursive: true });
 for (const name of ['icon.icns', 'tray.png', 'tray@2x.png']) {
   cpSync(join(root, 'resources/icons', name), join(bundledResources, name));
 }
@@ -53,9 +49,9 @@ writeFileSync(join(app, 'Contents/PkgInfo'), 'APPL????');
 writeFileSync(join(app, 'Contents/Info.plist'), `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>CFBundleIdentifier</key><string>com.jellybebra.zapret-local</string>
-  <key>CFBundleName</key><string>Zapret Local</string>
-  <key>CFBundleDisplayName</key><string>Zapret Local</string>
+  <key>CFBundleIdentifier</key><string>com.jellybebra.zapret-cudy</string>
+  <key>CFBundleName</key><string>Zapret Local · Cudy</string>
+  <key>CFBundleDisplayName</key><string>Zapret Local · Cudy</string>
   <key>CFBundleExecutable</key><string>zapret-local</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>

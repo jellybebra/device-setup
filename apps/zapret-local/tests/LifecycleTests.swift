@@ -56,7 +56,7 @@ final class FakeHelper: @unchecked Sendable {
 
     static func send(_ fd: Int32, running: Bool = false, ok: Bool = true, port: Int = 49946) {
         let value: [String: Any] = ["ok": ok, "running": running, "port": port,
-            "version": "0.1.0", "protocolVersion": 2, "error": ok ? NSNull() : "Network changed" as Any]
+            "version": "0.1.0", "protocolVersion": 12, "error": ok ? NSNull() : "Network changed" as Any]
         var data = try! JSONSerialization.data(withJSONObject: value)
         data.append(10)
         data.withUnsafeBytes { bytes in
@@ -72,7 +72,68 @@ final class FakeHelper: @unchecked Sendable {
 
 @main
 struct LifecycleTests {
+    static func checkServerLibrary() throws {
+        let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+        // An unrelated client's configs alongside a fresh install must not become servers.
+        let clean = temp.appendingPathComponent("Zapret Local")
+        let neighbor = temp.appendingPathComponent("v2rayN/binConfigs")
+        try FileManager.default.createDirectory(at: neighbor, withIntermediateDirectories: true)
+        try Data(#"{"outbounds":[{"tag":"proxy","protocol":"vless"}]}"#.utf8).write(to: neighbor.appendingPathComponent("config.json"))
+        let fresh = try ServerStore(directory: clean).read()
+        precondition(fresh.servers.isEmpty && fresh.selectedID == nil)
+        let store = ServerStore(directory: temp)
+        let uri = "vless://11111111-1111-4111-8111-111111111111@vpn.example.com:443?security=tls&type=tcp&sni=example.com&alpn=h2%2Chttp%2F1.1#Office%20TLS"
+        let first = try ProxyServer.fromLink(uri, id: "one")
+        precondition(first.name == "Office TLS")
+        // Old versions could keep only an outbound without a selected-server.json.
+        try first.outbound.write(to: temp.appendingPathComponent("vless.json"))
+        let migrated = try store.read()
+        precondition(migrated.selected?.matches(first.outbound) == true)
+        let current = migrated.selected!
+        let second = try ProxyServer.fromLink(uri.replacingOccurrences(of: "vpn.example", with: "other.example"), id: "two")
+        try store.change { try $0.put(second) }
+        do {
+            try store.change { try $0.put(first) }
+            fatalError("Duplicate accepted")
+        } catch is ProxyError {}
+        do {
+            try store.change { try $0.remove(current.id, enabled: true) }
+            fatalError("Removed active server")
+        } catch is ProxyError {}
+        let afterFailure = try store.read()
+        precondition(afterFailure.selectedID == current.id && afterFailure.servers.count == 2)
+        try store.change { try $0.put(second, select: true) }
+        try store.change { try $0.remove(current.id, enabled: true) }
+        var renamed = second
+        renamed.name = "Renamed"
+        try store.change { try $0.put(renamed) }
+        let reopened = try store.read()
+        precondition(reopened.selected?.name == "Renamed" && reopened.servers.count == 1)
+        try store.change { try $0.remove(second.id, enabled: false) }
+        let empty = try store.read()
+        precondition(empty.servers.isEmpty && empty.selected == nil)
+        let permissions = try FileManager.default.attributesOfItem(atPath: temp.appendingPathComponent("servers.json").path)
+        precondition((permissions[.posixPermissions] as? NSNumber)?.intValue == 0o600)
+        let key = Data(repeating: 42, count: 32).base64EncodedString().replacingOccurrences(of: "=", with: "")
+        let reality = uri.replacingOccurrences(of: "security=tls", with: "security=reality")
+            .replacingOccurrences(of: "alpn=h2%2Chttp%2F1.1", with: "pbk=" + key + "&sid=aabb&spx=%2Fhello")
+        let node = try ProxyServer.fromLink(reality)
+        let json = try JSONSerialization.jsonObject(with: node.outbound) as! [String:Any]
+        let tls = (json["streamSettings"] as! [String:Any])["realitySettings"] as! [String:Any]
+        precondition(tls["spiderX"] as? String == "/hello" && tls["publicKey"] as? String == key)
+        for bad in [uri.replacingOccurrences(of: "tcp", with: "ws"), uri.replacingOccurrences(of: "443", with: "99999"),
+                    uri.replacingOccurrences(of: "type=tcp", with: "type=tcp&allowInsecure=1"),
+                    reality.replacingOccurrences(of: key, with: "bad")] {
+            do { _ = try ProxyServer.fromLink(bad); fatalError("Invalid link accepted") }
+            catch is ProxyError {}
+        }
+        print("PASS: independent server catalog, migration, TLS/REALITY links, active deletion and persistence")
+    }
+
     static func main() async throws {
+        try checkServerLibrary()
         // A suspended child ignores graceful exit and SIGTERM until continued.
         // Shutdown must reach SIGKILL without ever waiting indefinitely.
         let child = Process()
@@ -142,7 +203,7 @@ struct LifecycleTests {
                 if failStop && command == "stop" { return false }
                 return true
             }
-            let service = ProxyService(settingsURL: settings, telegram: TelegramBridge(root: root.appendingPathComponent("telegram")),
+            let service = ProxyService(settingsURL: settings, profile: { Data("{}".utf8) }, checkTunnel: {},
                 clientFactory: { try HelperClient(path: fake.path, expectedUID: getuid()) })
             let started = await service.resume()
             precondition(started.running, "Recovery rejected a helper reporting the previous worker's failure")

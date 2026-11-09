@@ -12,7 +12,13 @@ async fn unreachable_dns_answer_is_evicted_and_releases_source_port() {
             Ipv4Addr::LOCALHOST,
         ),
     );
-    assert!(resolver.connect(host, free_port(), false).await.is_err());
+    // Keep the destination port reserved but not listening while other tests allocate sockets.
+    let refused = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP)).unwrap();
+    refused
+        .bind(&SocketAddrV4::new(Ipv4Addr::LOCALHOST, 0).into())
+        .unwrap();
+    let port = refused.local_addr().unwrap().as_socket().unwrap().port();
+    assert!(resolver.connect(host, port, false).await.is_err());
     assert!(!resolver
         .cache
         .lock()

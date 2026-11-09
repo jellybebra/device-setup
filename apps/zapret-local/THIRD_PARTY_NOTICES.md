@@ -182,8 +182,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 ```
 
-## Telegram transport
+## Network executables
 
-The application includes Flowseal/tg-ws-proxy at revision `307a384ab7f522e34bb1a045884d0bd90f40bee5` (MIT), with a local SOCKS transport adapter and application-owned lifecycle. The upstream source is unmodified. Python and its frozen dependencies are bundled; pinned package versions are in `telegram/build-requirements.txt`. Full notices, including the PSF, PyInstaller and dependency licenses, are included under `Contents/Resources/telegram/_internal/licenses/`.
+The distribution includes sing-box 1.14.3 and Xray-core 26.11.9. Their upstream licenses accompany the executables in Contents/Resources/network. The DNS worker uses miekg/dns and golang.org/x/sys. Its Go module versions are recorded in dns/go.sum.
 
-Upstream: https://github.com/Flowseal/tg-ws-proxy
+[sing-box source](https://github.com/SagerNet/sing-box/tree/v1.14.3) · [Xray source](https://github.com/XTLS/Xray-core/tree/v26.11.9) · [miekg/dns](https://github.com/miekg/dns/tree/v1.1.68)

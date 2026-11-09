@@ -25,6 +25,8 @@ const MAX_HEADERS: usize = 16_384;
 const MAX_UDP_PAYLOAD: usize = 65_507 - 10;
 const MAX_PEERS: usize = 64;
 const UDP_IDLE: Duration = Duration::from_secs(120);
+// A SOCKS domain used only between the local classifier and broker.
+pub const INSTAGRAM_TLS_RELAY: &str = "instagram-sni.invalid";
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -410,7 +412,7 @@ struct Resolver {
 // only the destination IP changes, preserving the client's SNI and TLS checks.
 fn media_fallback_name(name: &str) -> &str {
     if let Some(label) = name.strip_suffix(".cdninstagram.com") {
-        if label.starts_with("scontent-") && !label.contains('.') {
+        if (label.starts_with("scontent-") || label.starts_with("video-")) && !label.contains('.') {
             return "scontent.cdninstagram.com";
         }
     }
@@ -609,6 +611,77 @@ async fn udp_association(
     }
 }
 
+async fn instagram_tls(mut client: TcpStream, pool: Arc<Pool>) -> Result<()> {
+    // SOCKS clients send their TLS bytes only after the CONNECT acknowledgement.
+    client
+        .write_all(&socks_reply(0, SocketAddrV4::new(Ipv4Addr::LOCALHOST, 0)))
+        .await?;
+    let (hello, name) = timeout(Duration::from_secs(8), async {
+        let mut parser = rustls::server::Acceptor::default();
+        let mut wire = Vec::new();
+        let mut chunk = [0; 4096];
+        loop {
+            let n = client.read(&mut chunk).await?;
+            if n == 0 || wire.len() + n > 65536 {
+                bail!("Incomplete TLS ClientHello");
+            }
+            wire.extend_from_slice(&chunk[..n]);
+            let mut input = &chunk[..n];
+            while !input.is_empty() {
+                if parser.read_tls(&mut input)? == 0 {
+                    bail!("Invalid TLS record");
+                }
+                if let Some(parsed) = parser
+                    .accept()
+                    .map_err(|_| anyhow::anyhow!("Invalid ClientHello"))?
+                {
+                    let sni = parsed
+                        .client_hello()
+                        .server_name()
+                        .context("Missing SNI")?
+                        .to_owned();
+                    let name = domain_name(sni.as_bytes())?;
+                    if !["instagram.com", "cdninstagram.com"]
+                        .iter()
+                        .any(|d| name == *d || name.ends_with(&format!(".{d}")))
+                        && media_fallback_name(&name) == name
+                    {
+                        bail!("Unexpected Instagram SNI");
+                    }
+                    return Ok::<_, anyhow::Error>((wire, name));
+                }
+            }
+        }
+    })
+    .await??;
+    // Resolve on macOS, where Cudy has installed the ECS-aware Meta resolver.
+    // The client may have used DoH or cached an inaccessible regional address.
+    let canonical = media_fallback_name(&name);
+    let targets = std::iter::once(canonical).chain((canonical != name).then_some(name.as_str()));
+    for target in targets {
+        let Ok(Ok(peers)) = timeout(
+            Duration::from_secs(8),
+            tokio::net::lookup_host((target, 443)),
+        )
+        .await
+        else {
+            continue;
+        };
+        for peer in peers {
+            if let SocketAddr::V4(peer) = peer {
+                if public_ipv4(*peer.ip(), false).is_ok() {
+                    if let Ok((mut remote, _lease)) = pool.tcp(peer).await {
+                        remote.write_all(&hello).await?;
+                        tokio::io::copy_bidirectional(&mut client, &mut remote).await?;
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+    bail!("No reachable Instagram edge")
+}
+
 async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>) -> Result<()> {
     let request = timeout(Duration::from_secs(10), async {
         let version = client.read_u8().await?;
@@ -646,6 +719,9 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
         }
     };
     match command {
+        1 if port == 443 && matches!(&host, Host::Domain(name) if name == INSTAGRAM_TLS_RELAY) => {
+            instagram_tls(client, pool).await?;
+        }
         1 if port != 0 => {
             let remote = async {
                 let first = resolver.connect(host.clone(), port, false).await;

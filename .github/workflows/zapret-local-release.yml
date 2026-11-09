@@ -72,14 +72,14 @@ jobs:
           rustup target add "$BUILD_TARGET"
       - name: Install locked build dependencies
         run: npm ci
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/zapret-local/dns/go.mod
+          cache-dependency-path: apps/zapret-local/dns/go.sum
       - name: Prepare bundled engine and helper
         run: node scripts/prepare-release.mjs --target "$BUILD_TARGET"
-      - name: Prepare embedded Telegram runtime
-        run: python3 telegram/build.py --target "$BUILD_TARGET"
-      - name: Test embedded Telegram transport
-        run: |
-          python3 -m unittest discover -s telegram -p 'test_*.py'
-          python3 telegram/test_bundle.py "binaries/telegram-$BUILD_TARGET/zapret-telegram"
+      - name: Test direct DNS selector
+        run: cd dns && go test ./...
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
       - name: Test broker and privileged-helper logic
@@ -96,7 +96,7 @@ jobs:
       - name: Verify app dependencies and signatures
         run: |
           codesign --verify --deep --strict "dist/$BUILD_TARGET/Zapret Local.app"
-          for binary in Contents/MacOS/zapret-helper Contents/Resources/telegram/zapret-telegram; do
+          for binary in Contents/MacOS/zapret-helper Contents/Resources/network/xray Contents/Resources/network/sing-box Contents/Resources/network/cudy-dns; do
             arches="$(/usr/bin/lipo -archs "dist/$BUILD_TARGET/Zapret Local.app/$binary")"
             [[ " $arches " == *" $BUILD_ARCH "* ]]
           done
@@ -135,7 +135,7 @@ jobs:
           cat > release-notes.txt <<'NOTES'
           Zapret Local для macOS 14 и новее, Apple Silicon и Intel.
 
-          Скачайте DMG для своего Mac: aarch64 — Apple Silicon, x86_64 — Intel. Перенесите приложение в Applications и запустите его. Прокси управляется из строки меню. Telegram-мост, Python и зависимости встроены; Python и Homebrew устанавливать не нужно.
+          Скачайте DMG для своего Mac: aarch64 — Apple Silicon, x86_64 — Intel. Перенесите приложение в Applications и запустите его. Прокси управляется из строки меню. В приложение встроены Xray, sing-box и DNS-селектор.
 
           Эта сборка имеет локальную ad-hoc подпись, без Developer ID и нотарификации Apple. При первом открытии macOS может потребовать «Открыть всё равно» в разделе «Конфиденциальность и безопасность». Сетевой помощник устанавливается с отдельным системным подтверждением администратора.
 

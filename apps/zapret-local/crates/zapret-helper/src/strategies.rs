@@ -44,8 +44,79 @@ impl Selection {
 
     pub fn args(&self, directory: &Path, drop_root: bool) -> Result<Vec<String>> {
         self.validate()?;
+        let mut args = Vec::new();
+        if drop_root {
+            args.push(format!("--uid={}:{}", super::ENGINE_UID, super::GROUP));
+        }
+        // These sessions reach the broker only after the Cudy policy selected DPI.
+        let cf = format!(
+            "--ipset={}",
+            directory.join("cloudflare-ipv4.txt").display()
+        );
+        for (filter, matcher, proto) in [
+            (
+                "--filter-tcp=443",
+                "--hostlist-domains=trycloudflare.com".into(),
+                "tls",
+            ),
+            ("--filter-tcp=443,7844,8443", cf.clone(), "tls"),
+            ("--filter-udp=443,7844", cf.clone(), "quic"),
+            (
+                "--filter-tcp=443",
+                format!("--ipset-ip={}", super::network::VERCEL),
+                "tls",
+            ),
+            (
+                "--filter-udp=443",
+                format!("--ipset-ip={}", super::network::VERCEL),
+                "quic",
+            ),
+        ] {
+            args.extend([filter.into(), matcher, "--dpi-desync=fake".into()]);
+            if proto == "tls" {
+                args.extend([
+                    "--dpi-desync-repeats=12".into(),
+                    "--dpi-desync-fooling=ts".into(),
+                    "--dpi-desync-ts-increment=-600000".into(),
+                    format!(
+                        "--dpi-desync-fake-tls={}",
+                        directory.join(super::FILES[3]).display()
+                    ),
+                ]);
+            } else {
+                args.extend([
+                    "--filter-l7=quic".into(),
+                    "--dpi-desync-repeats=6".into(),
+                    format!(
+                        "--dpi-desync-fake-quic={}",
+                        directory.join(super::FILES[2]).display()
+                    ),
+                ]);
+            }
+            args.push("--new".into());
+        }
+        let media = super::network::MEDIA
+            .iter()
+            .chain(super::network::META)
+            .copied()
+            .collect::<Vec<_>>()
+            .join(",");
+        // ALT9's remaining Cloudflare web profile is HTTP on port 80.
+        // Leave named social sites to their existing hostname profiles on that port.
+        args.extend([
+            "--filter-tcp=80".into(),
+            cf,
+            format!("--hostlist-exclude-domains={media}"),
+            "--dpi-desync=hostfakesplit".into(),
+            "--dpi-desync-hostfakesplit-mod=host=ozon.ru".into(),
+            "--dpi-desync-repeats=4".into(),
+            "--dpi-desync-fooling=ts".into(),
+            "--dpi-desync-ts-increment=-600000".into(),
+            "--new".into(),
+        ]);
         if self.strategy == "local" {
-            return Ok(super::engine_args(directory, drop_root));
+            args.extend(super::engine_args(directory, false));
+            return Ok(args);
         }
         let preset = catalog()
             .into_iter()
@@ -57,10 +128,18 @@ impl Selection {
             "cloudflare" => "cloudflare-ipv4.txt",
             _ => "ipset-none.txt",
         });
-        let mut args = Vec::new();
-        if drop_root {
-            args.push(format!("--uid={}:{}", super::ENGINE_UID, super::GROUP));
-        }
+        args.extend([
+            "--filter-udp=443".into(),
+            "--filter-l7=quic".into(),
+            format!("--hostlist-domains={media}"),
+            "--dpi-desync=fake".into(),
+            "--dpi-desync-repeats=6".into(),
+            format!(
+                "--dpi-desync-fake-quic={}",
+                directory.join(super::FILES[2]).display()
+            ),
+            "--new".into(),
+        ]);
         for arg in preset.args {
             // Only compiled-in presets are accepted. No shell and no caller-
             // supplied paths/engine options cross the privileged IPC boundary.

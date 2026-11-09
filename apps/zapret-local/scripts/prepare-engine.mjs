@@ -32,7 +32,9 @@ for (const name of ['utunws', ...payloads]) {
   chmodSync(join(destination, name), name === 'utunws' ? 0o755 : 0o644);
 }
 for (const name of lists) {
-  const source = ['strategies.json', 'cloudflare-ipv4.txt'].includes(name)
+  const source = name === 'cloudflare-ipv4.txt'
+    ? join(root, '../../configs/cudy-tr3000', name)
+    : name === 'strategies.json'
     ? join(root, 'resources', name)
     : join(checkout, 'macos/Payload', name.startsWith('ipset-any') || name.startsWith('ipset-none') ? '' : 'default-lists', name);
   copyFileSync(source, join(destination, name));

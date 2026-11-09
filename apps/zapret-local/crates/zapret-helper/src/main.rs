@@ -1,5 +1,6 @@
-//! Root helper with a deliberately small local API. Never modifies default
-//! routes, system DNS, other PF anchors, v2rayN or unrelated processes.
+//! Root helper with a deliberately small local API. Never modifies
+//! other PF anchors or unrelated processes. The owned TUN handles system routing.
+mod network;
 mod strategies;
 use strategies::Selection;
 
@@ -29,19 +30,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-const LABEL: &str = "com.jellybebra.zapret-local";
-const INSTALL: &str = "/Library/PrivilegedHelperTools/com.jellybebra.zapret-local";
-const PLIST: &str = "/Library/LaunchDaemons/com.jellybebra.zapret-local.plist";
-const SOCKET: &str = "/var/run/com.jellybebra.zapret-local.sock";
-const WORKER_LOCK: &str = "/var/run/com.jellybebra.zapret-local.worker.lock";
-const SERVICE_LOCK: &str = "/var/run/com.jellybebra.zapret-local.service.lock";
-const ANCHOR: &str = "com.apple/zapret-local-app";
-const BROKER_UID: u32 = 60004;
-const ENGINE_UID: u32 = 60005;
+const LABEL: &str = "com.jellybebra.zapret-cudy";
+const INSTALL: &str = "/Library/PrivilegedHelperTools/com.jellybebra.zapret-cudy";
+const PLIST: &str = "/Library/LaunchDaemons/com.jellybebra.zapret-cudy.plist";
+const SOCKET: &str = "/var/run/com.jellybebra.zapret-cudy.sock";
+const WORKER_LOCK: &str = "/var/run/com.jellybebra.zapret-cudy.worker.lock";
+const SERVICE_LOCK: &str = "/var/run/com.jellybebra.zapret-cudy.service.lock";
+const ANCHOR: &str = "com.apple/zapret-cudy-app";
+const BROKER_UID: u32 = 60014;
+const ENGINE_UID: u32 = 60015;
 const GROUP: u32 = 65534;
-const PORT_FIRST: u16 = 42600;
-const PORT_LAST: u16 = 43623;
-const DEFAULT_PORT: u16 = 49946;
+const PORT_FIRST: u16 = 41000;
+const PORT_LAST: u16 = 42023;
+const DEFAULT_PORT: u16 = 49956;
 const COMMIT: &str = "94c3b5125b4904ce2f6aec0e2197fe17f2fadf14";
 const FILES: [&str; 20] = [
     "utunws",
@@ -78,6 +79,7 @@ extern "C" fn stop_signal(_: libc::c_int) {
 #[serde(deny_unknown_fields)]
 struct Request {
     command: String,
+    node: Option<serde_json::Value>,
     port: Option<u16>,
     selection: Option<Selection>,
 }
@@ -103,7 +105,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 2,
+            protocol_version: 12,
         }
     }
     fn failure(port: u16, error: impl ToString) -> Self {
@@ -154,7 +156,7 @@ fn signals() {
 fn valid_port(port: u16) -> Result<()> {
     ensure!(
         port >= 1024 && !(PORT_FIRST..=PORT_LAST).contains(&port),
-        "Choose a port from 1024–65535, excluding 42600–43623"
+        "Choose a port from 1024–65535, excluding 41000–42023"
     );
     Ok(())
 }
@@ -548,12 +550,28 @@ fn install(owner: u32, source: &Path) -> Result<()> {
     protected_dir(Path::new(INSTALL))?;
     protected_dir(&Path::new(INSTALL).join("engine"))?;
     protected_dir(Path::new("/Library/LaunchDaemons"))?;
+    let network_dir = Path::new(INSTALL).join("network");
+    protected_dir(&network_dir)?;
+    let network_source = source
+        .parent()
+        .context("Missing resources")?
+        .join("network");
+    let mut binaries = Vec::new();
+    for name in ["cudy-dns", "system-dns", "xray", "sing-box"] {
+        binaries.push((
+            name,
+            read_regular(&network_source.join(name), false, 280 * 1024 * 1024)?,
+        ));
+    }
     let (_service_lock, _worker_lock) = stop_installed_service()?;
     atomic_write(
         &Path::new(INSTALL).join("zapret-helper"),
         &executable,
         0o755,
     )?;
+    for (name, bytes) in binaries {
+        atomic_write(&network_dir.join(name), &bytes, 0o755)?;
+    }
     for (name, bytes) in data {
         atomic_write(
             &Path::new(INSTALL).join("engine").join(&name),
@@ -629,6 +647,10 @@ fn uninstall() -> Result<()> {
 }
 
 struct Runtime {
+    system_dns: Option<Child>,
+    dns: Option<Child>,
+    xray: Option<Child>,
+    tun: Option<Child>,
     engine: Option<Child>,
     broker: Option<Child>,
     token: Option<String>,
@@ -637,6 +659,10 @@ struct Runtime {
 impl Runtime {
     fn new() -> Self {
         Self {
+            system_dns: None,
+            dns: None,
+            xray: None,
+            tun: None,
             engine: None,
             broker: None,
             token: None,
@@ -644,13 +670,30 @@ impl Runtime {
         }
     }
     fn children_alive(&mut self) -> Result<()> {
-        for child in [&mut self.engine, &mut self.broker].into_iter().flatten() {
+        for child in [
+            &mut self.system_dns,
+            &mut self.tun,
+            &mut self.dns,
+            &mut self.xray,
+            &mut self.engine,
+            &mut self.broker,
+        ]
+        .into_iter()
+        .flatten()
+        {
             ensure!(child.try_wait()?.is_none(), "Proxy or packet engine exited");
         }
         Ok(())
     }
     fn cleanup(&mut self) -> Result<()> {
-        for child in [&mut self.broker, &mut self.engine] {
+        for child in [
+            &mut self.system_dns,
+            &mut self.tun,
+            &mut self.xray,
+            &mut self.dns,
+            &mut self.broker,
+            &mut self.engine,
+        ] {
             if let Some(mut owned) = child.take() {
                 stop_child(&mut owned);
             }
@@ -769,12 +812,15 @@ fn preflight(
     Ok(network)
 }
 
-fn worker(port: u16, selection: Selection) -> Result<()> {
+fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Result<()> {
     root_required()?;
     signals();
     descriptor_limit()?;
     let _lock = lock_file(WORKER_LOCK)?;
     let directory = Path::new(INSTALL).join("engine");
+    if node.is_some() {
+        network::check_tun()?;
+    }
     let network = preflight(port, &directory, true, &selection)?;
     let (unit, utun, local, peer) = choose_utun()?;
     let main = checked("/sbin/pfctl", &["-sr"], None)?;
@@ -884,6 +930,9 @@ fn worker(port: u16, selection: Selection) -> Result<()> {
         thread::sleep(Duration::from_millis(100));
     }
     ensure!(ready, "Local SOCKS5 proxy failed its readiness check");
+    if let Some(node) = node {
+        network::start(&mut runtime, stage.path(), &network, port, &node)?;
+    }
     println!(
         "{}",
         serde_json::to_string(&Response {
@@ -897,7 +946,7 @@ fn worker(port: u16, selection: Selection) -> Result<()> {
         runtime.children_alive()?;
         if network_check.elapsed() >= Duration::from_secs(2) {
             ensure!(
-                physical_network(&network.interface)? == network,
+                choose_network()? == network,
                 "Physical network changed; proxy stopped"
             );
             network_check = Instant::now();
@@ -914,7 +963,7 @@ struct WorkerProcess {
     output: BufReader<ChildStdout>,
 }
 impl WorkerProcess {
-    fn start(port: u16, selection: &Selection) -> Result<Self> {
+    fn start(port: u16, selection: &Selection, node: &network::Node) -> Result<Self> {
         let mut child = Command::new(Path::new(INSTALL).join("zapret-helper"))
             .args([
                 "--worker",
@@ -930,14 +979,16 @@ impl WorkerProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()?;
-        let lifetime = child.stdin.take();
+        let mut lifetime = child.stdin.take().context("Worker stdin")?;
+        serde_json::to_writer(&mut lifetime, node)?;
+        lifetime.write_all(b"\n")?;
         let output = BufReader::new(child.stdout.take().context("Worker has no output")?);
         let mut own = Self {
             child,
-            lifetime,
+            lifetime: Some(lifetime),
             output,
         };
-        let deadline = Instant::now() + Duration::from_secs(40);
+        let deadline = Instant::now() + Duration::from_secs(90);
         loop {
             if STOP.load(Ordering::SeqCst) {
                 bail!("Helper is stopping");
@@ -1082,7 +1133,16 @@ impl Controller {
         if !self.status.ok {
             return self.status.clone();
         }
-        match WorkerProcess::start(port, &selection) {
+        let node = match req
+            .node
+            .as_ref()
+            .context("Нет профиля VLESS")
+            .and_then(network::Node::import)
+        {
+            Ok(value) => value,
+            Err(e) => return self.reject(e),
+        };
+        match WorkerProcess::start(port, &selection, &node) {
             Ok(worker) => {
                 self.worker = Some(worker);
                 self.owner = Some(session);
@@ -1136,7 +1196,7 @@ fn handle_client(
                 }
                 Err(e) => return Err(e.into()),
             }
-            ensure!(pending.len() <= 4096, "IPC message too large");
+            ensure!(pending.len() <= 16384, "IPC message too large");
             while let Some(index) = pending.iter().position(|b| *b == b'\n') {
                 let line: Vec<_> = pending.drain(..=index).collect();
                 let response = match serde_json::from_slice::<Request>(&line) {
@@ -1295,6 +1355,13 @@ fn main_inner() -> Result<()> {
     };
     selection.validate()?;
     match args.first().map(String::as_str) {
+        Some("--check-tun") => network::check_tun()?,
+        Some("--probe-node") => {
+            let mut input=Vec::new();
+            std::io::stdin().take(16385).read_to_end(&mut input)?;
+            ensure!(input.len() <= 16384, "Профиль слишком большой");
+            network::probe_node(&input, &bundled_resources()?.with_file_name("network"))?;
+        }
         Some("--version") => println!("{}", env!("CARGO_PKG_VERSION")),
         Some("--install") => {
             let uid = value(&args, "--uid")?.context("Missing owner UID")?.parse()?;
@@ -1303,7 +1370,13 @@ fn main_inner() -> Result<()> {
         }
         Some("--serve") => serve()?,
         Some("--uninstall") => uninstall()?,
-        Some("--worker") => worker(port, selection.clone())?,
+        #[cfg(debug_assertions)]
+        Some("--probe-dpi") => worker(port, selection, None)?,
+        Some("--worker") => {
+            let mut data = String::new();
+            std::io::stdin().lock().take(16384).read_line(&mut data)?;
+            worker(port, selection.clone(), Some(serde_json::from_str(&data)?))?
+        },
         Some("--broker") => broker(value(&args, "--interface")?.context("Missing interface")?, value(&args, "--source-ip")?.context("Missing source IP")?.parse()?, port)?,
         Some("--check") => {
             let resources = value(&args, "--resources")?.map(PathBuf::from).unwrap_or(bundled_resources()?);
@@ -1339,14 +1412,14 @@ mod tests {
         for p in [0, 80, 1023, PORT_FIRST, PORT_LAST] {
             assert!(valid_port(p).is_err());
         }
-        for p in [1024, 49946, 65535] {
+        for p in [1024, 49956, 65535] {
             assert!(valid_port(p).is_ok());
         }
     }
     #[test]
     fn pf_scope_is_only_the_dedicated_broker() {
         let r = rules("192.0.2.3".parse().unwrap(), "utun70", "10.254.71.2");
-        assert!(r.contains("from 192.0.2.3 port 42600:43623 to any user 60004"));
+        assert!(r.contains("from 192.0.2.3 port 41000:42023 to any user 60014"));
         assert!(r.contains("route-to (utun70 10.254.71.2)"));
         assert!(!r.contains("60000"));
         assert!(!r.contains("60002"));
@@ -1390,7 +1463,7 @@ mod tests {
         assert!(!domains.contains(&"x.com"));
         assert!(args.contains(&"--dpi-desync=multidisorder".into()));
         assert!(args.contains(&"--filter-l7=discord,stun".into()));
-        assert_eq!(args[0], "--uid=60005:65534");
+        assert_eq!(args[0], "--uid=60015:65534");
         assert!(!engine_args(Path::new("/engine"), false)
             .iter()
             .any(|a| a.starts_with("--uid=")));

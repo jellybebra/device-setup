@@ -10,8 +10,6 @@ const version = config.version;
 if (typeof name !== 'string' || typeof version !== 'string') throw new Error('Explicit productName/version are required.');
 const app = join(root, 'dist', target, `${name}.app`);
 if (!existsSync(app)) throw new Error(`App bundle missing: ${app}. Run npm run build first.`);
-const telegram = join(app, 'Contents/Resources/telegram');
-if (!existsSync(join(telegram, 'zapret-telegram'))) throw new Error('Bundle is missing the embedded Telegram transport.');
 const engine = join(app, 'Contents/Resources/engine');
 const manifestPath = join(engine, 'manifest.json');
 if (!existsSync(manifestPath)) throw new Error('Bundle is missing Contents/Resources/engine.');
@@ -25,7 +23,7 @@ for (const file of ['utunws', ...payloads, ...lists]) {
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 run('/usr/bin/codesign', ['--force', '--sign', '-', app]);
 run('/usr/bin/codesign', ['--verify', '--deep', '--strict', app]);
-for (const binary of ['Contents/MacOS/zapret-local', 'Contents/MacOS/zapret-helper', 'Contents/Resources/engine/utunws', 'Contents/Resources/telegram/zapret-telegram']) {
+for (const binary of ['Contents/MacOS/zapret-local', 'Contents/MacOS/zapret-helper', 'Contents/Resources/engine/utunws', ...['sing-box','xray','cudy-dns','system-dns'].map(name=>'Contents/Resources/network/'+name)]) {
   const arches = output('/usr/bin/lipo', ['-archs', join(app, binary)]);
   if (target === 'universal-apple-darwin' && (!arches.includes('arm64') || !arches.includes('x86_64'))) {
     throw new Error(`Universal bundle contains a single-architecture binary: ${binary}`);

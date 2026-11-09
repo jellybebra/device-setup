@@ -6,41 +6,29 @@ import Combine
 import OSLog
 
 struct StrategySelection: Codable, Equatable, Sendable {
-    var strategy = "local"
+    var strategy = "general-exp"
     var ipset = "cloudflare"
 }
 
-struct StrategyPreset: Decodable, Identifiable, Sendable {
-    let id: String
-    let title: String
-    static let all: [StrategyPreset] = {
-        let local = StrategyPreset(id: "local", title: "Моя проверенная настройка")
-        guard let file = Bundle.main.resourceURL?.appendingPathComponent("engine/strategies.json"),
-              let data = try? Data(contentsOf: file),
-              let presets = try? JSONDecoder().decode([StrategyPreset].self, from: data) else { return [local] }
-        return [local] + presets
-    }()
-}
-
 struct ProxySettings: Codable, Sendable {
-    var port: UInt16 = 49946
+    var port: UInt16 = 49956
     var lastEnabled = false
     var selection: StrategySelection?
 }
 
 struct ProxyState: Sendable {
-    var port: UInt16 = 49946
+    var port: UInt16 = 49956
     var running = false
     var enabled = false
     var error: String?
-    var telegram = TelegramState()
     var selection = StrategySelection()
 }
 
 actor ProxyService {
-    private let telegram: TelegramBridge
+    private let checkTunnel: () throws -> Void
+    private let profile: () throws -> Data
     private let clientFactory: () throws -> HelperClient
-    private let logger = Logger(subsystem: "com.jellybebra.zapret-local", category: "lifecycle")
+    private let logger = Logger(subsystem: "com.jellybebra.zapret-cudy", category: "lifecycle")
     private var recoveryPending = false
     private var settings = ProxySettings()
     private var client: HelperClient?
@@ -49,12 +37,14 @@ actor ProxyService {
     private var reconnectAfter = Date.distantPast
     private let settingsURL: URL
 
-    init(settingsURL: URL? = nil, telegram: TelegramBridge = TelegramBridge(),
+    init(settingsURL: URL? = nil, profile: @escaping () throws -> Data = VLESSProfile.load,
+         checkTunnel: @escaping () throws -> Void = ProxyService.checkTunnelConflict,
          clientFactory: @escaping () throws -> HelperClient = { try HelperClient() }) {
-        self.telegram = telegram
+        self.profile = profile
+        self.checkTunnel = checkTunnel
         self.clientFactory = clientFactory
         self.settingsURL = settingsURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("com.jellybebra.zapret-local", isDirectory: true)
+            .appendingPathComponent("com.jellybebra.zapret-cudy", isDirectory: true)
             .appendingPathComponent("settings.json")
         if FileManager.default.fileExists(atPath: self.settingsURL.path) {
             do {
@@ -67,9 +57,25 @@ actor ProxyService {
         }
     }
 
+    static func checkTunnelConflict() throws {
+        let probe = Process()
+        guard let exe = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("zapret-helper") else {
+            throw ProxyError("Не найден сетевой помощник")
+        }
+        probe.executableURL = exe
+        probe.arguments = ["--check-tun"]
+        probe.standardOutput = FileHandle.nullDevice
+        probe.standardError = FileHandle.nullDevice
+        try probe.run()
+        probe.waitUntilExit()
+        guard probe.terminationStatus == 0 else {
+            throw ProxyError("Системный маршрут уже занят другим TUN либо недоступен")
+        }
+    }
+
     static func validatePort(_ port: UInt16) throws {
-        guard port >= 1024, !(42600...43623).contains(port) else {
-            throw ProxyError("Порт: 1024–65535, кроме служебных 42600–43623")
+        guard port >= 1024, !(41000...42023).contains(port) else {
+            throw ProxyError("Порт: 1024–65535, кроме служебных 41000–42023")
         }
     }
 
@@ -95,7 +101,7 @@ actor ProxyService {
     }
 
     private func save() throws {
-        try FileManager.default.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let data = try JSONEncoder().encode(settings)
         try data.write(to: settingsURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: settingsURL.path)
@@ -122,21 +128,26 @@ actor ProxyService {
         throw ProxyError("Помощник не запустился после установки")
     }
 
-    private func start(allowInstall: Bool) throws {
+    private func start(allowInstall: Bool, nodeOverride: Data? = nil) throws {
         if running { return }
+        let node = try nodeOverride ?? profile()
+        try checkTunnel()
         try checkPort(settings.port)
         try connect(allowInstall: allowInstall)
-        let reply = try client!.request("start", port: settings.port, selection: settings.selection ?? StrategySelection())
+        let reply = try client!.request("start", port: settings.port, selection: settings.selection ?? StrategySelection(), node: node)
         running = reply.running
         logger.notice("Proxy start replied: ok=\(reply.ok), running=\(reply.running)")
         guard reply.ok, reply.running, reply.port == settings.port else {
-            throw ProxyError(reply.error ?? "Не удалось запустить прокси")
+            // A failed network activation must not be retried by the periodic status poll.
+            settings.lastEnabled = false
+            recoveryPending = false
+            try save()
+            throw ProxyError(reply.error ?? "Не удалось запустить маршрутизацию")
         }
     }
 
     private func stop() throws {
-        logger.notice("Stopping local proxy and Telegram bridge")
-        let telegramStopped = telegram.stop()
+        logger.notice("Stopping network session")
         if let client {
             let reply: HelperReply
             do { reply = try client.request("stop") }
@@ -151,20 +162,34 @@ actor ProxyService {
             guard reply.ok, !reply.running else { throw ProxyError(reply.error ?? "Не удалось остановить прокси") }
         }
         running = false
-        guard telegramStopped else { throw ProxyError(telegram.state.error ?? "Не удалось остановить Telegram") }
     }
 
     func state() -> ProxyState {
-        telegram.sync(enabled: running && settings.lastEnabled, socks: settings.port)
-        return ProxyState(port: settings.port, running: running, enabled: settings.lastEnabled, error: error, telegram: telegram.state, selection: settings.selection ?? StrategySelection())
+        return ProxyState(port: settings.port, running: running, enabled: settings.lastEnabled, error: error, selection: settings.selection ?? StrategySelection())
     }
 
-    func telegramURL() -> URL? { telegram.connectionURL() }
-
-    func setTelegramPort(_ port: UInt16) -> ProxyState {
+    func choose(_ candidate: ProxyServer) -> ProxyState {
         error = nil
-        do { try telegram.setPort(port, socks: settings.port, enabled: running) }
-        catch { self.error = error.localizedDescription }
+        do {
+            if settings.lastEnabled {
+                let previous = try profile()
+                try VLESSProfile.probe(candidate)
+                try stop()
+                do {
+                    try start(allowInstall: false, nodeOverride: candidate.outbound)
+                    try VLESSProfile.save(candidate)
+                } catch {
+                    let failure = error.localizedDescription
+                    try stop()
+                    settings.lastEnabled = true
+                    try save()
+                    try start(allowInstall: false, nodeOverride: previous)
+                    throw ProxyError("Смена сервера не удалась. Восстановлен предыдущий сервер. " + failure)
+                }
+            } else {
+                try VLESSProfile.save(candidate)
+            }
+        } catch { self.error = error.localizedDescription }
         return state()
     }
 
@@ -185,55 +210,14 @@ actor ProxyService {
             try save()
             logger.notice("User requested enabled=\(enabled)")
             if enabled { try start(allowInstall: true) } else { try stop() }
-        } catch { self.error = error.localizedDescription }
-        return state()
-    }
-
-    func setPort(_ port: UInt16) -> ProxyState {
-        guard port != settings.port else { return state() }
-        error = nil
-        let previous = settings.port
-        let wasRunning = running
-        do {
-            guard port != telegram.state.port else { throw ProxyError("Порты Telegram и Zapret должны отличаться") }
-            try checkPort(port)
-            if wasRunning { try stop() }
-            settings.port = port
-            do {
-                if wasRunning { try start(allowInstall: false) }
-                try save()
-            } catch {
+        } catch {
+            self.error = error.localizedDescription
+            if enabled {
                 try? stop()
-                settings.port = previous
-                if wasRunning { try? start(allowInstall: false) }
-                throw error
+                settings.lastEnabled = false
+                try? save()
             }
-        } catch { self.error = error.localizedDescription }
-        return state()
-    }
-
-    func setSelection(_ selection: StrategySelection, force: Bool = false) -> ProxyState {
-        guard force || selection != (settings.selection ?? StrategySelection()) else { return state() }
-        guard StrategyPreset.all.contains(where: { $0.id == selection.strategy }),
-              ["none", "cloudflare", "loaded", "any"].contains(selection.ipset) else {
-            error = "Неизвестная стратегия"; return state()
         }
-        let previous = settings.selection
-        let wasRunning = running || settings.lastEnabled
-        error = nil
-        do {
-            try stop()
-            settings.selection = selection
-            do {
-                if wasRunning { try start(allowInstall: true) }
-                try save()
-            } catch {
-                try? stop()
-                settings.selection = previous
-                if wasRunning { try? start(allowInstall: false) }
-                throw error
-            }
-        } catch { self.error = error.localizedDescription }
         return state()
     }
 
@@ -291,16 +275,66 @@ actor ProxyService {
 final class ProxyModel: ObservableObject {
     @Published private(set) var state = ProxyState()
     @Published private(set) var busy = false
-    @Published private(set) var autostart = false
-    @Published var portText = "49946"
-    @Published var telegramPortText = "44950"
     @Published var notice: String?
+    @Published private(set) var servers: [ProxyServer] = []
+    @Published private(set) var selectedServer: ProxyServer?
+
+    func refreshServers() {
+        do {
+            apply(try ServerStore.shared.read())
+        } catch { notice = error.localizedDescription }
+    }
+
+    private func apply(_ library: ServerLibrary) {
+        servers = library.servers
+        selectedServer = library.selected
+        notice = servers.isEmpty ? "Добавьте VLESS-сервер в меню «Управление серверами»" : nil
+    }
+
+    func saveServer(id: String?, name: String, link: String) throws {
+        guard !busy else { throw ProxyError("Дождитесь завершения переключения") }
+        let library = try ServerStore.shared.change { library in
+            var server: ProxyServer
+            if let id {
+                guard let existing = library.servers.first(where: { $0.id == id }) else { throw ProxyError("Сервер уже удалён") }
+                if link.isEmpty {
+                    server = existing
+                    let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !title.isEmpty else { throw ProxyError("Укажите название сервера") }
+                    server.name = title
+                } else {
+                    guard library.selectedID != id || !state.enabled else {
+                        throw ProxyError("Для замены ссылки сначала выберите другой сервер или выключите Zapret Local")
+                    }
+                    server = try ProxyServer.fromLink(link, name: name, id: id)
+                }
+            } else {
+                server = try ProxyServer.fromLink(link, name: name)
+            }
+            try library.put(server)
+        }
+        apply(library)
+    }
+
+    func removeServer(_ id: String) throws {
+        guard !busy else { throw ProxyError("Дождитесь завершения переключения") }
+        apply(try ServerStore.shared.change { try $0.remove(id, enabled: state.enabled) })
+    }
+
+    func choose(_ server: ProxyServer) {
+        guard !busy, server.id != selectedServer?.id else { return }
+        busy = true
+        Task {
+            update(await service.choose(server))
+            refreshServers()
+            busy = false
+        }
+    }
     private let service = ProxyService()
     private var monitor: Task<Void, Never>?
     private var wakeObserver: AnyCancellable?
 
     init() {
-        autostart = SMAppService.mainApp.status == .enabled
         wakeObserver = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in await self?.service.networkDidWake() }
@@ -314,18 +348,12 @@ final class ProxyModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
                 guard !Task.isCancelled else { break }
-                if !self.busy { self.update(await service.refresh(), updatePort: false) }
+                if !self.busy { self.update(await service.refresh()) }
             }
         }
     }
 
-    private func update(_ newState: ProxyState, updatePort: Bool = true) {
-        state = newState
-        if updatePort {
-            portText = String(newState.port)
-            telegramPortText = String(newState.telegram.port)
-        }
-    }
+    private func update(_ newState: ProxyState) { state = newState }
 
     func toggle() {
         guard !busy else { return }
@@ -335,91 +363,6 @@ final class ProxyModel: ObservableObject {
         Task {
             update(await service.setEnabled(enable))
             busy = false
-        }
-    }
-
-    func applyPort() {
-        guard !busy else { return }
-        guard let port = UInt16(portText), (try? ProxyService.validatePort(port)) != nil else {
-            notice = "Порт: 1024–65535, кроме служебных 42600–43623"
-            return
-        }
-        busy = true
-        notice = nil
-        Task {
-            update(await service.setPort(port))
-            busy = false
-        }
-    }
-
-    func selectStrategy(_ id: String) {
-        var selection = state.selection; selection.strategy = id; applySelection(selection)
-    }
-
-    func applyTelegramPort() {
-        guard !busy else { return }
-        guard let port = UInt16(telegramPortText), (try? ProxyService.validatePort(port)) != nil else {
-            notice = "Порт: 1024–65535, кроме служебных 42600–43623"
-            return
-        }
-        busy = true; notice = nil
-        Task {
-            update(await service.setTelegramPort(port))
-            busy = false
-        }
-    }
-
-    func copyTelegram() {
-        Task {
-            if let url = await service.telegramURL() {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(url.absoluteString, forType: .string)
-            }
-        }
-    }
-
-    func selectIPSet(_ mode: String) {
-        var selection = state.selection; selection.ipset = mode; applySelection(selection)
-    }
-
-    func reconnect() { applySelection(state.selection, force: true) }
-
-    private func applySelection(_ selection: StrategySelection, force: Bool = false) {
-        guard !busy else { return }
-        busy = true; notice = nil
-        Task {
-            update(await service.setSelection(selection, force: force))
-            busy = false
-        }
-    }
-
-    func setAutostart(_ enabled: Bool) {
-        guard !busy else { return }
-        notice = nil
-        do {
-            if enabled { try SMAppService.mainApp.register() }
-            else { try SMAppService.mainApp.unregister() }
-            autostart = SMAppService.mainApp.status == .enabled
-            if enabled && SMAppService.mainApp.status == .requiresApproval {
-                notice = "Разрешите автозапуск в настройках macOS"
-                SMAppService.openSystemSettingsLoginItems()
-            }
-        } catch {
-            notice = "Не удалось изменить автозапуск: \(error.localizedDescription)"
-            autostart = SMAppService.mainApp.status == .enabled
-        }
-    }
-
-    func appeared() { autostart = SMAppService.mainApp.status == .enabled }
-
-    func copyProxy() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString("socks://127.0.0.1:\(state.port)#Zapret-Local", forType: .string)
-    }
-
-    func connectTelegram() {
-        Task {
-            if let url = await service.telegramURL() { NSWorkspace.shared.open(url) }
         }
     }
 

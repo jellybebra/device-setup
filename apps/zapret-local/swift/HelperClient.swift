@@ -18,7 +18,7 @@ struct ProxyError: LocalizedError, Sendable {
 }
 
 final class HelperClient {
-    static let path = "/var/run/com.jellybebra.zapret-local.sock"
+    static let path = "/var/run/com.jellybebra.zapret-cudy.sock"
     private var descriptor: Int32 = -1
     private var pending = Data()
 
@@ -65,14 +65,15 @@ final class HelperClient {
         pending.removeAll()
     }
 
-    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil, timeout: TimeInterval? = nil) throws -> HelperReply {
+    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil, node: Data? = nil, timeout: TimeInterval? = nil) throws -> HelperReply {
         // A status check must not hold the service actor for a full minute.
         // Start/stop retain the helper's existing startup and cleanup budgets.
-        let deadline = ContinuousClock.now.advanced(by: .milliseconds(Int64((timeout ?? (command == "status" ? 3 : 60)) * 1000)))
+        let deadline = ContinuousClock.now.advanced(by: .milliseconds(Int64((timeout ?? (command == "status" ? 3 : 100)) * 1000)))
         var completed = false
         defer { if !completed { disconnect() } }
         guard descriptor >= 0 else { throw ProxyError("Нет связи с сетевым помощником") }
         var request: [String: Any] = ["command": command]
+        if let node { request["node"] = try JSONSerialization.jsonObject(with: node) }
         if let port { request["port"] = Int(port) }
         if let selection { request["selection"] = ["strategy": selection.strategy, "ipset": selection.ipset] }
         var data = try JSONSerialization.data(withJSONObject: request)
@@ -103,7 +104,7 @@ final class HelperClient {
         guard reply.version == (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") else {
             throw ProxyError("Сетевой помощник требует обновления")
         }
-        guard reply.protocolVersion == 2 else { throw ProxyError("Сетевой помощник требует обновления для выбора стратегий") }
+        guard reply.protocolVersion == 12 else { throw ProxyError("Сетевой помощник требует обновления") }
         completed = true
         return reply
     }
