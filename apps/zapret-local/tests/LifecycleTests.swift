@@ -56,7 +56,7 @@ final class FakeHelper: @unchecked Sendable {
 
     static func send(_ fd: Int32, running: Bool = false, ok: Bool = true, port: Int = 49946) {
         let value: [String: Any] = ["ok": ok, "running": running, "port": port,
-            "version": "0.1.0", "protocolVersion": 12, "error": ok ? NSNull() : "Network changed" as Any]
+            "version": "0.1.0", "protocolVersion": 13, "error": ok ? NSNull() : "Network changed" as Any]
         var data = try! JSONSerialization.data(withJSONObject: value)
         data.append(10)
         data.withUnsafeBytes { bytes in

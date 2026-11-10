@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use std::os::unix::process::CommandExt;
 
 const CLOUDFLARE: &str = include_str!("../../../../../configs/cudy-tr3000/cloudflare-ipv4.txt");
+const CLOUDFRONT: &str = include_str!("../../../resources/cloudfront-ipv4.txt");
 pub(super) const MEDIA: &[&str] = &[
     "youtube.com",
     "youtu.be",
@@ -246,6 +247,7 @@ fn sing(
         .lines()
         .filter(|l| !l.trim().is_empty())
         .collect();
+    let cloudfront: Vec<_> = CLOUDFRONT.lines().collect();
     let vercel: Vec<_> = VERCEL.split(',').collect();
     let media: Vec<_> = MEDIA.iter().chain(META).collect();
     // Match before sniffing when system DNS knows the name so the TUN can
@@ -290,7 +292,9 @@ fn sing(
         {"domain_suffix":["trycloudflare.com","vercel.app","vercel.sh"],"outbound":"dpi"},
         {"ip_cidr":vercel,"outbound":"dpi"},
         {"ip_cidr":cdn,"network":"tcp","port":[80,443,8443],"outbound":"dpi"},
-        {"ip_cidr":cdn,"network":"udp","port":443,"outbound":"dpi"}
+        {"ip_cidr":cdn,"network":"udp","port":443,"outbound":"dpi"},
+        {"ip_cidr":cloudfront,"network":"udp","port":443,"outbound":"vless"},
+        {"ip_cidr":cloudfront,"network":"tcp","port":[80,443],"outbound":"vless"}
       ]}
     })
 }
@@ -810,6 +814,14 @@ mod tests {
             *cf[1].1,
             json!({"ip_cidr":cidrs,"network":"udp","port":443,"outbound":"dpi"})
         );
+        let cloudfront = json!(CLOUDFRONT.lines().collect::<Vec<_>>());
+        let after_cf = &rules[cf[1].0 + 1..];
+        assert!(after_cf.contains(
+            &json!({"ip_cidr":cloudfront,"network":"udp","port":443,"outbound":"vless"})
+        ));
+        assert!(after_cf.contains(
+            &json!({"ip_cidr":cloudfront,"network":"tcp","port":[80,443],"outbound":"vless"})
+        ));
         let before_cf = &rules[..cf[0].0];
         for exception in [
             json!({"port":7844,"outbound":"dpi"}),
