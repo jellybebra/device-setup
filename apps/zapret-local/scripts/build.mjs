@@ -31,7 +31,7 @@ for (const arch of archTargets) {
     '-framework', 'Security', '-framework', 'ServiceManagement', '-o', outputPath]);
   binaries.push(outputPath);
 }
-const app = join(root, 'dist', target, 'Zapret Local.app');
+const app = join(root, 'dist', target, 'V2DPI.app');
 if (existsSync(app)) rmSync(app, { recursive: true });
 const macos = join(app, 'Contents/MacOS');
 const bundledResources = join(app, 'Contents/Resources');
@@ -50,8 +50,8 @@ writeFileSync(join(app, 'Contents/Info.plist'), `<?xml version="1.0" encoding="U
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>com.jellybebra.zapret-cudy</string>
-  <key>CFBundleName</key><string>Zapret Local · Cudy</string>
-  <key>CFBundleDisplayName</key><string>Zapret Local · Cudy</string>
+  <key>CFBundleName</key><string>V2DPI</string>
+  <key>CFBundleDisplayName</key><string>V2DPI</string>
   <key>CFBundleExecutable</key><string>zapret-local</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>

@@ -9,7 +9,7 @@
 | [Huawei AX3](docs/huawei-ax3.md) | Профиль VLESS для debug-прошивки, прямой игровой UDP, совместимая сборка Xray |
 | [v2rayN на Windows и macOS](docs/v2rayn-routing.md) | Различия клиентских профилей, исключения TUN и маршрутизация через Zapret Local |
 | [Happ на iPhone](docs/happ-ios.md) | Локальный профиль маршрутизации, серверная подписка и условия входа по passkey |
-| [Zapret Local](apps/zapret-local/README.md) | Самостоятельный TUN для macOS с правилами Cudy, DPI и VLESS |
+| [V2DPI](apps/zapret-local/README.md) | Самостоятельный TUN для macOS с правилами Cudy, DPI и VLESS |
 
 **Windows:** [набор приложений после переустановки](docs/windows-reinstall.md),
 [голосовой ввод Chrome](docs/chrome-voice-windows.md), [Vencord](docs/vencord.md),

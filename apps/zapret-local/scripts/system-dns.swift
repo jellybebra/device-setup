@@ -5,7 +5,7 @@ import SystemConfiguration
 import Darwin
 
 guard CommandLine.arguments.count == 2, let port = UInt16(CommandLine.arguments[1]), port == 53 || port >= 1024 else { exit(2) }
-guard let store = SCDynamicStoreCreate(nil, "Zapret Local DNS" as CFString, nil, nil) else { exit(1) }
+guard let store = SCDynamicStoreCreate(nil, "V2DPI DNS" as CFString, nil, nil) else { exit(1) }
 let key = SCDynamicStoreKeyCreateNetworkServiceEntity(nil, kSCDynamicStoreDomainState,
                                                       "com.jellybebra.zapret-cudy" as CFString, kSCEntNetDNS)
 let settings: [String: Any] = [

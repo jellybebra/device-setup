@@ -54,7 +54,7 @@ struct ServerManager: View {
                                         Button("Изменить…") { edit(server) }
                                         Button("Удалить…", role: .destructive) {
                                             if selected && model.state.enabled {
-                                                message = "Сначала выберите другой сервер или выключите Zapret Local"
+                                                message = "Сначала выберите другой сервер или выключите V2DPI"
                                             } else { deleting = server }
                                         }
                                     } label: { Image(systemName: "ellipsis.circle") }
@@ -72,7 +72,7 @@ struct ServerManager: View {
             }
         }
         .padding(18).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .alert("Удалить сервер из Zapret Local?", isPresented: Binding(get: { deleting != nil },
+        .alert("Удалить сервер из V2DPI?", isPresented: Binding(get: { deleting != nil },
             set: { if !$0 { deleting = nil } }), presenting: deleting) { server in
             Button("Удалить", role: .destructive) { perform { try model.removeServer(server.id) } }
             Button("Отмена", role: .cancel) {}

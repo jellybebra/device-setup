@@ -304,7 +304,7 @@ final class ProxyModel: ObservableObject {
                     server.name = title
                 } else {
                     guard library.selectedID != id || !state.enabled else {
-                        throw ProxyError("Для замены ссылки сначала выберите другой сервер или выключите Zapret Local")
+                        throw ProxyError("Для замены ссылки сначала выберите другой сервер или выключите V2DPI")
                     }
                     server = try ProxyServer.fromLink(link, name: name, id: id)
                 }

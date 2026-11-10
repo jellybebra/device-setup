@@ -5,7 +5,7 @@ import { root, revision, payloads, lists, run, targetArgument, output } from './
 
 const target = targetArgument();
 const config = JSON.parse(readFileSync(join(root, 'package.json')));
-const name = 'Zapret Local';
+const name = 'V2DPI';
 const version = config.version;
 if (typeof name !== 'string' || typeof version !== 'string') throw new Error('Explicit productName/version are required.');
 const app = join(root, 'dist', target, `${name}.app`);
@@ -38,7 +38,7 @@ cpSync(app, join(stage, `${name}.app`), { recursive: true, verbatimSymlinks: tru
 symlinkSync('/Applications', join(stage, 'Applications'));
 copyFileSync(join(root, 'THIRD_PARTY_NOTICES.md'), join(stage, 'THIRD_PARTY_NOTICES.txt'));
 const arch = target === 'universal-apple-darwin' ? 'universal' : target.split('-')[0];
-const dmg = join(dist, `Zapret-Local_${version}_${arch}.dmg`);
+const dmg = join(dist, `V2DPI_${version}_${arch}.dmg`);
 run('/usr/bin/hdiutil', ['create', '-volname', name, '-srcfolder', stage, '-format', 'UDZO', '-fs', 'HFS+', '-ov', dmg]);
 run('/usr/bin/hdiutil', ['verify', dmg]);
 rmSync(stage, { recursive: true });

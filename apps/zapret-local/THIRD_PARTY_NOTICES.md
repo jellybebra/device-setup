@@ -1,6 +1,6 @@
 # Third-party notices
 
-Zapret Local bundles the separate `utunws` executable and fake packet payloads from Flowseal/zapret-mac-discord-youtube at revision `94c3b5125b4904ce2f6aec0e2197fe17f2fadf14`. The source is unmodified.
+V2DPI bundles the separate `utunws` executable and fake packet payloads from Flowseal/zapret-mac-discord-youtube at revision `94c3b5125b4904ce2f6aec0e2197fe17f2fadf14`. The source is unmodified.
 
 Upstream: https://github.com/Flowseal/zapret-mac-discord-youtube
 

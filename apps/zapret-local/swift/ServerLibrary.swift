@@ -21,7 +21,7 @@ struct ServerLibrary: Codable {
 
     mutating func remove(_ id: String, enabled: Bool) throws {
         if selectedID == id && enabled {
-            throw ProxyError("Сначала выберите другой сервер или выключите Zapret Local")
+            throw ProxyError("Сначала выберите другой сервер или выключите V2DPI")
         }
         servers.removeAll { $0.id == id }
         if selectedID == id { selectedID = servers.first?.id }

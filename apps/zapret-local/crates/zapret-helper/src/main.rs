@@ -1343,7 +1343,7 @@ fn bundled_resources() -> Result<PathBuf> {
         .join("../Resources/engine"))
 }
 fn main_inner() -> Result<()> {
-    ensure!(cfg!(target_os = "macos"), "Zapret Local requires macOS");
+    ensure!(cfg!(target_os = "macos"), "V2DPI requires macOS");
     let args: Vec<String> = std::env::args().skip(1).collect();
     let port: u16 = value(&args, "--port")?
         .map(|v| v.parse())

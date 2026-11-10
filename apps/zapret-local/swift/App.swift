@@ -9,7 +9,7 @@ struct ZapretLocalApp: App {
     private static let trayIcon: NSImage = {
         let image = Bundle.main.url(forResource: "tray@2x", withExtension: "png")
             .flatMap { NSImage(contentsOf: $0) }
-            ?? NSImage(systemSymbolName: "network", accessibilityDescription: "Zapret Local")!
+            ?? NSImage(systemSymbolName: "network", accessibilityDescription: "V2DPI")!
         image.size = NSSize(width: 18, height: 18)
         image.isTemplate = true
         return image
@@ -22,8 +22,8 @@ struct ZapretLocalApp: App {
             MenuContent(delegate: delegate)
         } label: {
             Image(nsImage: Self.trayIcon)
-                .accessibilityLabel("Zapret Local")
-                .help("Zapret Local")
+                .accessibilityLabel("V2DPI")
+                .help("V2DPI")
         }
         .menuBarExtraStyle(.window)
     }
@@ -97,7 +97,7 @@ struct ProxyPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Zapret Local · Cudy").font(.system(size: 14, weight: .semibold))
+                Text("V2DPI").font(.system(size: 14, weight: .semibold))
                 Spacer()
                 if model.busy {
                     ProgressView().controlSize(.small).scaleEffect(0.75)

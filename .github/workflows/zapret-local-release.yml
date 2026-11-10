@@ -1,4 +1,4 @@
-name: Zapret Local macOS release
+name: V2DPI macOS release
 
 on:
   push:
@@ -95,9 +95,9 @@ jobs:
         run: npm run build -- --target "$BUILD_TARGET" --ui-only
       - name: Verify app dependencies and signatures
         run: |
-          codesign --verify --deep --strict "dist/$BUILD_TARGET/Zapret Local.app"
+          codesign --verify --deep --strict "dist/$BUILD_TARGET/V2DPI.app"
           for binary in Contents/MacOS/zapret-helper Contents/Resources/network/xray Contents/Resources/network/sing-box Contents/Resources/network/cudy-dns; do
-            arches="$(/usr/bin/lipo -archs "dist/$BUILD_TARGET/Zapret Local.app/$binary")"
+            arches="$(/usr/bin/lipo -archs "dist/$BUILD_TARGET/V2DPI.app/$binary")"
             [[ " $arches " == *" $BUILD_ARCH "* ]]
           done
           cd .build/dist
@@ -133,7 +133,7 @@ jobs:
           for archive in release/*/flowseal-source-*.tar.gz; do cp "$archive" publish/; done
           (cd publish && sha256sum *.dmg *.tar.gz > SHA256SUMS.txt)
           cat > release-notes.txt <<'NOTES'
-          Zapret Local для macOS 14 и новее, Apple Silicon и Intel.
+          V2DPI для macOS 14 и новее, Apple Silicon и Intel.
 
           Скачайте DMG для своего Mac: aarch64 — Apple Silicon, x86_64 — Intel. Перенесите приложение в Applications и запустите его. Прокси управляется из строки меню. В приложение встроены Xray, sing-box и DNS-селектор.
 
@@ -142,4 +142,4 @@ jobs:
           SHA256SUMS.txt содержит контрольные суммы; исходники включённого движка приложены отдельным архивом.
           NOTES
           gh release create "$RELEASE_TAG" publish/* --verify-tag \
-            --title "Zapret Local ${RELEASE_TAG#zapret-v}" --notes-file release-notes.txt
+            --title "V2DPI ${RELEASE_TAG#zapret-v}" --notes-file release-notes.txt
