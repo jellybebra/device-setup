@@ -36,7 +36,6 @@ const PLIST: &str = "/Library/LaunchDaemons/com.jellybebra.zapret-cudy.plist";
 const SOCKET: &str = "/var/run/com.jellybebra.zapret-cudy.sock";
 const WORKER_LOCK: &str = "/var/run/com.jellybebra.zapret-cudy.worker.lock";
 const SERVICE_LOCK: &str = "/var/run/com.jellybebra.zapret-cudy.service.lock";
-const ANCHOR: &str = "com.apple/zapret-cudy-app";
 const BROKER_UID: u32 = 60014;
 const ENGINE_UID: u32 = 60015;
 const GROUP: u32 = 65534;
@@ -105,7 +104,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 13,
+            protocol_version: 15,
         }
     }
     fn failure(port: u16, error: impl ToString) -> Self {
@@ -132,6 +131,7 @@ struct Manifest {
 struct Network {
     interface: String,
     source: Ipv4Addr,
+    mtu: u32,
     gateway: Ipv4Addr,
     mac: String,
 }
@@ -243,6 +243,10 @@ fn physical_network(interface: &str) -> Result<Network> {
         .captures(&info)
         .context("Physical interface has no IPv4 address")?[1]
         .parse()?;
+    let mtu = Regex::new(r"(?m)^\S+:.*?\bmtu (\d+)")?
+        .captures(&info)
+        .context("Physical interface has no MTU")?[1]
+        .parse()?;
     let route = checked(
         "/sbin/route",
         &["-n", "get", "-ifscope", interface, "default"],
@@ -271,6 +275,7 @@ fn physical_network(interface: &str) -> Result<Network> {
         interface: interface.into(),
         source,
         gateway,
+        mtu,
         mac,
     })
 }
@@ -314,7 +319,7 @@ fn assert_unused_uid(uid: u32) -> Result<()> {
     );
     Ok(())
 }
-fn choose_utun() -> Result<(u32, String, String, String)> {
+fn choose_utun() -> Result<(u32, String, String)> {
     let interfaces = checked("/sbin/ifconfig", &["-l"], None)?;
     let addresses = checked("/sbin/ifconfig", &[], None)?;
     for unit in 61..=90 {
@@ -322,18 +327,10 @@ fn choose_utun() -> Result<(u32, String, String, String)> {
         if !interfaces.split_whitespace().any(|n| n == name)
             && !addresses.contains(&format!("10.254.{unit}."))
         {
-            return Ok((
-                unit,
-                name,
-                format!("10.254.{unit}.1"),
-                format!("10.254.{unit}.2"),
-            ));
+            return Ok((unit, name, format!("10.254.{unit}.2")));
         }
     }
     bail!("No unused private utun slot")
-}
-fn rules(source: Ipv4Addr, utun: &str, peer: &str) -> String {
-    format!("pass out quick route-to ({utun} {peer}) inet proto {{ tcp udp }} from {source} port {PORT_FIRST}:{PORT_LAST} to any user {BROKER_UID} no state\n")
 }
 fn engine_args(dir: &Path, drop_root: bool) -> Vec<String> {
     let mut args = Vec::new();
@@ -653,8 +650,6 @@ struct Runtime {
     tun: Option<Child>,
     engine: Option<Child>,
     broker: Option<Child>,
-    token: Option<String>,
-    loaded: bool,
 }
 impl Runtime {
     fn new() -> Self {
@@ -665,8 +660,6 @@ impl Runtime {
             tun: None,
             engine: None,
             broker: None,
-            token: None,
-            loaded: false,
         }
     }
     fn children_alive(&mut self) -> Result<()> {
@@ -685,7 +678,7 @@ impl Runtime {
         }
         Ok(())
     }
-    fn cleanup(&mut self) -> Result<()> {
+    fn cleanup(&mut self) {
         for child in [
             &mut self.system_dns,
             &mut self.tun,
@@ -698,36 +691,11 @@ impl Runtime {
                 stop_child(&mut owned);
             }
         }
-        let mut errors = Vec::new();
-        if self.loaded {
-            match cleanup_pf(&["-a", ANCHOR, "-F", "rules"]) {
-                Ok(()) => self.loaded = false,
-                Err(e) => errors.push(format!("PF rules cleanup: {e:#}")),
-            }
-        }
-        if let Some(token) = &self.token {
-            match cleanup_pf(&["-X", token]) {
-                Ok(()) => self.token = None,
-                Err(e) => errors.push(format!("PF reference cleanup: {e:#}")),
-            }
-        }
-        ensure!(errors.is_empty(), "{}", errors.join("; "));
-        Ok(())
     }
-}
-fn cleanup_pf(args: &[&str]) -> Result<()> {
-    // Bound each cleanup operation so the supervisor's shutdown grace covers
-    // an in-flight network check, both child exits and two cleanup attempts.
-    let (status, _, err) = run_bounded("/sbin/pfctl", args, None, Duration::from_secs(3))?;
-    ensure!(status.success(), "{}", err.trim());
-    Ok(())
 }
 impl Drop for Runtime {
     fn drop(&mut self) {
-        // Failed fields remain owned, so a failed explicit cleanup is retried.
-        if let Err(error) = self.cleanup() {
-            eprintln!("{error:#}");
-        }
+        self.cleanup();
     }
 }
 fn stop_child(child: &mut Child) {
@@ -822,17 +790,7 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
         network::check_tun()?;
     }
     let network = preflight(port, &directory, true, &selection)?;
-    let (unit, utun, local, peer) = choose_utun()?;
-    let main = checked("/sbin/pfctl", &["-sr"], None)?;
-    ensure!(
-        main.contains("anchor \"com.apple/*\""),
-        "The existing com.apple/* PF anchor is missing"
-    );
-    let (_, anchor, _) = run("/sbin/pfctl", &["-a", ANCHOR, "-sr"], None)?;
-    ensure!(
-        anchor.trim().is_empty(),
-        "Application PF anchor is already occupied; refusing to replace it"
-    );
+    let (unit, utun, peer) = choose_utun()?;
     let stage = tempfile::Builder::new()
         .prefix("zapret-local-app-")
         .tempdir_in("/var/run")?;
@@ -869,22 +827,30 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
         thread::sleep(Duration::from_millis(100));
     }
     ensure!(present, "The engine did not create its private utun");
+    // Route at socket creation so Darwin segments TCP for utun. Redirecting
+    // Wi-Fi TSO packets later in PF can drop the start of a large ClientHello.
+    // Use the LAN source for replies and let the engine emit on the physical link.
+    let source = network.source.to_string();
     checked(
         "/sbin/ifconfig",
-        &[&utun, &local, &peer, "netmask", "255.255.255.255", "up"],
+        &[
+            &utun,
+            &source,
+            &peer,
+            "netmask",
+            "255.255.255.255",
+            "mtu",
+            &network.mtu.to_string(),
+            "up",
+        ],
         None,
     )?;
-    let pf = rules(network.source, &utun, &peer);
-    checked("/sbin/pfctl", &["-a", ANCHOR, "-nf", "-"], Some(&pf))?;
-    let enabled = checked("/sbin/pfctl", &["-E"], None)?;
-    runtime.token = Some(
-        Regex::new(r"Token\s*:\s*(\d+)")?
-            .captures(&enabled)
-            .context("PF did not return an owned enable token")?[1]
-            .into(),
-    );
-    runtime.loaded = true;
-    checked("/sbin/pfctl", &["-a", ANCHOR, "-f", "-"], Some(&pf))?;
+    // This route is scoped to the engine interface and disappears with it.
+    checked(
+        "/sbin/route",
+        &["-n", "add", "-inet", "-ifscope", &utun, "default", &peer],
+        None,
+    )?;
     interrupted()?;
     let log = OpenOptions::new()
         .create_new(true)
@@ -896,7 +862,7 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
         .args([
             "--broker",
             "--interface",
-            &network.interface,
+            &utun,
             "--source-ip",
             &network.source.to_string(),
             "--port",
@@ -953,7 +919,6 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
         }
         thread::sleep(Duration::from_millis(100));
     }
-    runtime.cleanup()?;
     Ok(())
 }
 
@@ -1287,7 +1252,13 @@ fn serve() -> Result<()> {
 fn broker(interface: String, source: Ipv4Addr, port: u16) -> Result<()> {
     root_required()?;
     valid_port(port)?;
-    validate_interface(&interface)?;
+    ensure!(
+        interface
+            .strip_prefix("utun")
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+            || validate_interface(&interface).is_ok(),
+        "Invalid broker interface"
+    );
     descriptor_limit()?;
     unsafe {
         ensure!(
@@ -1381,8 +1352,8 @@ fn main_inner() -> Result<()> {
         Some("--check") => {
             let resources = value(&args, "--resources")?.map(PathBuf::from).unwrap_or(bundled_resources()?);
             let net = preflight(port, &resources, false, &selection)?;
-            let (_, tun, _, peer) = choose_utun()?;
-            println!("{}", serde_json::json!({"ready":true,"port":port,"network":net,"anchor":ANCHOR,"rules":rules(net.source,&tun,&peer)}));
+            let (_, tun, peer) = choose_utun()?;
+            println!("{}", serde_json::json!({"ready":true,"port":port,"network":net,"dpiInterface":tun,"dpiPeer":peer}));
         }
         _ => bail!("Usage: zapret-helper --install --uid UID [--resources DIR] | --uninstall | --check [--port PORT] [--resources DIR] | --version"),
     }
@@ -1415,14 +1386,6 @@ mod tests {
         for p in [1024, 49956, 65535] {
             assert!(valid_port(p).is_ok());
         }
-    }
-    #[test]
-    fn pf_scope_is_only_the_dedicated_broker() {
-        let r = rules("192.0.2.3".parse().unwrap(), "utun70", "10.254.71.2");
-        assert!(r.contains("from 192.0.2.3 port 41000:42023 to any user 60014"));
-        assert!(r.contains("route-to (utun70 10.254.71.2)"));
-        assert!(!r.contains("60000"));
-        assert!(!r.contains("60002"));
     }
     #[test]
     fn engine_profiles_keep_youtube_and_social_before_discord_fallback() {
@@ -1522,7 +1485,7 @@ mod tests {
             runtime.engine.as_ref().unwrap().id(),
             runtime.broker.as_ref().unwrap().id(),
         ];
-        runtime.cleanup().unwrap();
+        runtime.cleanup();
         assert!(runtime.engine.is_none() && runtime.broker.is_none());
         for pid in pids {
             assert_eq!(unsafe { libc::kill(pid as i32, 0) }, -1);

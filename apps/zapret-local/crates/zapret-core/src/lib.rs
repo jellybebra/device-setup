@@ -1,5 +1,5 @@
 //! Local SOCKS5 transport. All Internet sockets, including DNS, share the same
-//! physical-interface binding and source-port pool. No implicit DNS/VPN fallback.
+//! interface binding and source-port pool. No implicit DNS/VPN fallback.
 use anyhow::{bail, Context, Result};
 use serde::Deserialize;
 use socket2::{Domain, Protocol, Socket, Type};
@@ -73,12 +73,12 @@ impl Pool {
             0
         } else {
             if !cfg!(target_os = "macos") {
-                bail!("Physical-interface binding requires macOS");
+                bail!("Interface binding requires macOS");
             }
             let name = CString::new(config.interface.as_str())?;
             let index = unsafe { libc::if_nametoindex(name.as_ptr()) };
             if index == 0 {
-                bail!("Physical interface does not exist");
+                bail!("Broker interface does not exist");
             }
             index
         };
@@ -729,7 +729,7 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
                     return first;
                 }
                 // Different DoH providers can return different CDN edges. Retry
-                // failed DNS/TCP setup through Google, still on our physical
+                // failed DNS/TCP setup through Google, still on our bound
                 // interface and source-port pool, never through the system VPN.
                 resolver.connect(host, port, true).await
             }

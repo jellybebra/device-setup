@@ -279,6 +279,9 @@ fn sing(
       "route":{"default_domain_resolver":"direct-doh","final":"direct","rules":[
         {"inbound":"system-dns","action":"hijack-dns"},{"port":53,"action":"hijack-dns"},{"ip_version":6,"action":"reject"},
         instagram_udp,{"action":"sniff","timeout":"300ms"},instagram_udp,
+        // Pass the image hostname to the SOCKS resolver even when the browser
+        // connected to a cached CDN IP. The resolver selects X's Fastly edge.
+        {"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"},
         {"protocol":"tls","network":"tcp","port":443,"domain_suffix":["instagram.com","cdninstagram.com"],"domain_regex":regional_fb,
           "outbound":"dpi","override_address":zapret_core::INSTAGRAM_TLS_RELAY},
         {"ip_cidr":"216.150.1.1/32","network":"tcp","port":[80,443],"outbound":"dpi","override_address":"216.150.16.1"},
@@ -617,7 +620,7 @@ impl Capture<'_> {
             log,
         } = *self;
         let bin = Path::new(INSTALL).join("network");
-        let (_, tun, _, _) = choose_utun()?;
+        let (_, tun, _) = choose_utun()?;
         let config = stage.join("tun.json");
         let mut policy = sing(&net.interface, net.source, &tun, endpoint, dpi, ports);
         policy["inbounds"][0]["stack"] = json!(stack);
@@ -824,6 +827,7 @@ mod tests {
         ));
         let before_cf = &rules[..cf[0].0];
         for exception in [
+            json!({"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"}),
             json!({"port":7844,"outbound":"dpi"}),
             json!({"domain_suffix":VPN,"outbound":"vless"}),
             json!({"ip_cidr":TELEGRAM,"outbound":"vless"}),

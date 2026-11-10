@@ -83,6 +83,7 @@ def main():
     if not physical.startswith("en"):
         raise RuntimeError("The system route is already owned by another tunnel")
     original_dns = resolvers()
+    original_interfaces = {name for _, name in socket.if_nameindex()}
 
     def management_ok():
         return fetch("https://api.openai.com/v1/models", args.management_proxy) in {
@@ -142,6 +143,18 @@ def main():
                     or route(target, physical) != physical
                 ):
                     raise RuntimeError("System and physical routes do not coexist")
+                # The broker must select its own utun at connect time, even
+                # while unbound sockets use sing-box and Wi-Fi stays available.
+                engine_interfaces = {
+                    name for _, name in socket.if_nameindex()
+                    if name.startswith("utun") and name != captured
+                    and name not in original_interfaces
+                }
+                if len(engine_interfaces) != 1:
+                    raise RuntimeError(f"Expected one DPI interface, got {engine_interfaces}")
+                engine = engine_interfaces.pop()
+                if route("default", engine) != engine or route(target, engine) != engine:
+                    raise RuntimeError("DPI interface has no scoped Internet route")
                 if resolvers()[0] != "nameserver[0] : 127.0.0.1":
                     raise RuntimeError("System resolver was not registered")
                 with concurrent.futures.ThreadPoolExecutor(2) as pool:
@@ -167,7 +180,9 @@ def main():
                     finished.set()
                     watcher.join(timeout=9)
     for _ in range(30):
-        if route(target) == physical and resolvers() == original_dns:
+        current_interfaces = {name for _, name in socket.if_nameindex()}
+        if (engine not in current_interfaces and captured not in current_interfaces
+                and route(target) == physical and resolvers() == original_dns):
             print(f"OFF: route {physical} and original DNS restored")
             return
         time.sleep(0.1)
