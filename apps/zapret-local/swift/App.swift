@@ -37,7 +37,7 @@ private struct MenuContent: View {
             if let model = delegate.model {
                 ProxyPanel(model: model, manageServers: delegate.showServers)
             } else {
-                ProgressView().padding(20).frame(width: 370)
+                ProgressView().padding(12).frame(width: 300)
             }
         }
     }
@@ -93,9 +93,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Obse
 
 struct ProxyPanel: View {
     @ObservedObject var model: ProxyModel
+    @ObservedObject private var probes: ServerProbes
     var manageServers: () -> Void
+
+    init(model: ProxyModel, manageServers: @escaping () -> Void) {
+        self.model = model
+        self.probes = model.probes
+        self.manageServers = manageServers
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("V2DPI").font(.system(size: 14, weight: .semibold))
                 Spacer()
@@ -107,47 +114,129 @@ struct ProxyPanel: View {
                     .labelsHidden().toggleStyle(.switch).controlSize(.small).disabled(model.busy)
                     .accessibilityLabel(model.state.enabled ? "Выключить прокси" : "Включить прокси")
             }
-            HStack {
-                Text("Сервер").foregroundStyle(.secondary)
-                Spacer()
-                Menu(model.selectedServer?.name ?? "Текущий профиль") {
-                    ForEach(model.servers) { server in
-                        Button { model.choose(server) } label: {
-                            if server.id == model.selectedServer?.id {
-                                Label(server.name, systemImage: "checkmark")
-                            } else { Text(server.name) }
+            VStack(alignment: .leading, spacing: 0) {
+                if model.servers.isEmpty {
+                    Text("Нет серверов").font(.system(size: 13)).foregroundStyle(.secondary)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(model.servers) { server in
+                                serverRow(server)
+                            }
                         }
                     }
-                }.disabled(model.busy || model.servers.isEmpty)
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: CGFloat(min(model.servers.count, 8) * 28))
+                    .padding(.horizontal, -6)
+                }
             }
-            Button("Управление серверами…", action: manageServers)
             if let message = model.state.error ?? model.notice {
                 Text(message).font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
             }
             Divider()
-            Button { NSApp.terminate(nil) } label: {
-                Text("Выйти").frame(maxWidth: .infinity, alignment: .leading)
-            }.buttonStyle(MenuRowStyle()).padding(.horizontal, -10)
-                .padding(.top, -8).padding(.bottom, -10)
+            VStack(spacing: 0) {
+                Button { probes.checkAll(model.servers) } label: {
+                    Text(probes.isChecking ? "Проверка…" : "Проверить все")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .disabled(probes.isChecking || model.servers.isEmpty)
+                .help("Проверить HTTPS-соединение через каждый VLESS-сервер")
+                Button(action: manageServers) {
+                    Text("Управление серверами…").frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Button { NSApp.terminate(nil) } label: {
+                    Text("Выйти").frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .buttonStyle(MenuRowStyle())
+            .padding(.horizontal, -6)
+            .padding(.vertical, -4)
         }
-        .padding(20).frame(width: 370)
+        .padding(12).frame(width: 300)
         .onAppear { model.refreshServers() }
     }
 
+    private func serverRow(_ server: ProxyServer) -> some View {
+        let selected = server.id == model.selectedServer?.id
+        let pending = server.id == model.pendingServerID
+        let status = pending ? (model.state.enabled ? "Подключение…" : "Выбор…")
+            : selected ? (model.state.running ? "Подключён" : "Выбран") : ""
+
+        return HStack(spacing: 0) {
+            Button { model.choose(server) } label: {
+                Text(server.name)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 16)
+            }
+            .buttonStyle(MenuRowStyle())
+            .disabled(model.busy)
+            .accessibilityLabel(server.name)
+            .accessibilityValue(status)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .help(status.isEmpty ? "Выбрать сервер \(server.name)" : "\(server.name) — \(status)")
+
+            probeButton(server)
+            ZStack {
+                if pending {
+                    ProgressView().controlSize(.small).scaleEffect(0.75)
+                } else if selected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .frame(width: 16, height: 16).padding(.trailing, 6).accessibilityHidden(true)
+        }
+    }
+
+    private func probeButton(_ server: ProxyServer) -> some View {
+        let result = probes.results[server.id]
+        let description: String
+        switch result {
+        case .checking: description = "Проверка соединения через VLESS…"
+        case .success(let ms): description = "HTTPS через VLESS: \(ms) мс. Нажмите, чтобы проверить снова"
+        case .failure(let error): description = "\(error). Нажмите, чтобы повторить проверку"
+        case nil: description = "Проверить HTTPS-соединение через VLESS"
+        }
+
+        return Button { probes.check(server) } label: {
+            Group {
+                switch result {
+                case .checking:
+                    ProgressView().controlSize(.small).scaleEffect(0.65)
+                case .success(let ms):
+                    Text("\(ms) мс").monospacedDigit()
+                case .failure:
+                    Text("Ошибка")
+                case nil:
+                    Image(systemName: "arrow.clockwise")
+                }
+            }
+            .font(.system(size: 11)).foregroundStyle(.secondary)
+            .frame(width: 60, height: 16)
+        }
+        .buttonStyle(MenuRowStyle())
+        .disabled(result == .checking)
+        .accessibilityLabel("Проверить сервер \(server.name)")
+        .accessibilityValue(description)
+        .help(description)
+    }
 }
 
 private struct MenuRowStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
     @State private var hovered = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13))
-            .padding(.horizontal, 10).padding(.vertical, 6)
+            .padding(.horizontal, 6).padding(.vertical, 6)
             .contentShape(Rectangle())
             .background {
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(Color.primary.opacity(configuration.isPressed ? 0.14 : hovered ? 0.08 : 0))
+                    .fill(Color.primary.opacity(enabled ? (configuration.isPressed ? 0.14 : hovered ? 0.08 : 0) : 0))
             }
             .onHover { hovered = $0 }
     }

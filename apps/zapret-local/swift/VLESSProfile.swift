@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 enum VLESSProfile {
     static var directory: URL {
@@ -17,24 +18,47 @@ enum VLESSProfile {
     }
 
     static func probe(_ server: ProxyServer) throws {
+        _ = try measure(server)
+    }
+
+    static func measure(_ server: ProxyServer) throws -> Int {
+        try Task.checkCancellation()
         let process = Process()
         process.executableURL = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("zapret-helper")
         process.arguments = ["--probe-node"]
         let pipe = Pipe()
+        let output = Pipe()
         process.standardInput = pipe
-        process.standardOutput = FileHandle.nullDevice
+        process.standardOutput = output
         process.standardError = FileHandle.nullDevice
         try process.run()
-        do {
-            try pipe.fileHandleForWriting.write(contentsOf: server.outbound)
-            try pipe.fileHandleForWriting.close()
-        } catch {
+        defer {
             try? pipe.fileHandleForWriting.close()
-            process.terminate()
-            process.waitUntilExit()
-            throw error
+            if process.isRunning {
+                // --probe-node owns a separate process group, including Xray/curl.
+                // If it has not set up the group yet, no children exist either.
+                if kill(-process.processIdentifier, SIGKILL) != 0 {
+                    kill(process.processIdentifier, SIGKILL)
+                }
+                _ = ProcessShutdown.stop(process)
+            }
         }
-        process.waitUntilExit()
+        try pipe.fileHandleForWriting.write(contentsOf: server.outbound)
+        try pipe.fileHandleForWriting.close()
+        let deadline = ContinuousClock.now.advanced(by: .seconds(40))
+        while process.isRunning {
+            try Task.checkCancellation()
+            guard ContinuousClock.now < deadline else { throw ProxyError("Время проверки истекло") }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        try Task.checkCancellation()
         guard process.terminationStatus == 0 else { throw ProxyError("Сервер не прошёл проверку подключения") }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        struct Reply: Decodable { let latency_ms: Int }
+        guard let reply = try? JSONDecoder().decode(Reply.self, from: data),
+              (1...12_000).contains(reply.latency_ms) else {
+            throw ProxyError("Помощник не вернул время проверки. Обновите приложение")
+        }
+        return reply.latency_ms
     }
 }

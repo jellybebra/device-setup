@@ -1,6 +1,21 @@
 import Foundation
 import Darwin
 
+actor ProbeFixture {
+    private(set) var calls = 0
+    private var pending: [Int: CheckedContinuation<Int, Error>] = [:]
+
+    func measure(_ server: ProxyServer) async throws -> Int {
+        calls += 1
+        let call = calls
+        return try await withCheckedThrowingContinuation { pending[call] = $0 }
+    }
+
+    func finish(_ call: Int, _ result: Result<Int, Error>) {
+        pending.removeValue(forKey: call)!.resume(with: result)
+    }
+}
+
 // Real Unix sockets with scripted replies: never connects to the installed helper.
 final class FakeHelper: @unchecked Sendable {
     let path = "/tmp/zapret-test-\(UUID().uuidString).sock"
@@ -72,6 +87,55 @@ final class FakeHelper: @unchecked Sendable {
 
 @main
 struct LifecycleTests {
+    @MainActor
+    static func checkServerProbes() async throws {
+        let fixture = ProbeFixture()
+        let probes = ServerProbes { try await fixture.measure($0) }
+        let first = ProxyServer(id: "one", name: "One", outbound: Data("first".utf8))
+        let second = ProxyServer(id: "two", name: "Two", outbound: Data("second".utf8))
+        func waitFor(_ condition: () async -> Bool) async throws {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while !(await condition()) {
+                precondition(ContinuousClock.now < deadline, "Probe test timed out")
+                try await Task.sleep(nanoseconds: 5_000_000)
+            }
+        }
+
+        probes.check(first)
+        probes.check(first)
+        probes.checkAll([first, second])
+        precondition(probes.results[first.id] == .checking && probes.results[second.id] == .checking)
+        try await waitFor { await fixture.calls == 2 }
+        await fixture.finish(1, .success(42))
+        await fixture.finish(2, .failure(ProxyError("Unavailable")))
+        try await waitFor { !probes.isChecking }
+        precondition(probes.results.values.contains(.success(42)))
+        precondition(probes.results.values.contains(.failure("Unavailable")))
+
+        probes.check(first)
+        try await waitFor { await fixture.calls == 3 }
+        let changed = ProxyServer(id: first.id, name: first.name, outbound: Data("changed".utf8))
+        probes.reconcile([changed, second])
+        precondition(probes.results[first.id] == nil)
+        probes.check(changed)
+        try await waitFor { await fixture.calls == 4 }
+        await fixture.finish(3, .success(999))
+        await fixture.finish(4, .success(24))
+        try await waitFor { !probes.isChecking }
+        precondition(probes.results[first.id] == .success(24), "Stale profile result replaced the new check")
+        probes.reconcile([second])
+        precondition(probes.results[first.id] == nil)
+
+        probes.check(second)
+        try await waitFor { await fixture.calls == 5 }
+        let closing = Task { await probes.shutdown() }
+        try await waitFor { !probes.isChecking }
+        await fixture.finish(5, .success(88))
+        await closing.value
+        precondition(probes.results[second.id] == nil, "Cancelled probe published a result")
+        print("PASS: per-server checks, deduplication, partial failure, profile invalidation and shutdown")
+    }
+
     static func checkServerLibrary() throws {
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
@@ -133,6 +197,7 @@ struct LifecycleTests {
     }
 
     static func main() async throws {
+        try await checkServerProbes()
         try checkServerLibrary()
         // A suspended child ignores graceful exit and SIGTERM until continued.
         // Shutdown must reach SIGKILL without ever waiting indefinitely.

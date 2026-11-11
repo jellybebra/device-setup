@@ -273,11 +273,13 @@ actor ProxyService {
 
 @MainActor
 final class ProxyModel: ObservableObject {
+    let probes = ServerProbes()
     @Published private(set) var state = ProxyState()
     @Published private(set) var busy = false
     @Published var notice: String?
     @Published private(set) var servers: [ProxyServer] = []
     @Published private(set) var selectedServer: ProxyServer?
+    @Published private(set) var pendingServerID: String?
 
     func refreshServers() {
         do {
@@ -286,6 +288,7 @@ final class ProxyModel: ObservableObject {
     }
 
     private func apply(_ library: ServerLibrary) {
+        probes.reconcile(library.servers)
         servers = library.servers
         selectedServer = library.selected
         notice = servers.isEmpty ? "Добавьте VLESS-сервер в меню «Управление серверами»" : nil
@@ -324,10 +327,14 @@ final class ProxyModel: ObservableObject {
     func choose(_ server: ProxyServer) {
         guard !busy, server.id != selectedServer?.id else { return }
         busy = true
+        pendingServerID = server.id
         Task {
+            defer {
+                pendingServerID = nil
+                busy = false
+            }
             update(await service.choose(server))
             refreshServers()
-            busy = false
         }
     }
     private let service = ProxyService()
@@ -370,6 +377,6 @@ final class ProxyModel: ObservableObject {
         busy = true
         wakeObserver?.cancel()
         monitor?.cancel()
-        Task { await service.shutdown(); completion() }
+        Task { await probes.shutdown(); await service.shutdown(); completion() }
     }
 }

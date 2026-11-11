@@ -20,7 +20,7 @@ if (!existsSync(helper) || !existsSync(join(resources, 'manifest.json'))) {
 const compiled = join(root, '.build/swift', target);
 mkdirSync(compiled, { recursive: true });
 const sdk = output('xcrun', ['--show-sdk-path']);
-const sources = ['App.swift','Authorization.swift','HelperClient.swift','ProxyModel.swift','VLESSProfile.swift','ProxyServer.swift','ServerLibrary.swift','ServerManager.swift'].map(name => join(root, 'swift', name));
+const sources = ['App.swift','Authorization.swift','HelperClient.swift','ProxyModel.swift','VLESSProfile.swift','ProxyServer.swift','ServerLibrary.swift','ServerManager.swift','ServerProbes.swift','ProcessShutdown.swift'].map(name => join(root, 'swift', name));
 if (!sources.length) throw new Error('SwiftUI application sources are missing.');
 const binaries = [];
 for (const arch of archTargets) {

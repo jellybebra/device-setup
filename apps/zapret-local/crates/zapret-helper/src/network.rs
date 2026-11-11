@@ -327,7 +327,7 @@ fn wait_listener(port: u16, runtime: &mut Runtime) -> Result<()> {
 /// Validate a candidate before changing a running TUN. The UI launches this
 /// as its own user. Only a temporary loopback Xray and a bound physical socket
 /// are needed, so the current server continues to carry traffic.
-pub fn probe_node(input: &[u8], bin: &Path) -> Result<()> {
+pub fn probe_node(input: &[u8], bin: &Path) -> Result<u64> {
     let node = Node::import(&serde_json::from_slice(input)?)?;
     // An ordinary TCP socket only needs the physical interface. Unlike the
     // packet injector this probe does not need privileged ARP-table access.
@@ -376,7 +376,7 @@ pub fn probe_node(input: &[u8], bin: &Path) -> Result<()> {
         thread::sleep(Duration::from_millis(80));
     }
     ensure!(ready, "Проверочный Xray не открыл порт");
-    let (status, code, _) = run_bounded(
+    let (status, output, _) = run_bounded(
         "/usr/bin/curl",
         &[
             "--disable",
@@ -390,17 +390,28 @@ pub fn probe_node(input: &[u8], bin: &Path) -> Result<()> {
             "--output",
             "/dev/null",
             "--write-out",
-            "%{http_code}",
+            "%{http_code} %{time_total}",
             "https://www.gstatic.com/generate_204",
         ],
         None,
         Duration::from_secs(14),
     )?;
+    ensure!(status.success(), "Сервер не прошёл проверку HTTPS");
+    probe_latency(&output)
+}
+
+fn probe_latency(output: &str) -> Result<u64> {
+    let fields: Vec<_> = output.split_whitespace().collect();
     ensure!(
-        status.success() && code == "204",
+        fields.len() == 2 && fields[0] == "204",
         "Сервер не прошёл проверку HTTPS"
     );
-    Ok(())
+    let seconds: f64 = fields[1].parse().context("Некорректное время проверки")?;
+    ensure!(
+        seconds.is_finite() && (0.0..=12.0).contains(&seconds),
+        "Некорректное время проверки"
+    );
+    Ok((seconds * 1000.0).round().max(1.0) as u64)
 }
 
 fn check_dns(port: u16, tcp: bool) -> Result<()> {
@@ -696,6 +707,25 @@ impl Capture<'_> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn probe_requires_successful_https_and_valid_timing() {
+        assert_eq!(super::probe_latency("204 0.0424").unwrap(), 42);
+        assert_eq!(super::probe_latency("204 0.00001").unwrap(), 1);
+        for output in [
+            "200 0.1",
+            "503 0.1",
+            "000 0",
+            "204",
+            "204 NaN",
+            "204 inf",
+            "204 -1",
+            "204 13",
+            "204 0.1 extra",
+        ] {
+            assert!(super::probe_latency(output).is_err(), "{output}");
+        }
+    }
+
     use super::*;
     #[test]
     fn import_limits_root_config_and_preserves_tls_hostname() {

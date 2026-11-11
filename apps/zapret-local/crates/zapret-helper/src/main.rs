@@ -1328,10 +1328,13 @@ fn main_inner() -> Result<()> {
     match args.first().map(String::as_str) {
         Some("--check-tun") => network::check_tun()?,
         Some("--probe-node") => {
+            // Keep the temporary helper, Xray and curl in one cancellable group.
+            ensure!(unsafe { libc::setpgid(0, 0) } == 0, "Cannot isolate server probe");
             let mut input=Vec::new();
             std::io::stdin().take(16385).read_to_end(&mut input)?;
             ensure!(input.len() <= 16384, "Профиль слишком большой");
-            network::probe_node(&input, &bundled_resources()?.with_file_name("network"))?;
+            let latency = network::probe_node(&input, &bundled_resources()?.with_file_name("network"))?;
+            println!("{}", serde_json::json!({"latency_ms": latency}));
         }
         Some("--version") => println!("{}", env!("CARGO_PKG_VERSION")),
         Some("--install") => {
