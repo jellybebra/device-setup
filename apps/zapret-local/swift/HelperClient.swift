@@ -9,6 +9,9 @@ struct HelperReply: Decodable, Sendable {
     let version: String
     let protocolVersion: Int?
     let selection: StrategySelection?
+    let networkKey: String?
+    let networkInterface: String?
+    let policy: PolicySnapshot?
 }
 
 struct ProxyError: LocalizedError, Sendable {
@@ -65,7 +68,7 @@ final class HelperClient {
         pending.removeAll()
     }
 
-    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil, node: Data? = nil, timeout: TimeInterval? = nil) throws -> HelperReply {
+    func request(_ command: String, port: UInt16? = nil, selection: StrategySelection? = nil, node: Data? = nil, timeout: TimeInterval? = nil, networkKey: String? = nil) throws -> HelperReply {
         // A status check must not hold the service actor for a full minute.
         // Start/stop retain the helper's existing startup and cleanup budgets.
         let deadline = ContinuousClock.now.advanced(by: .milliseconds(Int64((timeout ?? (command == "status" ? 3 : 100)) * 1000)))
@@ -73,10 +76,12 @@ final class HelperClient {
         defer { if !completed { disconnect() } }
         guard descriptor >= 0 else { throw ProxyError("Нет связи с сетевым помощником") }
         var request: [String: Any] = ["command": command]
+        if let networkKey { request["networkKey"] = networkKey }
         if let node { request["node"] = try JSONSerialization.jsonObject(with: node) }
         if let port { request["port"] = Int(port) }
-        if let selection { request["selection"] = ["strategy": selection.strategy, "ipset": selection.ipset] }
+        if let selection { request["selection"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(selection)) }
         var data = try JSONSerialization.data(withJSONObject: request)
+        guard data.count < 1_200_000 else { throw ProxyError("Слишком много правил сетей") }
         data.append(10)
         try data.withUnsafeBytes { buffer in
             var written = 0
@@ -95,7 +100,7 @@ final class HelperClient {
             if count < 0 && [EINTR, EAGAIN].contains(errno) { continue }
             guard count > 0 else { throw ProxyError("Сетевой помощник не отвечает") }
             pending.append(contentsOf: buffer.prefix(count))
-            guard pending.count <= 16_384 else { throw ProxyError("Некорректный ответ помощника") }
+            guard pending.count <= 4_194_304 else { throw ProxyError("Некорректный ответ помощника") }
         }
         let end = pending.firstIndex(of: 10)!
         let line = pending.prefix(upTo: end)
@@ -104,7 +109,7 @@ final class HelperClient {
         guard reply.version == (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") else {
             throw ProxyError("Сетевой помощник требует обновления")
         }
-        guard reply.protocolVersion == 19 else { throw ProxyError("Сетевой помощник требует обновления") }
+        guard reply.protocolVersion == 23 else { throw ProxyError("Сетевой помощник требует обновления") }
         completed = true
         return reply
     }

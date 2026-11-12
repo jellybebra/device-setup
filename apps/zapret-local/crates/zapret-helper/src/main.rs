@@ -1,6 +1,8 @@
 //! Root helper with a deliberately small local API. Never modifies
 //! other PF anchors or unrelated processes. The owned TUN handles system routing.
+mod custom;
 mod network;
+mod policy;
 mod strategies;
 use strategies::Selection;
 
@@ -81,6 +83,8 @@ struct Request {
     node: Option<serde_json::Value>,
     port: Option<u16>,
     selection: Option<Selection>,
+    #[serde(rename = "networkKey")]
+    network_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,6 +98,20 @@ struct Response {
     selection: Selection,
     #[serde(rename = "protocolVersion", default)]
     protocol_version: u32,
+    #[serde(
+        rename = "networkKey",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    network_key: Option<String>,
+    #[serde(
+        rename = "networkInterface",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    network_interface: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    policy: Option<policy::Policy>,
 }
 impl Response {
     fn stopped(port: u16) -> Self {
@@ -104,7 +122,10 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 19,
+            protocol_version: 23,
+            network_key: None,
+            network_interface: None,
+            policy: None,
         }
     }
     fn failure(port: u16, error: impl ToString) -> Self {
@@ -134,6 +155,32 @@ struct Network {
     mtu: u32,
     gateway: Ipv4Addr,
     mac: String,
+}
+
+impl Network {
+    fn key(&self) -> String {
+        // DHCP client addresses and AP/BSSID roaming must not change the profile.
+        // A different gateway with the same common LAN address must not match it.
+        let mac = self
+            .mac
+            .split(':')
+            .filter_map(|part| u8::from_str_radix(part, 16).ok())
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<Vec<_>>()
+            .join(":");
+        format!(
+            "{:x}",
+            Sha256::digest(format!("v2dpi-network-v1|{}|{mac}", self.gateway))
+        )
+    }
+}
+
+#[derive(Deserialize)]
+struct WorkerInput {
+    #[serde(default)]
+    network_key: Option<String>,
+    node: network::Node,
+    selection: Selection,
 }
 
 fn root_required() -> Result<()> {
@@ -767,7 +814,9 @@ fn preflight(
         }
     }
     ensure!(free >= 64, "Too few free source ports for the proxy");
-    let mut args = selection.args(directory, false)?;
+    let mut args = selection
+        .for_network(&network.key())
+        .args(directory, false)?;
     args.push("--dry-run".into());
     checked(
         directory
@@ -780,16 +829,44 @@ fn preflight(
     Ok(network)
 }
 
-fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Result<()> {
+fn worker(
+    port: u16,
+    selection: Selection,
+    node: Option<network::Node>,
+    expected_network: Option<String>,
+) -> Result<()> {
     root_required()?;
     signals();
     descriptor_limit()?;
     let _lock = lock_file(WORKER_LOCK)?;
-    let directory = Path::new(INSTALL).join("engine");
+    let original = Path::new(INSTALL).join("engine");
+    resources(&original, true)?;
+    let custom_stage = tempfile::Builder::new()
+        .prefix("v2dpi-config-")
+        .tempdir_in("/var/run")?;
+    fs::set_permissions(custom_stage.path(), fs::Permissions::from_mode(0o755))?;
+    let directory = if let Some(custom) = &selection.custom {
+        let dir = custom_stage.path().join("engine");
+        custom.prepare(&original, &dir)?;
+        dir
+    } else {
+        original
+    };
     if node.is_some() {
         network::check_tun()?;
     }
     let network = preflight(port, &directory, true, &selection)?;
+    ensure!(
+        expected_network
+            .as_ref()
+            .is_none_or(|key| *key == network.key()),
+        "Сеть изменилась перед запуском конфигурации"
+    );
+    let effective_selection = selection.for_network(&network.key());
+    let rules = selection
+        .profile(&network.key())
+        .map(|p| p.rules.as_slice())
+        .unwrap_or(&[]);
     let (unit, utun, peer) = choose_utun()?;
     let stage = tempfile::Builder::new()
         .prefix("zapret-local-app-")
@@ -804,7 +881,7 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
         .open(stage.path().join("engine.log"))?;
     let mut command = Command::new(directory.join("utunws"));
     command
-        .args(selection.args(&directory, true)?)
+        .args(effective_selection.args(&directory, true)?)
         .env_clear()
         .env("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
         .env("ZAPRET_IFACE", &network.interface)
@@ -897,7 +974,15 @@ fn worker(port: u16, selection: Selection, node: Option<network::Node>) -> Resul
     }
     ensure!(ready, "Local SOCKS5 proxy failed its readiness check");
     if let Some(node) = node {
-        network::start(&mut runtime, stage.path(), &network, port, &node)?;
+        network::start(
+            &mut runtime,
+            stage.path(),
+            &network,
+            port,
+            &node,
+            rules,
+            selection.custom.as_ref(),
+        )?;
     }
     println!(
         "{}",
@@ -928,7 +1013,12 @@ struct WorkerProcess {
     output: BufReader<ChildStdout>,
 }
 impl WorkerProcess {
-    fn start(port: u16, selection: &Selection, node: &network::Node) -> Result<Self> {
+    fn start(
+        port: u16,
+        selection: &Selection,
+        node: &network::Node,
+        network_key: Option<&str>,
+    ) -> Result<Self> {
         let mut child = Command::new(Path::new(INSTALL).join("zapret-helper"))
             .args([
                 "--worker",
@@ -945,7 +1035,10 @@ impl WorkerProcess {
             .stderr(Stdio::null())
             .spawn()?;
         let mut lifetime = child.stdin.take().context("Worker stdin")?;
-        serde_json::to_writer(&mut lifetime, node)?;
+        serde_json::to_writer(
+            &mut lifetime,
+            &serde_json::json!({"node":node,"selection":selection,"network_key":network_key}),
+        )?;
         lifetime.write_all(b"\n")?;
         let output = BufReader::new(child.stdout.take().context("Worker has no output")?);
         let mut own = Self {
@@ -966,7 +1059,7 @@ impl WorkerProcess {
             let available = unsafe { libc::poll(&mut pfd, 1, 100) };
             if available > 0 {
                 let mut line = String::new();
-                own.output.by_ref().take(8192).read_line(&mut line)?;
+                own.output.by_ref().take(1_200_000).read_line(&mut line)?;
                 let status: Response = serde_json::from_str(&line)
                     .context("Network helper stopped before becoming ready")?;
                 ensure!(
@@ -1064,6 +1157,59 @@ impl Controller {
     }
     fn request(&mut self, session: u64, req: Request) -> Response {
         self.refresh();
+        if req.command == "validate" {
+            let result = (|| -> Result<()> {
+                let selection = req.selection.as_ref().context("Missing configuration")?;
+                selection.validate()?;
+                valid_port(req.port.unwrap_or(DEFAULT_PORT))?;
+                if let Some(node) = req.node.as_ref() {
+                    network::Node::import(node)?;
+                }
+                if let Some(custom) = &selection.custom {
+                    custom.check_engines(
+                        &Path::new(INSTALL).join("engine"),
+                        &Path::new(INSTALL).join("network/sing-box"),
+                    )?;
+                }
+                Ok(())
+            })();
+            return match result {
+                Ok(()) => Response {
+                    ok: true,
+                    error: None,
+                    ..self.status.clone()
+                },
+                Err(error) => self.reject(error),
+            };
+        }
+        if req.command == "policy" {
+            let selection = req.selection.as_ref().unwrap_or(&self.status.selection);
+            return match policy::inspect(
+                selection,
+                req.network_key.as_deref(),
+                &Path::new(INSTALL).join("engine"),
+            ) {
+                Ok(policy) => Response {
+                    ok: true,
+                    error: None,
+                    policy: Some(policy),
+                    ..self.status.clone()
+                },
+                Err(error) => self.reject(error),
+            };
+        }
+        if req.command == "network" {
+            return match choose_network() {
+                Ok(network) => Response {
+                    ok: true,
+                    error: None,
+                    network_key: Some(network.key()),
+                    network_interface: Some(network.interface),
+                    ..self.status.clone()
+                },
+                Err(error) => self.reject(error),
+            };
+        }
         if req.command == "status" {
             return self.status.clone();
         }
@@ -1107,7 +1253,7 @@ impl Controller {
             Ok(value) => value,
             Err(e) => return self.reject(e),
         };
-        match WorkerProcess::start(port, &selection, &node) {
+        match WorkerProcess::start(port, &selection, &node, req.network_key.as_deref()) {
             Ok(worker) => {
                 self.worker = Some(worker);
                 self.owner = Some(session);
@@ -1161,7 +1307,7 @@ fn handle_client(
                 }
                 Err(e) => return Err(e.into()),
             }
-            ensure!(pending.len() <= 16384, "IPC message too large");
+            ensure!(pending.len() <= 1_200_000, "IPC message too large");
             while let Some(index) = pending.iter().position(|b| *b == b'\n') {
                 let line: Vec<_> = pending.drain(..=index).collect();
                 let response = match serde_json::from_slice::<Request>(&line) {
@@ -1323,6 +1469,7 @@ fn main_inner() -> Result<()> {
     let selection = Selection {
         strategy: value(&args, "--strategy")?.unwrap_or_else(|| "local".into()),
         ipset: value(&args, "--ipset")?.unwrap_or_else(|| "cloudflare".into()),
+        ..Default::default()
     };
     selection.validate()?;
     match args.first().map(String::as_str) {
@@ -1345,11 +1492,13 @@ fn main_inner() -> Result<()> {
         Some("--serve") => serve()?,
         Some("--uninstall") => uninstall()?,
         #[cfg(debug_assertions)]
-        Some("--probe-dpi") => worker(port, selection, None)?,
+        Some("--probe-dpi") => worker(port, selection, None, None)?,
         Some("--worker") => {
             let mut data = String::new();
-            std::io::stdin().lock().take(16384).read_line(&mut data)?;
-            worker(port, selection.clone(), Some(serde_json::from_str(&data)?))?
+            std::io::stdin().lock().take(1_200_000).read_line(&mut data)?;
+            let input: WorkerInput = serde_json::from_str(&data)?;
+            input.selection.validate()?;
+            worker(port, input.selection, Some(input.node), input.network_key)?
         },
         Some("--broker") => broker(value(&args, "--interface")?.context("Missing interface")?, value(&args, "--source-ip")?.context("Missing source IP")?.parse()?, port)?,
         Some("--check") => {
@@ -1380,6 +1529,26 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn network_identity_ignores_dhcp_but_distinguishes_gateways() {
+        let net = Network {
+            interface: "en0".into(),
+            source: "192.0.2.4".parse().unwrap(),
+            mtu: 1500,
+            gateway: "192.0.2.1".parse().unwrap(),
+            mac: "02:00:00:00:00:01".into(),
+        };
+        let mut other = net.clone();
+        other.source = "192.0.2.5".parse().unwrap();
+        other.mac = "2:0:0:0:0:1".into();
+        assert_eq!(net.key(), other.key());
+        other.mac = "02:00:00:00:00:02".into();
+        assert_ne!(net.key(), other.key());
+        other = net.clone();
+        other.gateway = "198.51.100.1".parse().unwrap();
+        assert_ne!(net.key(), other.key());
+    }
+
     use super::*;
     #[test]
     fn port_validation_preserves_source_pool_and_privileged_ports() {
