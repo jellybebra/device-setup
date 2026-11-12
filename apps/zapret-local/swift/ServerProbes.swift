@@ -12,9 +12,9 @@ enum ServerProbeResult: Equatable {
 private actor ServerProbeRunner {
     static let shared = ServerProbeRunner()
 
-    func measure(_ server: ProxyServer) async throws -> Int {
+    func measure(_ server: ProxyServer, fastRetry: Bool) async throws -> Int {
         try Task.checkCancellation()
-        return try VLESSProfile.measure(server)
+        return try VLESSProfile.measure(server, fastRetry: fastRetry)
     }
 }
 
@@ -23,23 +23,32 @@ final class ServerProbes: ObservableObject {
     @Published private(set) var results: [String: ServerProbeResult] = [:]
     var isChecking: Bool { results.values.contains(.checking) }
 
+    private var fastRetry = false
+
     private var jobs: [String: Task<Void, Never>] = [:]
     private var profiles: [String: Data] = [:]
-    private let measure: @Sendable (ProxyServer) async throws -> Int
+    private let measure: @Sendable (ProxyServer, Bool) async throws -> Int
 
-    init(measure: @escaping @Sendable (ProxyServer) async throws -> Int = {
-        try await ServerProbeRunner.shared.measure($0)
+    init(measure: @escaping @Sendable (ProxyServer, Bool) async throws -> Int = {
+        try await ServerProbeRunner.shared.measure($0, fastRetry: $1)
     }) {
         self.measure = measure
+    }
+
+    func setFastRetry(_ enabled: Bool) {
+        guard fastRetry != enabled else { return }
+        cancelAll()
+        results.removeAll()
+        fastRetry = enabled
     }
 
     func check(_ server: ProxyServer) {
         guard jobs[server.id] == nil else { return }
         profiles[server.id] = server.outbound
         results[server.id] = .checking
-        jobs[server.id] = Task { [weak self, measure] in
+        jobs[server.id] = Task { [weak self, measure, fastRetry] in
             let result: ServerProbeResult
-            do { result = .success(try await measure(server)) }
+            do { result = .success(try await measure(server, fastRetry)) }
             catch { result = .failure(error.localizedDescription) }
             guard !Task.isCancelled, let self else { return }
             self.jobs[server.id] = nil

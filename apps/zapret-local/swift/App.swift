@@ -130,6 +130,18 @@ struct ProxyPanel: View {
                     .padding(.horizontal, -6)
                 }
             }
+            Divider()
+            HStack {
+                Text("Быстрый повтор").font(.system(size: 13))
+                Spacer()
+                Toggle("Быстрый повтор", isOn: Binding(
+                    get: { model.state.fastRetry }, set: { model.setFastRetry($0) }
+                ))
+                .labelsHidden().toggleStyle(.switch).controlSize(.mini)
+                .accessibilityLabel("Быстрый повтор подключения")
+            }
+            .disabled(model.busy)
+            .help("Если соединение с сервером не устанавливается, повторить попытку через 2 секунды. Изменение переподключит включённый VPN.")
             if let message = model.state.error ?? model.notice {
                 Text(message).font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
