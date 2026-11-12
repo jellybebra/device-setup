@@ -17,11 +17,19 @@ enum VLESSProfile {
         try ServerStore.shared.change { try $0.put(server, select: true) }
     }
 
-    static func probe(_ server: ProxyServer) throws {
-        _ = try measure(server)
+    static func connectionProfile(_ data: Data, fastRetry: Bool) throws -> Data {
+        guard var value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ProxyError("Некорректный профиль сервера")
+        }
+        value["fastConnectRetry"] = fastRetry
+        return try JSONSerialization.data(withJSONObject: value)
     }
 
-    static func measure(_ server: ProxyServer) throws -> Int {
+    static func probe(_ server: ProxyServer, fastRetry: Bool = false) throws {
+        _ = try measure(server, fastRetry: fastRetry)
+    }
+
+    static func measure(_ server: ProxyServer, fastRetry: Bool = false) throws -> Int {
         try Task.checkCancellation()
         let process = Process()
         process.executableURL = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("zapret-helper")
@@ -43,7 +51,7 @@ enum VLESSProfile {
                 _ = ProcessShutdown.stop(process)
             }
         }
-        try pipe.fileHandleForWriting.write(contentsOf: server.outbound)
+        try pipe.fileHandleForWriting.write(contentsOf: connectionProfile(server.outbound, fastRetry: fastRetry))
         try pipe.fileHandleForWriting.close()
         let deadline = ContinuousClock.now.advanced(by: .seconds(40))
         while process.isRunning {

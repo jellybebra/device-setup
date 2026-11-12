@@ -3,9 +3,11 @@ import Darwin
 
 actor ProbeFixture {
     private(set) var calls = 0
+    private(set) var retryOptions: [Bool] = []
     private var pending: [Int: CheckedContinuation<Int, Error>] = [:]
 
-    func measure(_ server: ProxyServer) async throws -> Int {
+    func measure(_ server: ProxyServer, fastRetry: Bool) async throws -> Int {
+        retryOptions.append(fastRetry)
         calls += 1
         let call = calls
         return try await withCheckedThrowingContinuation { pending[call] = $0 }
@@ -71,7 +73,7 @@ final class FakeHelper: @unchecked Sendable {
 
     static func send(_ fd: Int32, running: Bool = false, ok: Bool = true, port: Int = 49946) {
         let value: [String: Any] = ["ok": ok, "running": running, "port": port,
-            "version": "0.1.0", "protocolVersion": 18, "error": ok ? NSNull() : "Network changed" as Any]
+            "version": "0.1.0", "protocolVersion": 19, "error": ok ? NSNull() : "Network changed" as Any]
         var data = try! JSONSerialization.data(withJSONObject: value)
         data.append(10)
         data.withUnsafeBytes { bytes in
@@ -90,7 +92,7 @@ struct LifecycleTests {
     @MainActor
     static func checkServerProbes() async throws {
         let fixture = ProbeFixture()
-        let probes = ServerProbes { try await fixture.measure($0) }
+        let probes = ServerProbes { try await fixture.measure($0, fastRetry: $1) }
         let first = ProxyServer(id: "one", name: "One", outbound: Data("first".utf8))
         let second = ProxyServer(id: "two", name: "Two", outbound: Data("second".utf8))
         func waitFor(_ condition: () async -> Bool) async throws {
@@ -112,8 +114,12 @@ struct LifecycleTests {
         precondition(probes.results.values.contains(.success(42)))
         precondition(probes.results.values.contains(.failure("Unavailable")))
 
+        probes.setFastRetry(true)
+        precondition(probes.results.isEmpty, "Changing the option must invalidate old measurements")
         probes.check(first)
         try await waitFor { await fixture.calls == 3 }
+        let options = await fixture.retryOptions
+        precondition(options == [false, false, true], "Checks must use the selected retry option")
         let changed = ProxyServer(id: first.id, name: first.name, outbound: Data("changed".utf8))
         probes.reconcile([changed, second])
         precondition(probes.results[first.id] == nil)
@@ -260,8 +266,20 @@ struct LifecycleTests {
             let settings = root.appendingPathComponent("settings.json")
             try JSONEncoder().encode(ProxySettings(port: port, lastEnabled: true)).write(to: settings)
             var running = false
-            let fake = try FakeHelper { command, _, fd in
-                if command == "start" { running = true }
+            var retryStarts: [Bool] = []
+            var rejectFastOnce = false
+            let fake = try FakeHelper { command, request, fd in
+                if command == "start" {
+                    let retry = (request["node"] as? [String: Any])?["fastConnectRetry"] as? Bool ?? false
+                    retryStarts.append(retry)
+                    if retry && rejectFastOnce {
+                        rejectFastOnce = false
+                        running = false
+                        FakeHelper.send(fd, running: false, ok: false, port: Int(port))
+                        return true
+                    }
+                    running = true
+                }
                 if command == "stop" { running = false }
                 // A failed previous worker is a valid authenticated status, not a missing helper.
                 FakeHelper.send(fd, running: running, ok: (command != "status" || running) && !(failStop && command == "stop"), port: Int(port))
@@ -277,6 +295,17 @@ struct LifecycleTests {
                 let recovered = await service.refresh()
                 precondition(recovered.running)
                 precondition(fake.commands.filter { $0 == "start" }.count == 2, "Wake did not restart a live-but-stale worker")
+                precondition(!recovered.fastRetry, "Existing settings must default to off")
+                let enabledRetry = await service.setFastRetry(true)
+                precondition(enabledRetry.running && enabledRetry.fastRetry && retryStarts.last == true)
+                let savedRetry = try JSONDecoder().decode(ProxySettings.self, from: Data(contentsOf: settings))
+                precondition(savedRetry.fastRetry == true)
+                let disabledRetry = await service.setFastRetry(false)
+                precondition(disabledRetry.running && !disabledRetry.fastRetry && retryStarts.last == false)
+                rejectFastOnce = true
+                let rolledBack = await service.setFastRetry(true)
+                precondition(rolledBack.running && !rolledBack.fastRetry && rolledBack.error != nil)
+                precondition(Array(retryStarts.suffix(2)) == [true, false], "Failed option must restore prior connection")
             }
             let stopped = await service.setEnabled(false)
             precondition(!stopped.enabled)
@@ -287,6 +316,12 @@ struct LifecycleTests {
             await service.networkDidWake()
             _ = await service.refresh()
             precondition(fake.commands.filter { $0 == "start" }.count == starts, "Disabled proxy restarted after wake")
+            let offlineOption = await service.setFastRetry(true)
+            precondition(offlineOption.fastRetry && !offlineOption.enabled)
+            precondition(fake.commands.filter { $0 == "start" }.count == starts, "Changing an option while off must not start VPN")
+            let reloaded = ProxyService(settingsURL: settings)
+            let savedState = await reloaded.state()
+            precondition(savedState.fastRetry && !savedState.enabled)
             await service.shutdown()
             fake.finish()
         }

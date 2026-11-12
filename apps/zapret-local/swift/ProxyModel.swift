@@ -13,6 +13,7 @@ struct StrategySelection: Codable, Equatable, Sendable {
 struct ProxySettings: Codable, Sendable {
     var port: UInt16 = 49956
     var lastEnabled = false
+    var fastRetry: Bool?
     var selection: StrategySelection?
 }
 
@@ -20,6 +21,7 @@ struct ProxyState: Sendable {
     var port: UInt16 = 49956
     var running = false
     var enabled = false
+    var fastRetry = false
     var error: String?
     var selection = StrategySelection()
 }
@@ -130,7 +132,7 @@ actor ProxyService {
 
     private func start(allowInstall: Bool, nodeOverride: Data? = nil) throws {
         if running { return }
-        let node = try nodeOverride ?? profile()
+        let node = try VLESSProfile.connectionProfile(nodeOverride ?? profile(), fastRetry: settings.fastRetry ?? false)
         try checkTunnel()
         try checkPort(settings.port)
         try connect(allowInstall: allowInstall)
@@ -165,7 +167,7 @@ actor ProxyService {
     }
 
     func state() -> ProxyState {
-        return ProxyState(port: settings.port, running: running, enabled: settings.lastEnabled, error: error, selection: settings.selection ?? StrategySelection())
+        return ProxyState(port: settings.port, running: running, enabled: settings.lastEnabled, fastRetry: settings.fastRetry ?? false, error: error, selection: settings.selection ?? StrategySelection())
     }
 
     func choose(_ candidate: ProxyServer) -> ProxyState {
@@ -173,7 +175,7 @@ actor ProxyService {
         do {
             if settings.lastEnabled {
                 let previous = try profile()
-                try VLESSProfile.probe(candidate)
+                try VLESSProfile.probe(candidate, fastRetry: settings.fastRetry ?? false)
                 try stop()
                 do {
                     try start(allowInstall: false, nodeOverride: candidate.outbound)
@@ -190,6 +192,38 @@ actor ProxyService {
                 try VLESSProfile.save(candidate)
             }
         } catch { self.error = error.localizedDescription }
+        return state()
+    }
+
+    func setFastRetry(_ enabled: Bool) -> ProxyState {
+        guard enabled != (settings.fastRetry ?? false) else { return state() }
+        let previous = settings.fastRetry
+        let wasEnabled = settings.lastEnabled
+        error = nil
+        do {
+            settings.fastRetry = enabled
+            try save()
+            if wasEnabled {
+                try stop()
+                try start(allowInstall: false)
+            }
+        } catch {
+            let failure = error.localizedDescription
+            settings.fastRetry = previous
+            settings.lastEnabled = wasEnabled
+            do {
+                try save()
+                if wasEnabled {
+                    try stop()
+                    try start(allowInstall: false)
+                }
+                self.error = "Настройка не применена. " + failure
+            } catch {
+                settings.lastEnabled = false
+                try? save()
+                self.error = "Не удалось восстановить подключение. " + error.localizedDescription
+            }
+        }
         return state()
     }
 
@@ -360,7 +394,20 @@ final class ProxyModel: ObservableObject {
         }
     }
 
-    private func update(_ newState: ProxyState) { state = newState }
+    private func update(_ newState: ProxyState) {
+        state = newState
+        probes.setFastRetry(newState.fastRetry)
+    }
+
+    func setFastRetry(_ enabled: Bool) {
+        guard !busy else { return }
+        busy = true
+        Task {
+            await probes.shutdown()
+            update(await service.setFastRetry(enabled))
+            busy = false
+        }
+    }
 
     func toggle() {
         guard !busy else { return }

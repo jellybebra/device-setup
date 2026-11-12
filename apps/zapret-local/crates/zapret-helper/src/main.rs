@@ -104,7 +104,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 18,
+            protocol_version: 19,
         }
     }
     fn failure(port: u16, error: impl ToString) -> Self {

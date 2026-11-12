@@ -96,6 +96,8 @@ pub(crate) struct Node {
     mldsa: String,
     ech_config: String,
     flow: String,
+    #[serde(default)]
+    fast_connect_retry: bool,
 }
 
 impl Node {
@@ -189,11 +191,20 @@ impl Node {
             mldsa: Self::text(tls, "mldsa65Verify"),
             ech_config,
             flow,
+            fast_connect_retry: o["fastConnectRetry"].as_bool().unwrap_or(false),
         })
     }
     fn xray(&self, ip: Ipv4Addr, port: u16, interface: &str) -> Value {
+        // Bound only the initial TCP SYN wait. Xray's existing dial retry then
+        // opens a fresh socket/source port; established streams and TLS retain
+        // their normal timeouts. Darwin TCP_CONNECTIONTIMEOUT is option 0x20
+        // at IPPROTO_TCP (6), with its value expressed in seconds.
         let mut stream =
             json!({"network":"raw","security":self.security,"sockopt":{"interface":interface}});
+        if self.fast_connect_retry {
+            stream["sockopt"]["customSockopt"] = json!([{"system":"darwin","network":"tcp",
+                "level":"6","opt":"32","value":"2","type":"int"}]);
+        }
         if self.security == "reality" {
             stream["realitySettings"] = json!({"serverName":self.server_name,"fingerprint":self.fingerprint,"publicKey":self.public_key,"shortId":self.short_id,"spiderX":self.spider,"mldsa65Verify":self.mldsa});
         } else {
@@ -745,7 +756,24 @@ mod tests {
                 ob["streamSettings"][format!("{tls}Settings")]["serverName"],
                 "vpn.example.com"
             );
-            assert_eq!(ob["streamSettings"]["sockopt"], json!({"interface":"en0"}));
+            let sockopt = &ob["streamSettings"]["sockopt"];
+            assert_eq!(sockopt["interface"], "en0");
+            assert!(sockopt.get("dialerProxy").is_none());
+            assert!(
+                sockopt.get("customSockopt").is_none(),
+                "Existing profiles keep their original timeout"
+            );
+            let mut enabled = source.clone();
+            enabled["fastConnectRetry"] = json!(true);
+            let node = Node::import(&enabled).unwrap();
+            let cfg = node.xray("192.0.2.2".parse().unwrap(), 12345, "en0");
+            assert_eq!(
+                cfg["outbounds"][0]["streamSettings"]["sockopt"]["customSockopt"],
+                json!([{
+                    "system":"darwin","network":"tcp","level":"6",
+                    "opt":"32","value":"2","type":"int"
+                }])
+            );
         }
     }
     // Called only by tests/loopback.py with a freshly created, private temp directory.
