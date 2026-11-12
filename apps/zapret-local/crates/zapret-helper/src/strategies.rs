@@ -114,6 +114,16 @@ impl Selection {
             "--dpi-desync-ts-increment=-600000".into(),
             "--new".into(),
         ]);
+        // X media needs its own TCP profile even when a general preset is
+        // selected. The preset's fake/overlap profile intermittently stalls
+        // the TLS handshake on Fastly; plain multidisorder preserves it.
+        args.extend([
+            "--filter-tcp=443".into(),
+            "--hostlist-domains=twimg.com".into(),
+            "--dpi-desync=multidisorder".into(),
+            "--dpi-desync-split-pos=1,midsld".into(),
+            "--new".into(),
+        ]);
         if self.strategy == "local" {
             args.extend(super::engine_args(directory, false));
             return Ok(args);
@@ -179,6 +189,41 @@ mod tests {
         .validate()
         .is_err());
     }
+    #[test]
+    fn x_media_profile_precedes_each_general_preset() {
+        for strategy in
+            std::iter::once("local".to_owned()).chain(catalog().into_iter().map(|p| p.id))
+        {
+            let args = Selection {
+                strategy,
+                ..Selection::default()
+            }
+            .args(Path::new("/engine"), false)
+            .unwrap();
+            let profiles: Vec<_> = args.split(|arg| arg == "--new").collect();
+            let index = profiles
+                .iter()
+                .position(|profile| {
+                    profile
+                        .iter()
+                        .any(|arg| arg == "--hostlist-domains=twimg.com")
+                })
+                .unwrap();
+            assert!(profiles[index].iter().any(|arg| arg == "--filter-tcp=443"));
+            assert!(profiles[index]
+                .iter()
+                .any(|arg| arg == "--dpi-desync=multidisorder"));
+            assert!(profiles[index]
+                .iter()
+                .any(|arg| arg == "--dpi-desync-split-pos=1,midsld"));
+            // A catch-all or list-based preset before this profile would
+            // silently make the targeted strategy unreachable again.
+            assert!(profiles[..index].iter().all(|profile| !profile
+                .iter()
+                .any(|arg| { arg.starts_with("--hostlist=") || arg == "--filter-tcp=80,443" })));
+        }
+    }
+
     #[test]
     fn every_preset_has_only_bundled_paths_and_preserves_profile_order() {
         let presets = catalog();

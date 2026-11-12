@@ -41,6 +41,9 @@ pub(super) const META: &[&str] = &[
     "ig.me",
 ];
 const VPN: &[&str] = &[
+    // GitHub's stylesheet/script CDN resets direct TLS connections on this
+    // network independently of SNI. Use the working VLESS route for these assets.
+    "githubassets.com",
     "telegram.org",
     "t.me",
     "telegram.me",
@@ -856,6 +859,12 @@ mod tests {
             &json!({"ip_cidr":cloudfront,"network":"tcp","port":[80,443],"outbound":"vless"})
         ));
         let before_cf = &rules[..cf[0].0];
+        assert!(before_cf.iter().any(|rule| {
+            rule["outbound"] == "vless"
+                && rule["domain_suffix"]
+                    .as_array()
+                    .is_some_and(|domains| domains.contains(&json!("githubassets.com")))
+        }));
         for exception in [
             json!({"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"}),
             json!({"port":7844,"outbound":"dpi"}),

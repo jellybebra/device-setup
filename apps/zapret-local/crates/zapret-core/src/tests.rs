@@ -182,6 +182,13 @@ async fn start(pool: Arc<Pool>) -> (watch::Sender<bool>, JoinHandle<Result<()>>,
 }
 
 async fn request(port: u16, command: u8, destination: SocketAddrV4) -> (TcpStream, [u8; 10]) {
+    let mut address = vec![1];
+    address.extend_from_slice(&destination.ip().octets());
+    address.extend_from_slice(&destination.port().to_be_bytes());
+    request_address(port, command, &address).await
+}
+
+async fn request_address(port: u16, command: u8, address: &[u8]) -> (TcpStream, [u8; 10]) {
     let mut client = TcpStream::connect((Ipv4Addr::LOCALHOST, port))
         .await
         .unwrap();
@@ -189,9 +196,8 @@ async fn request(port: u16, command: u8, destination: SocketAddrV4) -> (TcpStrea
     let mut auth = [0; 2];
     client.read_exact(&mut auth).await.unwrap();
     assert_eq!(auth, [5, 0]);
-    let mut packet = vec![5, command, 0, 1];
-    packet.extend_from_slice(&destination.ip().octets());
-    packet.extend_from_slice(&destination.port().to_be_bytes());
+    let mut packet = vec![5, command, 0];
+    packet.extend_from_slice(address);
     client.write_all(&packet).await.unwrap();
     let mut reply = [0; 10];
     client.read_exact(&mut reply).await.unwrap();
@@ -245,6 +251,12 @@ async fn tcp_relay_large_payload_half_close_and_shutdown() {
 
 #[tokio::test]
 async fn udp_association_pins_sender_and_closes_with_tcp_control() {
+    for ipv6_wildcard in [false, true] {
+        check_udp_association(ipv6_wildcard).await;
+    }
+}
+
+async fn check_udp_association(ipv6_wildcard: bool) {
     let echo = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
     let target = match echo.local_addr().unwrap() {
         SocketAddr::V4(a) => a,
@@ -259,7 +271,13 @@ async fn udp_association_pins_sender_and_closes_with_tcp_control() {
     });
     let pool = test_pool();
     let (stop, server, port) = start(pool.clone()).await;
-    let (control, reply) = request(port, 3, SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).await;
+    let (control, reply) = if ipv6_wildcard {
+        let mut address = vec![4];
+        address.extend_from_slice(&[0; 18]);
+        request_address(port, 3, &address).await
+    } else {
+        request(port, 3, SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).await
+    };
     assert_eq!(reply[1], 0);
     let relay = SocketAddrV4::new(
         Ipv4Addr::new(reply[4], reply[5], reply[6], reply[7]),
@@ -302,6 +320,27 @@ async fn udp_association_pins_sender_and_closes_with_tcp_control() {
     stop.send(true).unwrap();
     server.await.unwrap().unwrap();
     echo_task.abort();
+}
+
+#[tokio::test]
+async fn ipv6_udp_wildcard_does_not_enable_ipv6_destinations_or_foreign_clients() {
+    let pool = test_pool();
+    let (stop, server, port) = start(pool.clone()).await;
+    for (command, ip, expected) in [
+        (1, "::", 8),
+        (1, "2001:db8::1", 8),
+        (3, "::1", 2),
+        (3, "2001:db8::1", 2),
+    ] {
+        let mut address = vec![4];
+        address.extend_from_slice(&ip.parse::<std::net::Ipv6Addr>().unwrap().octets());
+        address.extend_from_slice(&0u16.to_be_bytes());
+        let (_, reply) = request_address(port, command, &address).await;
+        assert_eq!(reply[1], expected);
+        assert!(pool.ports.lock().unwrap().busy.is_empty());
+    }
+    stop.send(true).unwrap();
+    server.await.unwrap().unwrap();
 }
 
 #[tokio::test]

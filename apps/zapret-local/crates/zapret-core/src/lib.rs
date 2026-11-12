@@ -698,6 +698,21 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
         if header[0] != 5 || header[2] != 0 {
             bail!("Invalid SOCKS request");
         }
+        if header[1] == 3 && header[3] == 4 {
+            // UDP ASSOCIATE describes the client's UDP endpoint, not an
+            // Internet destination. sing-box uses :: when it has no bound
+            // endpoint yet, including for IPv4 traffic addressed by domain.
+            let mut address = [0; 16];
+            client.read_exact(&mut address).await?;
+            let port = client.read_u16().await?;
+            if address != [0; 16] {
+                client
+                    .write_all(&socks_reply(2, SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)))
+                    .await?;
+                return Ok(None);
+            }
+            return Ok(Some((3, Host::Ip(Ipv4Addr::UNSPECIFIED), port)));
+        }
         if !matches!(header[3], 1 | 3) {
             client
                 .write_all(&socks_reply(8, SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)))
