@@ -14,7 +14,7 @@ struct ServerManager: View {
         VStack(alignment: .leading, spacing: 12) {
             if formOpen {
                 Text(editing == nil ? "Добавить сервер" : "Изменить сервер").font(.headline)
-                TextField("Название сервера", text: $name)
+                TextField("Название сервера", text: $name).textFieldStyle(.roundedBorder)
                 if editing?.id != model.selectedServer?.id || !model.state.enabled || editing == nil {
                     HStack {
                         SecureField(editing == nil ? "Ссылка vless://" : "Новая ссылка vless://", text: $link)
@@ -26,6 +26,7 @@ struct ServerManager: View {
                     if editing != nil { Text("Оставьте ссылку пустой, чтобы изменить только название.").font(.caption) }
                 }
                 HStack {
+                    Spacer()
                     Button("Отмена") { closeForm() }.keyboardShortcut(.cancelAction)
                     Button("Сохранить") {
                         perform {
@@ -36,7 +37,6 @@ struct ServerManager: View {
                 }
                 Spacer()
             } else {
-                Button("Добавить…") { edit(nil) }.disabled(model.busy)
                 if model.servers.isEmpty {
                     ContentUnavailableView("Нет серверов", systemImage: "network")
                 } else {
@@ -44,34 +44,32 @@ struct ServerManager: View {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(model.servers) { server in
                                 let selected = server.id == model.selectedServer?.id
-                                HStack {
-                                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selected ? Color.accentColor : .secondary)
-                                        .accessibilityLabel(selected ? "Выбран" : "Не выбран")
-                                    Text(server.name).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                                ManagementRow(name: server.name, selected: selected) {
+                                    Button { edit(server) } label: { Image(systemName: "square.and.pencil").frame(width: 24, height: 24) }
+                                        .buttonStyle(.borderless).help("Редактировать сервер")
+                                        .accessibilityLabel("Редактировать сервер \(server.name)")
                                     Menu {
                                         Button("Использовать") { model.choose(server) }.disabled(selected)
-                                        Button("Изменить…") { edit(server) }
                                         Button("Удалить…", role: .destructive) {
                                             if selected && model.state.enabled {
                                                 message = "Сначала выберите другой сервер или выключите V2DPI"
                                             } else { deleting = server }
                                         }
-                                    } label: { Image(systemName: "ellipsis.circle") }
-                                    .menuStyle(.borderlessButton).fixedSize()
+                                    } label: { Image(systemName: "ellipsis").frame(width: 24, height: 24) }
+                                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                                     .accessibilityLabel("Действия с сервером \(server.name)")
-                                }.padding(.vertical, 9)
-                                Divider()
+                                }
                             }
                         }
                     }.disabled(model.busy)
                 }
             }
             if let info = message ?? model.state.error ?? model.notice {
-                Text(info).font(.callout).foregroundStyle(.secondary)
+                Text(info).font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(18).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(ManagementToolbar(label: "Добавить сервер", isEnabled: !model.busy && !formOpen) { edit(nil) })
         .alert("Удалить сервер из V2DPI?", isPresented: Binding(get: { deleting != nil },
             set: { if !$0 { deleting = nil } }), presenting: deleting) { server in
             Button("Удалить", role: .destructive) { perform { try model.removeServer(server.id) } }

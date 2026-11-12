@@ -41,9 +41,6 @@ pub(super) const META: &[&str] = &[
     "ig.me",
 ];
 const VPN: &[&str] = &[
-    // GitHub's stylesheet/script CDN resets direct TLS connections on this
-    // network independently of SNI. Use the working VLESS route for these assets.
-    "githubassets.com",
     "telegram.org",
     "t.me",
     "telegram.me",
@@ -302,6 +299,8 @@ fn sing(
         {"ip_cidr":"216.150.1.1/32","network":"udp","port":443,"outbound":"dpi","override_address":"216.150.16.1"},
         {"port":7844,"outbound":"dpi"},
         {"ip_is_private":true,"outbound":"direct"},
+        // GitHub assets must stay direct, including when CDN address ranges change.
+        {"domain_suffix":"githubassets.com","outbound":"direct"},
         {"domain_suffix":VPN,"outbound":"vless"},{"ip_cidr":TELEGRAM,"outbound":"vless"},
         {"domain_suffix":["pinterest.com","pinimg.com","pin.it"],"outbound":"direct"},
         {"network":"udp","port_range":["19294:19344","50000:50100"],"outbound":"dpi"},
@@ -314,6 +313,87 @@ fn sing(
         {"ip_cidr":cloudfront,"network":"tcp","port":[80,443],"outbound":"vless"}
       ]}
     })
+}
+
+fn apply_network_rules(config: &mut Value, rules: &[super::strategies::DomainRule]) -> Vec<usize> {
+    let routes = config["route"]["rules"].as_array_mut().unwrap();
+    let index = routes.iter().position(|r| r["action"] == "sniff").unwrap() + 1;
+    // Keep private addresses direct before any user override. More specific
+    // suffixes win, independently of the order in which the UI stored them.
+    let mut overrides = rules.iter().collect::<Vec<_>>();
+    overrides.sort_by_key(|r| std::cmp::Reverse(r.domain.len()));
+    let mut entries = vec![json!({"ip_is_private":true,"outbound":"direct"})];
+    entries.extend(
+        overrides
+            .into_iter()
+            .map(|r| json!({"domain_suffix":r.domain,"outbound":r.route})),
+    );
+    routes.splice(index..index, entries.clone());
+    // DNS reverse mapping can identify UDP before sniffing; honor its override too.
+    let count = entries.len();
+    routes.splice(3..3, entries);
+    (4..3 + count)
+        .chain(index + count + 1..index + 2 * count)
+        .collect()
+}
+
+/// The inspector and the worker use the same policy builder. Only policy fields
+/// leave the helper: no node credentials, endpoint, local address or ports.
+pub(super) fn inspect_policy(rules: &[super::strategies::DomainRule]) -> Value {
+    let mut config = sing(
+        "interface",
+        Ipv4Addr::UNSPECIFIED,
+        "tun",
+        Ipv4Addr::UNSPECIFIED,
+        0,
+        &Ports {
+            vless: 0,
+            doh: 0,
+            resolver: 0,
+        },
+    );
+    let profile_indices = apply_network_rules(&mut config, rules);
+    let mut capture = config["inbounds"][0].clone();
+    for key in ["interface_name", "address", "mtu", "type", "tag"] {
+        capture.as_object_mut().unwrap().remove(key);
+    }
+    for address in capture["route_exclude_address"].as_array_mut().unwrap() {
+        if *address == "0.0.0.0/32" {
+            *address = json!("VLESS-сервер /32");
+        }
+    }
+    for server in config["dns"]["servers"].as_array_mut().unwrap() {
+        server.as_object_mut().unwrap().remove("server_port");
+    }
+    json!({"route":config["route"], "dns":config["dns"], "capture":capture, "profileIndices":profile_indices})
+}
+
+pub(super) fn check_custom(
+    custom: &super::custom::CustomPolicy,
+    binary: &Path,
+    stage: &Path,
+) -> Result<()> {
+    let mut config = sing(
+        "en0",
+        "192.0.2.11".parse()?,
+        "utun91",
+        "192.0.2.10".parse()?,
+        49956,
+        &Ports {
+            vless: 49957,
+            doh: 49958,
+            resolver: 49959,
+        },
+    );
+    custom.apply(&mut config);
+    let file = stage.join("check.json");
+    atomic_write(&file, &serde_json::to_vec(&config)?, 0o600)?;
+    checked(
+        binary.to_str().context("Invalid binary path")?,
+        &["check", "-c", file.to_str().unwrap()],
+        None,
+    )?;
+    Ok(())
 }
 
 fn spawn(exe: &Path, args: &[&str], log: &File) -> Result<Child> {
@@ -513,6 +593,8 @@ pub fn start(
     net: &Network,
     dpi: u16,
     node: &Node,
+    rules: &[super::strategies::DomainRule],
+    custom: Option<&super::custom::CustomPolicy>,
 ) -> Result<()> {
     let bin = Path::new(INSTALL).join("network");
     let ports = Ports::available()?;
@@ -596,6 +678,8 @@ pub fn start(
         dpi,
         ports: &ports,
         log: &log,
+        rules,
+        custom,
     };
     let mut report = Vec::new();
     for stack in ["mixed", "gvisor"] {
@@ -632,6 +716,8 @@ struct Capture<'a> {
     dpi: u16,
     ports: &'a Ports,
     log: &'a File,
+    rules: &'a [super::strategies::DomainRule],
+    custom: Option<&'a super::custom::CustomPolicy>,
 }
 
 impl Capture<'_> {
@@ -643,11 +729,25 @@ impl Capture<'_> {
             dpi,
             ports,
             log,
+            rules,
+            custom,
         } = *self;
         let bin = Path::new(INSTALL).join("network");
         let (_, tun, _) = choose_utun()?;
         let config = stage.join("tun.json");
         let mut policy = sing(&net.interface, net.source, &tun, endpoint, dpi, ports);
+        apply_network_rules(&mut policy, rules);
+        if let Some(custom) = custom {
+            custom.apply(&mut policy);
+        }
+        // Validate before launching or modifying system routing.
+        let check = stage.join("check.json");
+        atomic_write(&check, &serde_json::to_vec(&policy)?, 0o600)?;
+        checked(
+            bin.join("sing-box").to_str().unwrap(),
+            &["check", "-c", check.to_str().unwrap()],
+            None,
+        )?;
         policy["inbounds"][0]["stack"] = json!(stack);
         atomic_write(&config, &serde_json::to_vec(&policy)?, 0o600)?;
         runtime.tun = Some(spawn(
@@ -829,6 +929,56 @@ mod tests {
     }
 
     #[test]
+    fn network_routes_override_services_and_are_specific_and_private_safe() {
+        use super::super::strategies::{DomainRule, Route};
+        let ports = Ports {
+            vless: 49957,
+            doh: 49958,
+            resolver: 49959,
+        };
+        let mut config = sing(
+            "en0",
+            "192.0.2.11".parse().unwrap(),
+            "utun91",
+            "192.0.2.10".parse().unwrap(),
+            49956,
+            &ports,
+        );
+        let baseline = config.clone();
+        apply_network_rules(
+            &mut config,
+            &[
+                DomainRule {
+                    domain: "githubassets.com".into(),
+                    route: Route::Vless,
+                },
+                DomainRule {
+                    domain: "specific.githubassets.com".into(),
+                    route: Route::Direct,
+                },
+            ],
+        );
+        let rules = config["route"]["rules"].as_array().unwrap();
+        assert_eq!(rules[3], json!({"ip_is_private":true,"outbound":"direct"}));
+        assert_eq!(
+            rules[4],
+            json!({"domain_suffix":"specific.githubassets.com","outbound":"direct"})
+        );
+        assert_eq!(
+            rules[5],
+            json!({"domain_suffix":"githubassets.com","outbound":"vless"})
+        );
+        let sniff = rules.iter().position(|r| r["action"] == "sniff").unwrap();
+        assert_eq!(rules[sniff + 1], rules[3]);
+        assert_eq!(rules[sniff + 2], rules[4]);
+        assert_eq!(rules[sniff + 3], rules[5]);
+        assert!(!baseline["route"]["rules"]
+            .as_array()
+            .unwrap()
+            .contains(&rules[5]));
+    }
+
+    #[test]
     fn check_policy_with_bundled_sing_box() {
         let config = sing(
             "en0",
@@ -887,13 +1037,9 @@ mod tests {
             &json!({"ip_cidr":cloudfront,"network":"tcp","port":[80,443],"outbound":"vless"})
         ));
         let before_cf = &rules[..cf[0].0];
-        assert!(before_cf.iter().any(|rule| {
-            rule["outbound"] == "vless"
-                && rule["domain_suffix"]
-                    .as_array()
-                    .is_some_and(|domains| domains.contains(&json!("githubassets.com")))
-        }));
+        assert!(!VPN.contains(&"githubassets.com"));
         for exception in [
+            json!({"domain_suffix":"githubassets.com","outbound":"direct"}),
             json!({"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"}),
             json!({"port":7844,"outbound":"dpi"}),
             json!({"domain_suffix":VPN,"outbound":"vless"}),
