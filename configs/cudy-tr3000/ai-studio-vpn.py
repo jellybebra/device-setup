@@ -12,6 +12,7 @@ DOMAINS = (
     'accounts.google.com',
     'waa-pa.clients6.google.com',
     'generativelanguage.googleapis.com',
+    'daily-cloudcode-pa.googleapis.com',
     'alkalimakersuite-pa.clients6.google.com',
     'webchannel-alkalimakersuite-pa.clients6.google.com',
     'alkalimakersuiteapplets.pa.clients6.google.com',
