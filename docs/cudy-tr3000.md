@@ -13,7 +13,7 @@ TR3000 другая разметка flash. Образ, разделы загр�
 | Vercel | Для сайтов на общем IP `216.150.1.1` Cudy меняет адрес назначения на `216.150.16.1`. Соединение идёт напрямую, имя сайта сохраняется. |
 | Cloudflare Tunnel | С ПК без собственного VPN соединения HTTP/2 и QUIC выходят с Cudy к Cloudflare на порт 7844. Сервер 3x-ui в этом пути не участвует. |
 | Telegram, OpenAI, Anthropic, Notion | Через VLESS по правилам PassWall2. Для вложений, CDN и соединений без доменного имени важны отдельные правила. |
-| Google AI Studio | Сайт, Gemini API и служебные домены Playground выходят через финский узел `quiet` по TCP и QUIC. Через этот же узел идёт `accounts.google.com`, в том числе при входе в другие сервисы Google. |
+| Google AI Studio и Antigravity | Сайт AI Studio, Gemini API, служебные домены Playground и запросы Antigravity к `daily-cloudcode-pa.googleapis.com` выходят через финский узел `quiet` по TCP и QUIC. Через этот же узел идёт `accounts.google.com`, в том числе при входе в другие сервисы Google. |
 
 Общий маршрут PassWall2 — прямой. Пустое правило, назначенное на VPN, способно перехватить весь оставшийся
 трафик. Правила Cloudflare охватывают опубликованные диапазоны сети. Сайты с собственными адресами могут
