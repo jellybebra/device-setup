@@ -1,0 +1,92 @@
+--- a/nfq/params.h
++++ b/nfq/params.h
+@@ -105,6 +105,7 @@
+ 	int n;	// number of the profile
+ 
+ 	uint16_t wsize,wssize;
++	bool wssize_ramp;
+ 	uint8_t wscale,wsscale;
+ 	char wssize_cutoff_mode; // n - packets, d - data packets, s - relative sequence
+ 	bool wssize_no_forced_cutoff;
+--- a/nfq/conntrack.h
++++ b/nfq/conntrack.h
+@@ -9,6 +9,7 @@
+ #include <ctype.h>
+ #include <sys/types.h>
+ #include <time.h>
++#include "wssize_ramp.h"
+ #include <netinet/in.h>
+ 
+ #define __FAVOR_BSD
+@@ -69,6 +70,7 @@
+ 
+ 	// tcp only state, not used in udp
+ 	t_connstate state;
++	struct wssize_ramp_state ramp;
+ 	uint32_t seq0, ack0;			// starting seq and ack
+ 	uint16_t winsize_orig, winsize_reply;	// last seen window size
+ 	uint8_t scale_orig, scale_reply;	// last seen window scale factor. SCALE_NONE if none
+--- a/nfq/nfqws.c
++++ b/nfq/nfqws.c
+@@ -1935,6 +1935,7 @@
+ 		" --hostlist-auto-debug=<logfile>\t\t\t; debug auto hostlist positives\n"
+ 		"\nTAMPER:\n"
+ 		" --wsize=<window_size>[:<scale_factor>]\t\t\t; set window size. 0 = do not modify. OBSOLETE !\n"
++		" --wssize-ramp\t\t\t\t; advertise 1:1 until first server data ACK, then restore scaled receive credit\n"
+ 		" --wssize=<window_size>[:<scale_factor>]\t\t; set window size for server. 0 = do not modify. default scale_factor = 0.\n"
+ 		" --wssize-cutoff=[n|d|s]N\t\t\t\t; apply server wsize only to packet numbers (n, default), data packet numbers (d), relative sequence (s) less than N\n"
+ 		" --wssize-forced-cutoff=0|1\t\t\t\t; 1(default)=auto cutoff wssize on known protocol\n"
+@@ -2126,6 +2127,7 @@
+ #endif
+ 	IDX_WSIZE,
+ 	IDX_WSSIZE,
++	IDX_WSSIZE_RAMP,
+ 	IDX_WSSIZE_CUTOFF,
+ 	IDX_WSSIZE_FORCED_CUTOFF,
+ 	IDX_SYNACK_SPLIT,
+@@ -2266,6 +2268,7 @@
+ 	[IDX_UID] = {"uid", required_argument, 0, 0},
+ #endif
+ 	[IDX_WSIZE] = {"wsize", required_argument, 0, 0},
++	[IDX_WSSIZE_RAMP] = {"wssize-ramp", no_argument, 0, 0},
+ 	[IDX_WSSIZE] = {"wssize", required_argument, 0, 0},
+ 	[IDX_WSSIZE_CUTOFF] = {"wssize-cutoff", required_argument, 0, 0},
+ 	[IDX_WSSIZE_FORCED_CUTOFF] = {"wssize-forced-cutoff", required_argument, 0, 0},
+@@ -2606,7 +2609,12 @@
+ 			if (!parse_ws_scale_factor(optarg, &dp->wsize, &dp->wscale))
+ 				exit_clean(1);
+ 			break;
++		case IDX_WSSIZE_RAMP:
++			if (dp->wssize) { DLOG_ERR("conflicting window options\n"); exit(1); }
++			dp->wssize_ramp = true;
++			break;
+ 		case IDX_WSSIZE:
++			if (dp->wssize_ramp) { DLOG_ERR("conflicting window options\n"); exit(1); }
+ 			if (!parse_ws_scale_factor(optarg, &dp->wssize, &dp->wsscale))
+ 				exit_clean(1);
+ 			break;
+--- a/nfq/desync.c
++++ b/nfq/desync.c
+@@ -1286,6 +1286,13 @@
+ 			DLOG("matching desync profile not found\n");
+ 			return verdict;
+ 		}
++		if (!bReverse && ctrack && (dp->wssize_ramp || ctrack->ramp.negotiated))
++		{
++			uint8_t *scale = (dis->tcp->th_flags & TH_SYN) ? tcp_find_option(dis->tcp, 3) : NULL;
++			if (wssize_ramp_apply(&ctrack->ramp, dp->wssize_ramp, dis->tcp,
++					scale && scale[1] == 3 ? scale + 2 : NULL, ctrack->ack0))
++				verdict = VERDICT_MODIFY;
++		}
+ 		maybe_cutoff(ctrack, IPPROTO_TCP);
+ 
+ 		HostFailPoolPurgeRateLimited(&dp->hostlist_auto_fail_counters);
+@@ -1372,7 +1379,7 @@
+ 		if (orig_mod(dp, ctrack, dis)) // ttl can change !
+ 			verdict = VERDICT_MODIFY;
+ 
+-		if (dp->wssize)
++		if (dp->wssize && !(ctrack && ctrack->ramp.negotiated))
+ 		{
+ 			if (ctrack)
+ 			{

@@ -122,7 +122,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 23,
+            protocol_version: 24,
             network_key: None,
             network_interface: None,
             policy: None,

@@ -109,7 +109,7 @@ final class HelperClient {
         guard reply.version == (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") else {
             throw ProxyError("Сетевой помощник требует обновления")
         }
-        guard reply.protocolVersion == 23 else { throw ProxyError("Сетевой помощник требует обновления") }
+        guard reply.protocolVersion == 24 else { throw ProxyError("Сетевой помощник требует обновления") }
         completed = true
         return reply
     }
