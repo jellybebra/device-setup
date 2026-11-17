@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube — восстановление перемотки",
+  "version": "1.2.0",
+  "description": "Возобновляет зависшее после перемотки видео в текущем плеере YouTube.",
+  "content_scripts": [{
+    "matches": ["https://www.youtube.com/*"],
+    "js": ["recover.js"],
+    "world": "MAIN",
+    "run_at": "document_start"
+  }]
+}

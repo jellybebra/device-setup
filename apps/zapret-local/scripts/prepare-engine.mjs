@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync, copyFileSync, chmodSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { root, revision, upstream, payloads, lists, run, output } from './common.mjs';
@@ -23,13 +23,29 @@ if (output('git', ['-C', checkout, 'status', '--porcelain', '--untracked-files=n
   throw new Error('Engine checkout has modified tracked sources.');
 }
 const sdk = output('xcrun', ['--show-sdk-path']);
-run('make', ['-C', join(checkout, 'nfq'), 'mac', `SDKROOT=${sdk}`]);
 const destination = join(root, 'resources/engine');
 mkdirSync(destination, { recursive: true });
-for (const name of ['utunws', ...payloads]) {
-  const source = name === 'utunws' ? join(checkout, 'nfq', name) : join(checkout, 'macos/Payload/bin', name);
-  copyFileSync(source, join(destination, name));
-  chmodSync(join(destination, name), name === 'utunws' ? 0o755 : 0o644);
+const dist = join(build, 'dist');
+mkdirSync(dist, { recursive: true });
+const stage = mkdtempSync(join(build, 'engine-src-'));
+try {
+  const prefix = 'flowseal-' + revision;
+  const source = join(stage, prefix);
+  const archive = join(stage, 'source.tar');
+  run('git', ['-C', checkout, 'archive', '--format=tar', '--prefix=' + prefix + '/', '--output=' + archive, revision]);
+  run('tar', ['-xf', archive, '-C', stage]);
+  run('/usr/bin/patch', ['-p1', '-i', join(root, 'native/utunws-wssize-ramp.patch')], { cwd: source });
+  copyFileSync(join(root, 'native/wssize_ramp.h'), join(source, 'nfq/wssize_ramp.h'));
+  run('tar', ['-czf', join(dist, `flowseal-source-${revision.slice(0, 12)}.tar.gz`), '-C', stage, prefix]);
+  run('make', ['-C', join(source, 'nfq'), 'mac', `SDKROOT=${sdk}`]);
+  copyFileSync(join(source, 'nfq/utunws'), join(destination, 'utunws'));
+  chmodSync(join(destination, 'utunws'), 0o755);
+} finally {
+  rmSync(stage, { recursive: true, force: true });
+}
+for (const name of payloads) {
+  copyFileSync(join(checkout, 'macos/Payload/bin', name), join(destination, name));
+  chmodSync(join(destination, name), 0o644);
 }
 for (const name of lists) {
   const source = name === 'cloudflare-ipv4.txt'
@@ -49,8 +65,4 @@ const hashes = Object.fromEntries(['utunws', ...payloads, ...lists].map(name => 
 writeFileSync(join(destination, 'manifest.json'), JSON.stringify({ source: upstream.replace(/\.git$/, ''), commit: revision, sha256: hashes }, null, 2) + '\n');
 copyFileSync(join(checkout, 'LICENSE'), join(destination, 'FLOWSEAL-LICENSE.txt'));
 copyFileSync(join(root, 'THIRD_PARTY_NOTICES.md'), join(destination, 'THIRD_PARTY_NOTICES.md'));
-const dist = join(build, 'dist');
-mkdirSync(dist, { recursive: true });
-run('git', ['-C', checkout, 'archive', '--format=tar.gz', `--prefix=flowseal-${revision}/`,
-  `--output=${join(dist, `flowseal-source-${revision.slice(0, 12)}.tar.gz`)}`, revision]);
 console.log(`Built pinned universal Flowseal engine in ${destination}`);

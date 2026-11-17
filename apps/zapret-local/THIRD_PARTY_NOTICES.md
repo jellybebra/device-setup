@@ -1,6 +1,6 @@
 # Third-party notices
 
-V2DPI bundles the separate `utunws` executable and fake packet payloads from Flowseal/zapret-mac-discord-youtube at revision `94c3b5125b4904ce2f6aec0e2197fe17f2fadf14`. The source is unmodified.
+V2DPI bundles the separate `utunws` executable and fake packet payloads from Flowseal/zapret-mac-discord-youtube at revision `94c3b5125b4904ce2f6aec0e2197fe17f2fadf14`. V2DPI adds a native implementation of the default wssize_ramp receive-window algorithm. The accompanying source archive includes the build-time patch and native code in applied form. Reference behavior is documented in the [Zapret GUI release](https://t.me/zapretguidev/2488).
 
 Upstream: https://github.com/Flowseal/zapret-mac-discord-youtube
 

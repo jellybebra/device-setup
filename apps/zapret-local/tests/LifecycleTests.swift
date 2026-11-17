@@ -73,7 +73,7 @@ final class FakeHelper: @unchecked Sendable {
 
     static func send(_ fd: Int32, running: Bool = false, ok: Bool = true, port: Int = 49946, policy: [String: Any]? = nil, networkKey: String? = nil) {
         var value: [String: Any] = ["ok": ok, "running": running, "port": port,
-            "version": "0.1.0", "protocolVersion": 23, "error": ok ? NSNull() : "Network changed" as Any]
+            "version": "0.1.0", "protocolVersion": 24, "error": ok ? NSNull() : "Network changed" as Any]
         if let policy { value["policy"] = policy }
         if let networkKey { value["networkKey"] = networkKey; value["networkInterface"] = "en0" }
         var data = try! JSONSerialization.data(withJSONObject: value)
