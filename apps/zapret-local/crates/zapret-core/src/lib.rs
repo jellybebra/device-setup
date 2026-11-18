@@ -20,6 +20,8 @@ use tokio::{
 };
 use tokio_rustls::{rustls, TlsConnector};
 
+mod youtube_start;
+
 const MAX_BODY: usize = 65_536;
 const MAX_HEADERS: usize = 16_384;
 const MAX_UDP_PAYLOAD: usize = 65_507 - 10;
@@ -30,6 +32,7 @@ pub const INSTAGRAM_TLS_RELAY: &str = "instagram-sni.invalid";
 
 #[derive(Debug, Clone)]
 pub struct Config {
+    pub youtube_startup_retry: bool,
     pub interface: String,
     pub source_ip: Ipv4Addr,
     pub listen_port: u16,
@@ -48,6 +51,7 @@ struct Pool {
     ports: Mutex<Ports>,
     interface_index: u32,
     test_loopback: bool,
+    youtube_retries: youtube_start::Retries,
 }
 
 struct Lease {
@@ -90,6 +94,7 @@ impl Pool {
             config,
             interface_index,
             test_loopback,
+            youtube_retries: Default::default(),
         }))
     }
 
@@ -746,7 +751,7 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
                 // Different DoH providers can return different CDN edges. Retry
                 // failed DNS/TCP setup through Google, still on our bound
                 // interface and source-port pool, never through the system VPN.
-                resolver.connect(host, port, true).await
+                resolver.connect(host.clone(), port, true).await
             }
             .await;
             match remote {
@@ -756,7 +761,20 @@ async fn handle(mut client: TcpStream, pool: Arc<Pool>, resolver: Arc<Resolver>)
                         _ => unreachable!(),
                     };
                     client.write_all(&socks_reply(0, local)).await?;
-                    tokio::io::copy_bidirectional(&mut client, &mut stream).await?;
+                    if pool.config.youtube_startup_retry
+                        && port == 443
+                        && youtube_start::candidate(&host)
+                    {
+                        youtube_start::relay(
+                            &mut client,
+                            &mut stream,
+                            &host,
+                            &pool.youtube_retries,
+                        )
+                        .await?;
+                    } else {
+                        tokio::io::copy_bidirectional(&mut client, &mut stream).await?;
+                    }
                 }
                 Err(_) => {
                     client

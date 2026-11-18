@@ -73,7 +73,7 @@ final class FakeHelper: @unchecked Sendable {
 
     static func send(_ fd: Int32, running: Bool = false, ok: Bool = true, port: Int = 49946, policy: [String: Any]? = nil, networkKey: String? = nil) {
         var value: [String: Any] = ["ok": ok, "running": running, "port": port,
-            "version": "0.1.0", "protocolVersion": 24, "error": ok ? NSNull() : "Network changed" as Any]
+            "version": "0.1.0", "protocolVersion": 25, "error": ok ? NSNull() : "Network changed" as Any]
         if let policy { value["policy"] = policy }
         if let networkKey { value["networkKey"] = networkKey; value["networkInterface"] = "en0" }
         var data = try! JSONSerialization.data(withJSONObject: value)
@@ -398,6 +398,11 @@ struct LifecycleTests {
         precondition(routing["final"] == .string("dpi"), "Default route must not be reset to direct")
         let again = try EditableProfileConfiguration(restored).text()
         precondition(again == originalText, "Editing a custom configuration must preserve every field")
+        var youtube = document
+        youtube.youtubeStartupRetry = true
+        let enabled = try EditableProfileConfiguration.parse(youtube.text()).updating(original)
+        precondition(enabled.selection.custom?.youtubeStartupRetry == true)
+        precondition(restored.selection.custom?.youtubeStartupRetry == nil)
         var invalid = try JSONSerialization.jsonObject(with: Data(originalText.utf8)) as! [String: Any]
         invalid["routeing"] = [:]
         do { _ = try EditableProfileConfiguration.parse(String(decoding: JSONSerialization.data(withJSONObject: invalid), as: UTF8.self)); fatalError("Unknown field accepted") } catch {}

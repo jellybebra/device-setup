@@ -4,6 +4,8 @@ use serde_json::{json, Value};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct CustomPolicy {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub youtube_startup_retry: bool,
     pub routing: Value,
     pub dns: Value,
     pub dpi_arguments: Vec<String>,
@@ -272,6 +274,7 @@ mod tests {
     fn policy() -> CustomPolicy {
         let snapshot = network::inspect_policy(&[]);
         CustomPolicy {
+            youtube_startup_retry: false,
             routing: snapshot["route"].clone(),
             dns: snapshot["dns"].clone(),
             dpi_arguments: vec![

@@ -59,6 +59,7 @@ indirect enum ConfigurationValue: Codable, Equatable, Sendable {
     }
 }
 struct CustomPolicyConfiguration: Codable, Equatable, Sendable {
+    var youtubeStartupRetry: Bool? = nil
     var routing: ConfigurationValue
     var dns: ConfigurationValue
     var dpiArguments: [String]
@@ -66,6 +67,7 @@ struct CustomPolicyConfiguration: Codable, Equatable, Sendable {
 }
 
 struct EditableProfileConfiguration: Codable {
+    var youtubeStartupRetry: Bool? = nil
     var name: String
     var fastRetry: Bool
     var routing: ConfigurationValue
@@ -76,6 +78,7 @@ struct EditableProfileConfiguration: Codable {
     init(_ saved: ProfileConfiguration) throws {
         name = saved.name; fastRetry = saved.fastRetry
         if let custom = saved.selection.custom {
+            youtubeStartupRetry = custom.youtubeStartupRetry
             routing = custom.routing; dns = custom.dns; dpiArguments = custom.dpiArguments; lists = custom.lists
             return
         }
@@ -98,14 +101,14 @@ struct EditableProfileConfiguration: Codable {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ProxyError("Укажите имя") }
         var result = saved
         result.name = name; result.fastRetry = fastRetry
-        result.selection.custom = CustomPolicyConfiguration(routing: routing, dns: dns, dpiArguments: dpiArguments, lists: lists)
+        result.selection.custom = CustomPolicyConfiguration(youtubeStartupRetry: youtubeStartupRetry == true ? true : nil, routing: routing, dns: dns, dpiArguments: dpiArguments, lists: lists)
         result.selection.networkProfiles = nil
         return result
     }
     static func parse(_ text: String) throws -> Self {
         let data = Data(text.utf8)
         guard data.count <= 1_100_000, let fields = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ProxyError("Нужен JSON-объект до 1 МБ") }
-        let known: Set<String> = ["name", "fastRetry", "routing", "dns", "dpiArguments", "lists"]
+        let known: Set<String> = ["name", "fastRetry", "youtubeStartupRetry", "routing", "dns", "dpiArguments", "lists"]
         let unknown = Set(fields.keys).subtracting(known)
         guard unknown.isEmpty else { throw ProxyError("Неизвестные поля: " + unknown.sorted().joined(separator: ", ")) }
         return try JSONDecoder().decode(Self.self, from: data)

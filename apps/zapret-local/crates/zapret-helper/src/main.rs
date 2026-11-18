@@ -122,7 +122,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 24,
+            protocol_version: 25,
             network_key: None,
             network_interface: None,
             policy: None,
@@ -951,6 +951,13 @@ fn worker(
         .stderr(log);
     // Keep children in the launchd job's process group. If macOS eventually
     // force-stops the job, no detached packet engine/broker survives it.
+    if effective_selection
+        .custom
+        .as_ref()
+        .is_some_and(|p| p.youtube_startup_retry)
+    {
+        command.arg("--youtube-startup-retry");
+    }
     runtime.broker = Some(command.spawn()?);
     let mut ready = false;
     for _ in 0..50 {
@@ -1395,7 +1402,12 @@ fn serve() -> Result<()> {
     Ok(())
 }
 
-fn broker(interface: String, source: Ipv4Addr, port: u16) -> Result<()> {
+fn broker(
+    interface: String,
+    source: Ipv4Addr,
+    port: u16,
+    youtube_startup_retry: bool,
+) -> Result<()> {
     root_required()?;
     valid_port(port)?;
     ensure!(
@@ -1431,6 +1443,7 @@ fn broker(interface: String, source: Ipv4Addr, port: u16) -> Result<()> {
         });
         zapret_core::serve(
             zapret_core::Config {
+                youtube_startup_retry,
                 interface,
                 source_ip: source,
                 listen_port: port,
@@ -1500,7 +1513,7 @@ fn main_inner() -> Result<()> {
             input.selection.validate()?;
             worker(port, input.selection, Some(input.node), input.network_key)?
         },
-        Some("--broker") => broker(value(&args, "--interface")?.context("Missing interface")?, value(&args, "--source-ip")?.context("Missing source IP")?.parse()?, port)?,
+        Some("--broker") => broker(value(&args, "--interface")?.context("Missing interface")?, value(&args, "--source-ip")?.context("Missing source IP")?.parse()?, port, args.iter().any(|a| a == "--youtube-startup-retry"))?,
         Some("--check") => {
             let resources = value(&args, "--resources")?.map(PathBuf::from).unwrap_or(bundled_resources()?);
             let net = preflight(port, &resources, false, &selection)?;
