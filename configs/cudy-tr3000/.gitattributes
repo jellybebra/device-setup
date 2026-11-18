@@ -4,3 +4,5 @@
 *.conf text eol=lf
 *.config text eol=lf
 *.txt text eol=lf
+*.nft text eol=lf
+*.lua text eol=lf

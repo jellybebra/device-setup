@@ -304,10 +304,10 @@ mod tests {
                 .count(),
             2
         );
-        assert!(report
-            .entries
-            .iter()
-            .any(|e| e.section == "DPI" && e.details.contains("multidisorder")));
+        assert!(report.entries.iter().any(|e| e.section == "DPI"
+            && e.details.contains("--hostlist-domains=^discord.com,")
+            && e.details.contains("--dpi-desync=multisplit")
+            && e.details.contains("--dpi-desync-split-seqovl=568")));
         assert!(report
             .entries
             .iter()

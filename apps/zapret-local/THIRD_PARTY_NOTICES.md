@@ -2,6 +2,8 @@
 
 V2DPI bundles the separate `utunws` executable and fake packet payloads from Flowseal/zapret-mac-discord-youtube at revision `94c3b5125b4904ce2f6aec0e2197fe17f2fadf14`. V2DPI adds a native implementation of the default wssize_ramp receive-window algorithm. The accompanying source archive includes the build-time patch and native code in applied form. Reference behavior is documented in the [Zapret GUI release](https://t.me/zapretguidev/2488).
 
+The Cudy configuration generator also uses this revision's `macos/Payload/bin/tls_clienthello_4pda_to.bin` under the same license.
+
 Upstream: https://github.com/Flowseal/zapret-mac-discord-youtube
 
 An exact source archive accompanies each release. Rust dependencies are identified by the committed Cargo.lock. The interface uses the native SwiftUI and AppKit frameworks supplied with macOS. Dependency license files are included under Contents/Resources/engine/licenses in the application bundle.

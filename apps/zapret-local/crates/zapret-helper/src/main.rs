@@ -122,7 +122,7 @@ impl Response {
             error: None,
             version: env!("CARGO_PKG_VERSION").into(),
             selection: Selection::default(),
-            protocol_version: 25,
+            protocol_version: 26,
             network_key: None,
             network_interface: None,
             policy: None,
@@ -413,8 +413,8 @@ fn engine_args(dir: &Path, drop_root: bool) -> Vec<String> {
         dir.join(FILES[2]).display()
     ));
     args.extend(["--new", "--filter-tcp=80,443"].map(String::from));
-    // X itself needs fake TLS rather than the media split profile. Extra
-    // repeats reduce intermittent first-response stalls on its rotating edges.
+    // Preserve the local profile for HTTP on X. HTTPS is handled by the
+    // named Discord/X profile at the start of Selection::args.
     args.extend(
         [
             "--hostlist-domains=x.com",

@@ -1,0 +1,11 @@
+# These 32 A records serve rr1 through rr8 in the four affected cache groups.
+# Keep the original destination for Xray's routeOnly TLS inspection.
+chain youtube_cache_sni_lan {
+    type nat hook prerouting priority dstnat - 11; policy accept;
+    iifname "br-lan" ip daddr {
+        79.133.77.44-79.133.77.51,
+        95.167.58.204-95.167.58.211,
+        188.128.79.12-188.128.79.19,
+        178.176.151.76-178.176.151.83
+    } tcp dport 443 counter redirect to :2001
+}
