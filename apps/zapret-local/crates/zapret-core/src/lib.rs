@@ -430,11 +430,13 @@ fn media_fallback_name(name: &str) -> &str {
 }
 
 fn dns_query_name(name: &str, alternate: bool) -> &str {
+    if !alternate {
+        return name;
+    }
     match name {
         "abs.twimg.com" | "pbs.twimg.com" => "twimg.twitter.map.fastly.net",
         "video.twimg.com" => "dualstack.video.twitter.map.fastly.net",
-        _ if alternate => media_fallback_name(name),
-        _ => name,
+        _ => media_fallback_name(name),
     }
 }
 
@@ -515,12 +517,8 @@ impl Resolver {
             // Request an alternate CDN region using a public resolver subnet,
             // without sending the user's subnet or pinning a CDN IP address.
             let subnet = if google { "&edns_client_subnet=8.8.8.0/24" } else { "" };
-            // X rotates twimg hosts between CDN providers. The Cloudflare
-            // edge can complete TLS then stall partway through a JS response
-            // with our split strategy, which a SOCKS proxy cannot safely retry.
-            // Resolve its observed Fastly CNAME directly; retain the client's
-            // original hostname/SNI and end-to-end certificate verification.
-            // DNS still supplies the live edge address (no hard-coded CDN IP).
+            // Query the original hostname first. The alternate lookup can also
+            // switch X media to its Fastly alias or Meta to its global edge.
             let query_name = dns_query_name(&name, google);
             let request = format!("GET {path}?name={query_name}&type=A{subnet} HTTP/1.1\r\nHost: {dns_host}\r\nAccept: application/dns-json\r\nConnection: close\r\n\r\n");
             tls.write_all(request.as_bytes()).await?;

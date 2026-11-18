@@ -291,7 +291,7 @@ fn sing(
         {"inbound":"system-dns","action":"hijack-dns"},{"port":53,"action":"hijack-dns"},{"ip_version":6,"action":"reject"},
         instagram_udp,{"action":"sniff","timeout":"300ms"},instagram_udp,
         // Pass the image hostname to the SOCKS resolver even when the browser
-        // connected to a cached CDN IP. The resolver selects X's Fastly edge.
+        // connected to a cached CDN IP.
         {"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"},
         {"protocol":"tls","network":"tcp","port":443,"domain_suffix":["instagram.com","cdninstagram.com"],"domain_regex":regional_fb,
           "outbound":"dpi","override_address":zapret_core::INSTAGRAM_TLS_RELAY},

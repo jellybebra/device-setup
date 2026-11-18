@@ -2,6 +2,12 @@ use anyhow::{ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+const WEB_GENERAL: &str = concat!(
+    "^discord.com,^updates.discord.com,^discord.gg,^gateway.discord.gg,^discordapp.com,",
+    "^cdn.discordapp.com,^media.discordapp.net,^images-ext-1.discordapp.net,^images-ext-2.discordapp.net,",
+    "x.com,twitter.com,twimg.com"
+);
+
 #[derive(Debug, Deserialize)]
 pub struct Preset {
     pub id: String,
@@ -155,6 +161,22 @@ impl Selection {
             args.push(format!("--uid={}:{}", super::ENGINE_UID, super::GROUP));
         }
         // These sessions reach the broker only after the Cudy policy selected DPI.
+        // Select voice and web by TLS hostname before the IP-wide CDN profiles.
+        args.extend([
+            "--filter-tcp=443,2053,2083,2087,2096,8443".into(),
+            "--hostlist-domains=discord.media".into(),
+            "--new".into(),
+            "--filter-tcp=443".into(),
+            format!("--hostlist-domains={WEB_GENERAL}"),
+            "--dpi-desync=multisplit".into(),
+            "--dpi-desync-split-seqovl=568".into(),
+            "--dpi-desync-split-pos=1".into(),
+            format!(
+                "--dpi-desync-split-seqovl-pattern={}",
+                directory.join("tls_clienthello_4pda_to.bin").display()
+            ),
+            "--new".into(),
+        ]);
         let cf = format!(
             "--ipset={}",
             directory.join("cloudflare-ipv4.txt").display()
@@ -218,16 +240,6 @@ impl Selection {
             "--dpi-desync-repeats=4".into(),
             "--dpi-desync-fooling=ts".into(),
             "--dpi-desync-ts-increment=-600000".into(),
-            "--new".into(),
-        ]);
-        // X media needs its own TCP profile even when a general preset is
-        // selected. The preset's fake/overlap profile intermittently stalls
-        // the TLS handshake on Fastly; plain multidisorder preserves it.
-        args.extend([
-            "--filter-tcp=443".into(),
-            "--hostlist-domains=twimg.com".into(),
-            "--dpi-desync=multidisorder".into(),
-            "--dpi-desync-split-pos=1,midsld".into(),
             "--new".into(),
         ]);
         if self.strategy == "local" {
@@ -348,7 +360,7 @@ mod tests {
         .is_err());
     }
     #[test]
-    fn x_media_profile_precedes_each_general_preset() {
+    fn discord_and_x_web_profile_precedes_cdn_and_general_presets() {
         for strategy in
             std::iter::once("local".to_owned()).chain(catalog().into_iter().map(|p| p.id))
         {
@@ -358,27 +370,37 @@ mod tests {
             }
             .args(Path::new("/engine"), false)
             .unwrap();
-            let profiles: Vec<_> = args.split(|arg| arg == "--new").collect();
-            let index = profiles
-                .iter()
-                .position(|profile| {
-                    profile
-                        .iter()
-                        .any(|arg| arg == "--hostlist-domains=twimg.com")
-                })
-                .unwrap();
-            assert!(profiles[index].iter().any(|arg| arg == "--filter-tcp=443"));
-            assert!(profiles[index]
-                .iter()
-                .any(|arg| arg == "--dpi-desync=multidisorder"));
-            assert!(profiles[index]
-                .iter()
-                .any(|arg| arg == "--dpi-desync-split-pos=1,midsld"));
-            // A catch-all or list-based preset before this profile would
-            // silently make the targeted strategy unreachable again.
-            assert!(profiles[..index].iter().all(|profile| !profile
-                .iter()
-                .any(|arg| { arg.starts_with("--hostlist=") || arg == "--filter-tcp=80,443" })));
+            let mut profiles = args.split(|arg| arg == "--new");
+            assert_eq!(
+                profiles.next().unwrap(),
+                [
+                    "--filter-tcp=443,2053,2083,2087,2096,8443",
+                    "--hostlist-domains=discord.media"
+                ]
+            );
+            let profile = profiles.next().unwrap();
+            assert_eq!(profile[0], "--filter-tcp=443");
+            let hosts = profile[1].strip_prefix("--hostlist-domains=").unwrap();
+            for name in [
+                "^discord.com",
+                "^gateway.discord.gg",
+                "x.com",
+                "twitter.com",
+                "twimg.com",
+            ] {
+                assert!(hosts.split(',').any(|h| h == name));
+            }
+            assert!(!hosts.contains("discord.media") && !hosts.contains("dl2.discordapp.net"));
+            assert_eq!(
+                &profile[2..5],
+                [
+                    "--dpi-desync=multisplit",
+                    "--dpi-desync-split-seqovl=568",
+                    "--dpi-desync-split-pos=1"
+                ]
+            );
+            assert!(profile[5].starts_with("--dpi-desync-split-seqovl-pattern="));
+            assert!(profile[5].ends_with("tls_clienthello_4pda_to.bin"));
         }
     }
 

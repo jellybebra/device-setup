@@ -71,17 +71,15 @@ fn failed_connection_does_not_evict_a_newer_dns_address() {
 
 #[test]
 fn cdn_resolution_preserves_unrelated_names_and_meta_fallback() {
+    for (name, fallback) in [
+        ("abs.twimg.com", "twimg.twitter.map.fastly.net"),
+        ("pbs.twimg.com", "twimg.twitter.map.fastly.net"),
+        ("video.twimg.com", "dualstack.video.twitter.map.fastly.net"),
+    ] {
+        assert_eq!(dns_query_name(name, false), name);
+        assert_eq!(dns_query_name(name, true), fallback);
+    }
     for alternate in [false, true] {
-        for name in ["abs.twimg.com", "pbs.twimg.com"] {
-            assert_eq!(
-                dns_query_name(name, alternate),
-                "twimg.twitter.map.fastly.net"
-            );
-        }
-        assert_eq!(
-            dns_query_name("video.twimg.com", alternate),
-            "dualstack.video.twitter.map.fastly.net"
-        );
         for name in [
             "x.com",
             "api.x.com",
