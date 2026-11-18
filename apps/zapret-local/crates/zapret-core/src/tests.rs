@@ -162,6 +162,7 @@ fn test_pool() -> Arc<Pool> {
     };
     Pool::new(
         Config {
+            youtube_startup_retry: false,
             interface: "test-only".into(),
             source_ip: Ipv4Addr::LOCALHOST,
             listen_port: free_port(),
