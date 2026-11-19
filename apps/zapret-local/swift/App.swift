@@ -7,26 +7,8 @@ import ServiceManagement
 struct ZapretLocalApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
-    private static let trayIcon: NSImage = {
-        let image = Bundle.main.url(forResource: "tray@2x", withExtension: "png")
-            .flatMap { NSImage(contentsOf: $0) }
-            ?? NSImage(systemSymbolName: "network", accessibilityDescription: "V2DPI")!
-        image.size = NSSize(width: 18, height: 18)
-        image.isTemplate = true
-        return image
-    }()
-
     var body: some Scene {
-        // Let SwiftUI own the status-item tracking session: pressed appearance,
-        // placement, keyboard focus, outside-click dismissal and animation.
-        MenuBarExtra {
-            MenuContent(delegate: delegate)
-        } label: {
-            Image(nsImage: Self.trayIcon)
-                .accessibilityLabel("V2DPI")
-                .help("V2DPI")
-        }
-        .menuBarExtraStyle(.window)
+        Settings { EmptyView() }
         .commands {
             CommandGroup(replacing: .appSettings) {
                 Button("Настройки…", action: delegate.showSettings)
@@ -36,23 +18,11 @@ struct ZapretLocalApp: App {
     }
 }
 
-private struct MenuContent: View {
-    @ObservedObject var delegate: AppDelegate
-
-    var body: some View {
-        Group {
-            if let model = delegate.model {
-                ProxyPanel(model: model, manageServers: delegate.showServers, manageProfiles: delegate.showProfiles, manageSettings: delegate.showSettings)
-            } else {
-                ProgressView().padding(12).frame(width: 300)
-            }
-        }
-    }
-}
-
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, ObservableObject {
-    @Published private(set) var model: ProxyModel?
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private var model: ProxyModel?
+    private var statusItem: NSStatusItem?
+    private let panel = NSPopover()
 
     private var managerWindow: NSWindow?
     private var profilesWindow: NSWindow?
@@ -60,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Obse
 
     func showProfiles() {
         guard let model else { return }
+        panel.performClose(nil)
         if profilesWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
                                   styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
@@ -77,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Obse
 
     func showSettings() {
         guard let model else { return }
+        panel.performClose(nil)
         if settingsWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 340, height: 180),
                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -91,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Obse
 
     func showServers() {
         guard let model else { return }
+        panel.performClose(nil)
         model.refreshServers()
         if managerWindow == nil {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 320),
@@ -125,7 +98,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Obse
             return
         }
         // Start the saved proxy session on launch, even before opening the menu.
-        model = ProxyModel()
+        let model = ProxyModel()
+        self.model = model
+        panel.behavior = .transient
+        panel.animates = false
+        panel.contentViewController = NSHostingController(rootView: ProxyPanel(
+            model: model, manageServers: showServers, manageProfiles: showProfiles, manageSettings: showSettings
+        ))
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = item
+        guard let button = item.button else { return }
+        let image = Bundle.main.url(forResource: "tray@2x", withExtension: "png")
+            .flatMap { NSImage(contentsOf: $0) }
+            ?? NSImage(systemSymbolName: "network", accessibilityDescription: "V2DPI")
+        image?.size = NSSize(width: 18, height: 18)
+        image?.isTemplate = true
+        button.image = image
+        button.toolTip = "V2DPI"
+        button.setAccessibilityLabel("V2DPI")
+        button.target = self
+        button.action = #selector(togglePanel(_:))
+    }
+
+    @objc private func togglePanel(_ button: NSStatusBarButton) {
+        if panel.isShown {
+            let window = panel.contentViewController?.view.window
+            let visibleHere = window?.isVisible == true && window?.isOnActiveSpace == true
+            panel.close()
+            if visibleHere { return }
+        }
+        NSApp.activate()
+        panel.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        panel.contentViewController?.view.window?.makeKey()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
