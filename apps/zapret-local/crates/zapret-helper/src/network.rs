@@ -63,6 +63,7 @@ const VPN: &[&str] = &[
     "telegramdownload.com",
     "openai.com",
     "chatgpt.com",
+    "chatgpt.site",
     "oaistatic.com",
     "oaiusercontent.com",
     "auth0.com",
