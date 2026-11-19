@@ -11,6 +11,27 @@
 
 Правила охватывают IPv4. Обычные сайты выходят напрямую. YouTube, Discord, X, Instagram и Vercel используют DPI-помощник. Telegram, AI и Notion используют VLESS, даже если сайт размещён на Cloudflare. Остальной трафик на IPv4-адреса Cloudflare идёт напрямую: TCP на портах 80, 443 и 8443 и QUIC на UDP/443 проходят через DPI-помощник. Для Cloudflare Tunnel выделен прямой путь с DPI на порту 7844. DNS использует прямой DoH Cloudflare с повтором через Google, Google DNS через VLESS с ECS для выбора доступного CDN Meta и подстановки адресов Vercel. macOS получает локальный адрес и порт DNS. Перед регистрацией приложение проверяет ответ по UDP, адреса обоих прямых DoH исключены из захвата TUN. При ошибке запуска указывается этап проверки. Новые подключения к публичному IPv6 отклоняются в TUN.
 
+Google AI Studio, Gemini API и вход через `accounts.google.com` используют выбранный VLESS-сервер. Через него также проходит вход в другие сервисы Google. Для AI Studio нужен сервер в [поддерживаемом регионе](https://aistudio.google.com/docs/available-regions).
+
+В ранее сохранённом профиле откройте «Профили…» → «Редактировать профиль». Добавьте в `routing.rules` сразу после действия `sniff` это правило и сохраните профиль. Для проверки откройте [новый чат](https://aistudio.google.com/prompts/new_chat) под своим аккаунтом и дождитесь загрузки модели и поля ввода.
+
+```json
+{
+  "domain": [
+    "ai.studio",
+    "aistudio.google.com",
+    "accounts.google.com",
+    "waa-pa.clients6.google.com",
+    "generativelanguage.googleapis.com",
+    "daily-cloudcode-pa.googleapis.com",
+    "alkalimakersuite-pa.clients6.google.com",
+    "webchannel-alkalimakersuite-pa.clients6.google.com",
+    "alkalimakersuiteapplets.pa.clients6.google.com"
+  ],
+  "outbound": "vless"
+}
+```
+
 Для IPv4-адресов Amazon CloudFront веб-трафик (TCP/80, TCP/443 и QUIC на UDP/443) проходит через выбранный VLESS-сервер. Явные маршруты сервисов выше по списку сохраняют приоритет. Файл `resources/cloudfront-ipv4.txt` содержит глобальные и региональные диапазоны из [списка AWS](https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips), обновлённого в сборке 10 ноября 2026 года.
 
 Сокеты DPI-помощника привязаны к отдельному utun с адресом физического интерфейса и собственным маршрутом. macOS разбивает исходящий TCP-поток на сегменты до передачи в zapret. Это позволяет передавать большие TLS ClientHello при включённом аппаратном ускорении Wi-Fi.

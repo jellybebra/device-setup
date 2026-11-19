@@ -40,6 +40,17 @@ pub(super) const META: &[&str] = &[
     "fbsbx.com",
     "ig.me",
 ];
+const AI_STUDIO: &[&str] = &[
+    "ai.studio",
+    "aistudio.google.com",
+    "accounts.google.com",
+    "waa-pa.clients6.google.com",
+    "generativelanguage.googleapis.com",
+    "daily-cloudcode-pa.googleapis.com",
+    "alkalimakersuite-pa.clients6.google.com",
+    "webchannel-alkalimakersuite-pa.clients6.google.com",
+    "alkalimakersuiteapplets.pa.clients6.google.com",
+];
 const VPN: &[&str] = &[
     "telegram.org",
     "t.me",
@@ -301,6 +312,7 @@ fn sing(
         {"ip_is_private":true,"outbound":"direct"},
         // GitHub assets must stay direct, including when CDN address ranges change.
         {"domain_suffix":"githubassets.com","outbound":"direct"},
+        {"domain":AI_STUDIO,"outbound":"vless"},
         {"domain_suffix":VPN,"outbound":"vless"},{"ip_cidr":TELEGRAM,"outbound":"vless"},
         {"domain_suffix":["pinterest.com","pinimg.com","pin.it"],"outbound":"direct"},
         {"network":"udp","port_range":["19294:19344","50000:50100"],"outbound":"dpi"},
@@ -1042,6 +1054,7 @@ mod tests {
             json!({"domain_suffix":"githubassets.com","outbound":"direct"}),
             json!({"domain":"pbs.twimg.com","port":443,"outbound":"dpi","override_address":"pbs.twimg.com"}),
             json!({"port":7844,"outbound":"dpi"}),
+            json!({"domain":AI_STUDIO,"outbound":"vless"}),
             json!({"domain_suffix":VPN,"outbound":"vless"}),
             json!({"ip_cidr":TELEGRAM,"outbound":"vless"}),
             json!({"domain_suffix":["pinterest.com","pinimg.com","pin.it"],"outbound":"direct"}),
