@@ -28,9 +28,10 @@ zapret2, не даёт PassWall2 повторно перехватить их.
 [Исключение по метке](../configs/cudy-tr3000/zapret-guard.sh) ·
 [Правило для Vercel](../configs/cudy-tr3000/30-vercel-ingress.nft)
 
-В генераторе zapret2 перед общим правилом Cloudflare стоят два правила по имени. Первое пропускает
-TLS голосовых шлюзов `discord.media` в исходном виде, второе применяет TCP-профиль Flowseal `general`
-к именам приложения Discord, X и Twimg. С компьютера в LAN проверены полный JavaScript Discord,
+Для всех устройств за Cudy zapret2 применяет профиль Flowseal `general` к голосовым шлюзам
+`discord.media` на TCP/443. На портах 2053, 2083, 2087, 2096 и 8443 Cudy сохраняет исходный TLS. Имя шлюза, порт
+и UDP-адрес медиасервера выбирает Discord. Профиль `general` также действует для имён
+приложения Discord, X и Twimg. С компьютера в LAN проверены полный JavaScript Discord,
 манифест обновления, Gateway, HTML X, а также картинки и видео Twimg на адресах из DNS.
 Голосовые серверы во Франкфурте и Амстердаме вернули WebSocket Hello на выданных портах 8443 и 2053.
 [Генератор](../configs/cudy-tr3000/make-zapret.py) · [Исходный профиль Flowseal](https://github.com/Flowseal/zapret-discord-youtube/blob/2401b7a13837139b0265632464ba563dddbf80d8/general.bat) · [Профили V2DPI](../configs/v2dpi/README.md)

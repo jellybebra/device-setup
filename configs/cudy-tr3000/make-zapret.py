@@ -58,8 +58,8 @@ def main():
         quic = f'--payload=quic_initial --lua-desync=fake:blob=flow_quic:repeats={11 if mode == "alt11" else 6}'
         general_tls = '--payload=tls_client_hello --lua-desync=multisplit:pos=1:seqovl=568:seqovl_pattern=flow_4pda'
         profiles = [
-            # Voice WebSockets use the server-assigned port and an unmodified TLS handshake.
-            '--filter-tcp=443,2053,2083,2087,2096,8443 --hostlist-domains=discord.media',
+            f'--filter-tcp=443 --hostlist-domains=discord.media {exclusions} {general_tls}',
+            '--filter-tcp=2053,2083,2087,2096,8443 --hostlist-domains=discord.media',
             f'--filter-tcp=443 --hostlist-domains=trycloudflare.com {exclusions} --payload=tls_client_hello --lua-desync=fake:blob=flow_google:repeats=12:tcp_ts=-600000',
             f'--filter-tcp=7844 --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=tls_client_hello --lua-desync=fake:blob=flow_google:repeats=12:tcp_ts=-600000',
             f'--filter-udp=7844 --filter-l7=quic --ipset={base}/ipset/cloudflare.txt {exclusions} --payload=quic_initial --lua-desync=fake:blob=flow_quic:repeats=6',
