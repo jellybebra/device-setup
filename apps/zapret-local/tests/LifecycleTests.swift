@@ -192,11 +192,18 @@ struct LifecycleTests {
         let reality = uri.replacingOccurrences(of: "security=tls", with: "security=reality")
             .replacingOccurrences(of: "alpn=h2%2Chttp%2F1.1", with: "pbk=" + key + "&sid=aabb&spx=%2Fhello")
         let node = try ProxyServer.fromLink(reality)
+        for hint in ["true", "false"] {
+            let link = reality.replacingOccurrences(of: "type=tcp", with: "type=tcp&support-x25519mlkem768=" + hint)
+            let imported = try ProxyServer.fromLink(link)
+            precondition(imported.name == node.name && imported.matches(node.outbound))
+        }
         let json = try JSONSerialization.jsonObject(with: node.outbound) as! [String:Any]
         let tls = (json["streamSettings"] as! [String:Any])["realitySettings"] as! [String:Any]
         precondition(tls["spiderX"] as? String == "/hello" && tls["publicKey"] as? String == key)
         for bad in [uri.replacingOccurrences(of: "tcp", with: "ws"), uri.replacingOccurrences(of: "443", with: "99999"),
                     uri.replacingOccurrences(of: "type=tcp", with: "type=tcp&allowInsecure=1"),
+                    reality.replacingOccurrences(of: "type=tcp", with: "type=tcp&support-x25519mlkem768=oops"),
+                    reality.replacingOccurrences(of: "type=tcp", with: "type=tcp&support-x25519mlkem768=true&support-x25519mlkem768=false"),
                     reality.replacingOccurrences(of: key, with: "bad")] {
             do { _ = try ProxyServer.fromLink(bad); fatalError("Invalid link accepted") }
             catch is ProxyError {}

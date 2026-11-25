@@ -41,7 +41,7 @@ extension ProxyServer {
         else { throw ProxyError("Нужна ссылка vless:// с ID, именем узла или IPv4-адресом и портом") }
 
         let supported: Set<String> = ["security","type","sni","fp","alpn","pbk","sid","spx","pqv",
-                                      "flow","encryption","ech","headerType","allowInsecure"]
+                                      "flow","encryption","ech","headerType","allowInsecure","support-x25519mlkem768"]
         var q: [String: String] = [:]
         for item in url.queryItems ?? [] {
             guard supported.contains(item.name), q[item.name] == nil else {
@@ -54,6 +54,12 @@ extension ProxyServer {
               ["0", "false", ""].contains(q["allowInsecure"] ?? ""),
               let security = q["security"], ["tls","reality"].contains(security) else {
             throw ProxyError("Поддерживается VLESS поверх TCP с TLS или REALITY и проверкой сертификата")
+        }
+        // 3x-ui includes this Mihomo handshake hint in REALITY links. Xray has no such outbound field.
+        if let hint = q["support-x25519mlkem768"] {
+            guard security == "reality", ["true", "false"].contains(hint) else {
+                throw ProxyError("Некорректный параметр support-x25519mlkem768 для REALITY")
+            }
         }
         if security == "reality" {
             let key = (q["pbk"] ?? "").replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")

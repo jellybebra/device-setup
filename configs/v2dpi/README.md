@@ -4,6 +4,7 @@
 
 | Профиль | Особенность |
 | --- | --- |
+| [Всё, кроме РФ → VLESS](all-except-ru-vless.json) | Домены `.ru` и `.рф`, российские IPv4-адреса и локальные сети идут напрямую. Остальной IPv4-трафик идёт через выбранный VLESS-сервер. |
 | [По умолчанию](default.json) | Прямой маршрут для статики GitHub. |
 | [githubassets → VLESS](github-assets-vless.json) | Статика GitHub идёт через VLESS, включён быстрый повтор TCP-подключения к VLESS-серверу. |
 | [YouTube VLESS](youtube-vless.json) | YouTube и видеосерверы идут через VLESS. |
@@ -14,4 +15,6 @@
 
 Пять вариантов для YouTube наследуют настройки профиля «githubassets → VLESS». Для вариантов с автокэшем и исключением местных кэшей нужна сборка с поддержкой `--wssize-ramp` и `youtubeStartupRetry`. [V2DPI для macOS](../../apps/zapret-local/)
 
-Во всех семи профилях Discord и X используют прямой HTTPS со стратегией Flowseal `general`. Для собственного профиля скопируйте два соседних блока из `dpiArguments` перед общим TCP-правилом Cloudflare. Первый пропускает голосовой WebSocket `discord.media` на назначенном сервером порту, второй задаёт для веб-трафика `--dpi-desync-split-seqovl=568` и шаблон `tls_clienthello_4pda_to.bin`. Готовые профили используют обычные адреса Discord из DNS. [Пример профиля](default.json)
+В семи профилях со стратегиями DPI Discord и X используют прямой HTTPS со стратегией Flowseal `general`. Для собственного профиля скопируйте два соседних блока из `dpiArguments` перед общим TCP-правилом Cloudflare. Первый пропускает голосовой WebSocket `discord.media` на назначенном сервером порту, второй задаёт для веб-трафика `--dpi-desync-split-seqovl=568` и шаблон `tls_clienthello_4pda_to.bin`. Готовые профили используют обычные адреса Discord из DNS. [Пример профиля](default.json)
+
+В профиле «Всё, кроме РФ → VLESS» российские подсети взяты из снимка GeoIP на 25 ноября 2026 года. Диапазоны встроены в JSON. Для обновления списка потребуется обновить профиль. Публичный IPv6 блокируется по обычным правилам V2DPI. [Источник диапазонов SagerNet](https://github.com/SagerNet/sing-geoip/blob/rule-set/geoip-ru.srs)
