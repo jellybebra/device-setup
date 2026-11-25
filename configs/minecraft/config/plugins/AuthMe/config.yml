@@ -1,0 +1,16 @@
+DataSource:
+  backend: SQLITE
+settings:
+  messagesLanguage: ru
+  sessions:
+    enabled: false
+  registration:
+    enabled: true
+    force: true
+    type: PASSWORD
+Security:
+  SQLProblem:
+    stopServer: true
+Protection:
+  geoIpDatabase:
+    enabled: false

@@ -1,0 +1,4 @@
+_version: 31
+command-blocks:
+  permissions-level: 4
+  force-follow-perm-level: true
